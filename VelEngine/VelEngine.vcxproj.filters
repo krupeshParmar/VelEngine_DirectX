@@ -8,6 +8,8 @@
     <ClInclude Include="Components\ComponentsCommon.h" />
     <ClInclude Include="Components\TransformCompnent.h" />
     <ClInclude Include="Utlilities\Utilities.h" />
+    <ClInclude Include="VelAPI\GameEntity.h" />
+    <ClInclude Include="VelAPI\TransformComponentAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\Entity.cpp" />

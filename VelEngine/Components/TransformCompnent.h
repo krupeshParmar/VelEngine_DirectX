@@ -3,8 +3,6 @@
 
 namespace vel::transform
 {
-	DEFINE_TYPE_ID(transform_id);
-
 	struct init_info
 	{
 		f32 position[3]{};
@@ -12,7 +10,7 @@ namespace vel::transform
 		f32 scale[3]{1.f,1.f,1.f};
 	};
 
-	transform_id create_transform(const init_info& info, game_entity::entity_id entity_id);
-	void remove_transform(transform_id id);
-	bool is_alive(transform_id id);
+	component create_transform(const init_info& info, game_entity::entity ent);
+	void remove_transform(component id);
+	bool is_alive(component tra);
 }
