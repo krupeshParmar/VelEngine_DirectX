@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VelEditor", "VelEditor\VelEditor.csproj", "{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B} = {95F0DE61-894F-4C5E-BB01-A3443556AD9B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VelEngine", "VelEngine\VelEngine.vcxproj", "{95F0DE61-894F-4C5E-BB01-A3443556AD9B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Debug|Any CPU.Build.0 = Debug|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Debug|x64.ActiveCfg = Debug|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Debug|x64.Build.0 = Debug|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Release|Any CPU.ActiveCfg = Release|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Release|Any CPU.Build.0 = Release|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Release|x64.ActiveCfg = Debug|x64
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.Release|x64.Build.0 = Debug|x64
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Debug|x64.Build.0 = Debug|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Release|x64.ActiveCfg = Debug|Any CPU
+		{9B4D78E8-FFB8-4144-8ADF-C675A9B9706D}.Release|x64.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
