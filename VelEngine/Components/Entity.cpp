@@ -56,7 +56,7 @@ namespace vel::game_entity
 		const entity_id id{ en.get_id() };
 		const id::id_type index{ id::index(id) };
 		assert(is_alive(en));
-		if (!is_alive(en))
+		if (is_alive(en))
 		{
 			transform::remove_transform(transforms_list[index]);
 			transforms_list[index] = {};
