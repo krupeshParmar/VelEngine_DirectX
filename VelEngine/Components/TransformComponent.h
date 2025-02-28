@@ -11,6 +11,6 @@ namespace vel::transform
 	};
 
 	component create_transform(const init_info& info, game_entity::entity ent);
-	void remove_transform(component id);
+	void remove_transform(component c);
 	bool is_alive(component tra);
 }

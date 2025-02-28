@@ -1,5 +1,5 @@
 #include "Entity.h"
-#include "TransformCompnent.h"
+#include "TransformComponent.h"
 
 namespace vel::game_entity
 {
@@ -45,7 +45,7 @@ namespace vel::game_entity
 		assert(!transforms_list[index].is_valid());
 		transforms_list[index] = transform::create_transform(*info.transform, new_entity);
 
-		if (!transforms_list[index].is_valid()) return entity{};
+		if (!transforms_list[index].is_valid()) return {};
 
 		return new_entity;
 	}
@@ -58,6 +58,8 @@ namespace vel::game_entity
 		assert(is_alive(en));
 		if (!is_alive(en))
 		{
+			transform::remove_transform(transforms_list[index]);
+			transforms_list[index] = {};
 			free_ids.push_back(id);
 		}
 	}
@@ -70,7 +72,15 @@ namespace vel::game_entity
 		const id::id_type index{ id::index(id) };
 		assert(index < generations.size());
 		assert(generations[index] == id::generation(id));
-		return (generations[index] == id::generation(id));
+		return (generations[index] == id::generation(id) && transforms_list[index].is_valid());
+	}
+
+	transform::component
+		entity::transform() const
+	{
+		assert(is_alive(*this));
+		const id::id_type index{ id::index(_id) };
+		return transforms_list[index];
 	}
 
 }
