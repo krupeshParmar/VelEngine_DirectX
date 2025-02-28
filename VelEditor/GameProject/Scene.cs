@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -57,14 +58,23 @@ namespace VelEditor.GameProject
         public ICommand AddGameEntityCommand { get; private set; }
         public ICommand RemoveGameEntityCommand { get; private set; }
 
-        private void AddGameEntity(GameEntity gameEntity)
+        private void AddGameEntity(GameEntity gameEntity, int index = -1)
         {
             Debug.Assert(!_gameEntityList.Contains(gameEntity));
-            _gameEntityList.Add(gameEntity);
+            gameEntity.IsActive = IsActive;
+            if(index == -1)
+            {
+                _gameEntityList.Add(gameEntity);
+            }
+            else
+            {
+                _gameEntityList.Insert(index, gameEntity);
+            }
         }
         private void RemoveGameEntity(GameEntity gameEntity)
         {
             Debug.Assert(_gameEntityList.Contains(gameEntity));
+            gameEntity.IsActive = false;
             _gameEntityList.Remove(gameEntity);
         }
 
@@ -77,22 +87,27 @@ namespace VelEditor.GameProject
                 OnPropertyChanged(nameof(GameEntityList));
             }
 
+            foreach(var gameEntity in _gameEntityList)
+            {
+                gameEntity.IsActive = IsActive;
+            }
+
             AddGameEntityCommand = new RelayCommand<GameEntity>(x =>
             {
                 AddGameEntity(x);
                 var index = _gameEntityList.Count - 1;
                 Project.UndoRedoManager.Add(new UndoRedoAction(
                     () => RemoveGameEntity(x),
-                    () => _gameEntityList.Insert(index, x),
+                    () => AddGameEntity(x, index),
                     $"Add {x.Name} in {Name}"
                     ));
             });
             RemoveGameEntityCommand = new RelayCommand<GameEntity>(x =>
             {
-                var sceneIndex = _gameEntityList.IndexOf(x);
+                var index = _gameEntityList.IndexOf(x);
                 RemoveGameEntity(x);
                 Project.UndoRedoManager.Add(new UndoRedoAction(
-                    () => _gameEntityList.Insert(sceneIndex, x),
+                    () => AddGameEntity(x, index),
                     () => RemoveGameEntity(x),
                     $"Remove {x.Name} from {Name}"
                     ));

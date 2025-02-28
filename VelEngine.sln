@@ -11,8 +11,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VelEngine", "VelEngine\VelEngine.vcxproj", "{95F0DE61-894F-4C5E-BB01-A3443556AD9B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineTest", "EngineTest\EngineTest.vcxproj", "{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B} = {95F0DE61-894F-4C5E-BB01-A3443556AD9B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineDLL", "EngineDLL\EngineDLL.vcxproj", "{1CA0DA23-3191-4971-8B24-20F8F6B00210}"
+	ProjectSection(ProjectDependencies) = postProject
+		{95F0DE61-894F-4C5E-BB01-A3443556AD9B} = {95F0DE61-894F-4C5E-BB01-A3443556AD9B}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

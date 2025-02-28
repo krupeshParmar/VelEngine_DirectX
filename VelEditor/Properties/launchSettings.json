@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "VelEditor": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

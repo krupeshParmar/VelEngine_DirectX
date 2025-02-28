@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using VelEditor.DLLWrapper;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
 
@@ -16,6 +17,45 @@ namespace VelEditor.Components
     [KnownType(typeof(Transform))]
     class GameEntity : ViewModelBase
     {
+        private int _entityId = ID.INVALID_ID;
+
+        public int EntityId
+        {
+            get => _entityId;
+            set
+            {
+                if (_entityId != value)
+                {
+                    _entityId = value;
+                    OnPropertyChanged(nameof(EntityId));
+                }
+            }
+        }
+
+        private bool _isActive;
+
+        public bool IsActive
+        {
+            get => _isActive;
+            set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                    if(_isActive)
+                    {
+                        EntityId = VelAPI.CreateGameEntity(this);
+                        Debug.Assert(ID.IsValid(_entityId));
+                    }
+                    else
+                    {
+                        VelAPI.RemoveGameEntity(this);
+                    }
+                    OnPropertyChanged(nameof(_isActive));
+                }
+            }
+        }
+
         private bool _isEnabled = true;
         [DataMember]
         public bool IsEnabled
@@ -50,6 +90,9 @@ namespace VelEditor.Components
         [DataMember(Name = nameof(ComponentsList))]
         private readonly ObservableCollection<Component> _componentsList = new ObservableCollection<Component>();
         public ReadOnlyObservableCollection<Component> ComponentsList { get; private set; }
+
+        public Component GetComponent(Type type) => ComponentsList.FirstOrDefault(c => c.GetType() == type);
+        public T GetComponent<T>() where T : Component => GetComponent(typeof(T)) as T;
 
         [OnDeserialized]
         void OnDersialized(StreamingContext context)
