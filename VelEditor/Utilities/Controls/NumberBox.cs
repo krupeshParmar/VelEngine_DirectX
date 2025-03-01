@@ -26,6 +26,14 @@ namespace VelEditor.Utilities.Controls
         public static readonly DependencyProperty ValueProperty =
             DependencyProperty.Register(nameof(Value), typeof(string), typeof(NumberBox),
                 new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public double Multiplier
+        {
+            get => (double)GetValue(MultiplierProperty); 
+            set => SetValue(MultiplierProperty, value);
+        }
+        public static readonly DependencyProperty MultiplierProperty =
+            DependencyProperty.Register(nameof(Multiplier), typeof(double), typeof(NumberBox),
+                new PropertyMetadata(1.0));
 
         public override void OnApplyTemplate()
         {
@@ -48,7 +56,6 @@ namespace VelEditor.Utilities.Controls
             _valueChanged = false;
             e.Handled = true;
 
-            _multiplier = 0.01;
             _mouseXStart = e.GetPosition(this).X;
         }
 
@@ -80,7 +87,8 @@ namespace VelEditor.Utilities.Controls
                         _multiplier = 0.001;
                     else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
                         _multiplier = 0.1;
-                    var newValue = _originalValue + (d * _multiplier);
+                    else _multiplier = 0.01;
+                    var newValue = _originalValue + (d * _multiplier * Multiplier);
                     Value = newValue.ToString("0.#####");
                     _valueChanged = true;
                 }

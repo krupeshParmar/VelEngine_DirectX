@@ -44,7 +44,7 @@
                             Background="{StaticResource Editor.Window.GrayBrush3}"
                             Margin="0,5,0,0"/>
             </Grid>
-            <GridSplitter Grid.Column="1" Width="7" 
+            <GridSplitter Grid.Column="1" Width="5" 
                           HorizontalAlignment="Left"
                           VerticalAlignment="Stretch" Background="Transparent"/>
             <Grid Grid.Column="1">
@@ -52,9 +52,19 @@
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Border Background="{StaticResource Editor.Selected.BackgroundBrush}">
-                    <ctl:NumberBox VerticalAlignment="Center" Value="0.0" 
-                                   Foreground="{StaticResource Editor.FontBrush}"/>
+                <Border Background="{StaticResource Editor.Selected.BackgroundBrush}" Margin="2">
+                    <StackPanel>
+                        <ctl:NumberBox VerticalAlignment="Center" Value="0.0" 
+                                       Foreground="{StaticResource Editor.FontBrush}"/>
+                        <ctl:ScalarBox Value="10" Multiplier="10"/>
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector2" Multiplier="200"/>
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector3"/>
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector4"/>
+                        
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector2" orientation="Vertical"/>
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector3" orientation="Vertical"/>
+                        <ctl:VectorBox X="0" Y="1" Z="2" W="3" VectorType="Vector4" orientation="Vertical"/>
+                    </StackPanel>
                 </Border>
                 <GridSplitter Grid.Row="1" Height="5" 
                           HorizontalAlignment="Stretch"

@@ -32,7 +32,6 @@ namespace VelEditor.Editors
         {
             Loaded -= OnWorldEditorViewLoaded;
             Focus();
-            ((INotifyCollectionChanged)Project.UndoRedoManager.UndoList).CollectionChanged += (s, e) => Focus();
         }
     }
 }
