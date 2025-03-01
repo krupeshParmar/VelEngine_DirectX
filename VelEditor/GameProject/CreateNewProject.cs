@@ -119,7 +119,7 @@ namespace VelEditor.GameProject
             }
             else if(Directory.Exists(path) && Directory.EnumerateFileSystemEntries(path).Any())
             {
-                ErrorMessage = "Selected project foler already exists.";
+                ErrorMessage = "Selected project folder already exists.";
             }
             else
             {

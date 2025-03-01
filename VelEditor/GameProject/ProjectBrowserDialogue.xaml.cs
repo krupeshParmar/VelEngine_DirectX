@@ -9,6 +9,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
@@ -19,6 +20,7 @@ namespace VelEditor.GameProject
     /// </summary>
     public partial class ProjectBrowserDialogue : Window
     {
+        private readonly CubicEase _easing = new CubicEase() { EasingMode = EasingMode.EaseInOut };
         public ProjectBrowserDialogue()
         {
             InitializeComponent();
@@ -35,6 +37,31 @@ namespace VelEditor.GameProject
                 OnToggleButton_Click(createProjectButton, new RoutedEventArgs());
             }
         }
+        private void AnimateToCreateProject()
+        {
+            var highlightAnimation = new DoubleAnimation(210, 410, new Duration(TimeSpan.FromSeconds(0.2)));
+            highlightAnimation.EasingFunction = _easing;
+            highlightAnimation.Completed += (s, e) =>
+            {
+                var animation = new ThicknessAnimation(new Thickness(0), new Thickness(-1600, 0, 0, 0), new Duration(TimeSpan.FromSeconds(0.4)));
+                animation.EasingFunction = _easing;
+                BrowserContent.BeginAnimation(MarginProperty, animation);
+            };
+            highlightRect.BeginAnimation(Canvas.LeftProperty, highlightAnimation);
+        }
+
+        private void AnimateToOpenProject()
+        {
+            var highlightAnimation = new DoubleAnimation(410, 210, new Duration(TimeSpan.FromSeconds(0.2)));
+            highlightAnimation.EasingFunction = _easing;
+            highlightAnimation.Completed += (s, e) =>
+            {
+                var animation = new ThicknessAnimation(new Thickness(-1600, 0, 0, 0), new Thickness(0), new Duration(TimeSpan.FromSeconds(0.4)));
+                animation.EasingFunction = _easing;
+                BrowserContent.BeginAnimation(MarginProperty, animation);
+            };
+            highlightRect.BeginAnimation(Canvas.LeftProperty, highlightAnimation);
+        }
 
         private void OnToggleButton_Click(object sender, RoutedEventArgs e)
         {
@@ -43,7 +70,10 @@ namespace VelEditor.GameProject
                 if (createProjectButton.IsChecked == true)
                 {
                     createProjectButton.IsChecked = false;
-                    BrowserContent.Margin = new Thickness(0);
+                    AnimateToOpenProject();
+                    openProjectView.IsEnabled = true;
+                    createProjectView.IsEnabled = false;
+                    //BrowserContent.Margin = new Thickness(0);
                 }
                 openProjectButton.IsChecked = true;
             }
@@ -52,7 +82,10 @@ namespace VelEditor.GameProject
                 if (openProjectButton.IsChecked == true)
                 {
                     openProjectButton.IsChecked = false;
-                    BrowserContent.Margin = new Thickness(-800, 0, 0, 0);
+                    AnimateToCreateProject();
+                    createProjectView.IsEnabled = true;
+                    openProjectView.IsEnabled = false;
+                    //BrowserContent.Margin = new Thickness(-1600, 0, 0, 0);
                 }
                 createProjectButton.IsChecked = true;
             }
