@@ -87,6 +87,8 @@ namespace VelEditor.Components
         [DataMember]
         public Scene ParentScene { get; private set; }
 
+        public double positionX;
+
         [DataMember(Name = nameof(ComponentsList))]
         private readonly ObservableCollection<Component> _componentsList = new ObservableCollection<Component>();
         public ReadOnlyObservableCollection<Component> ComponentsList { get; private set; }
