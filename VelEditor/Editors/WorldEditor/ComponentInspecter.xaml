@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="VelEditor.Editors.WorldEditor.ComponentInspecter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VelEditor.Editors.WorldEditor"
+             mc:Ignorable="d" x:Name="componentInspecter"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Expander IsExpanded="True">
+        <Expander.Style>
+            <Style TargetType="{x:Type Expander}">
+                <Setter Property="Foreground" Value="{StaticResource Editor.FontBrush}"/>
+            </Style>
+        </Expander.Style>
+        <Expander.Header>
+            <TextBlock Text="{Binding Header, ElementName=componentInspecter}" FontWeight="Bold"/>
+        </Expander.Header>
+        <ContentPresenter Margin="5"/>
+    </Expander>
+</UserControl>

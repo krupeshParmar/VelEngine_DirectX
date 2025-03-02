@@ -167,43 +167,39 @@ namespace VelEditor.Components
 
         public List<GameEntity> SelectedEntities { get; }
 
-        public static float? GetMixedValue(List<GameEntity> entities, Func<GameEntity, float> getProperty)
+        private void MakeComponentList()
         {
-            var value = getProperty(entities.First());
-            foreach (var entity in entities.Skip(1))
+            _components.Clear();
+            var firstEntity = SelectedEntities.FirstOrDefault();
+            if (firstEntity == null) return;
+
+            foreach(var component in firstEntity.ComponentsList)
             {
-                if(!value.IsTheSameAs(getProperty(entity)))
+                var type = component.GetType();
+                if (!SelectedEntities.Skip(1).Any(entity => entity.GetComponent(type) == null))
                 {
-                    return null;
+                    Debug.Assert(ComponentsList.FirstOrDefault(x => x.GetType() == type) == null);
+                    _components.Add(component.GetMultiSelectionComponent(this));
                 }
             }
-            return value;
         }
 
-        public static bool? GetMixedValue(List<GameEntity> entities, Func<GameEntity, bool> getProperty)
+        public static float? GetMixedValue<T>(List<T> objects, Func<T, float> getProperty)
         {
-            var value = getProperty(entities.First());
-            foreach (var entity in entities.Skip(1))
-            {
-                if(value != getProperty(entity))
-                {
-                    return null;
-                }
-            }
-            return value;
+            var value = getProperty(objects.First());
+            return objects.Skip(1).Any(x => !getProperty(x).IsTheSameAs(value)) ? (float?)null : value;
         }
 
-        public static string GetMixedValue(List<GameEntity> entities, Func<GameEntity, string> getProperty)
+        public static bool? GetMixedValue<T>(List<T> objects, Func<T, bool> getProperty)
         {
-            var value = getProperty(entities.First());
-            foreach (var entity in entities.Skip(1))
-            {
-                if(value != getProperty(entity))
-                {
-                    return null;
-                }
-            }
-            return value;
+            var value = getProperty(objects.First());
+            return objects.Skip(1).Any(x => getProperty(x) != value) ? (bool?)null :  value;
+        }
+
+        public static string GetMixedValue<T>(List<T> objects, Func<T, string> getProperty)
+        {
+            var value = getProperty(objects.First());
+            return objects.Skip(1).Any(x => value != getProperty(x) ) ? null :  value;
         }
 
         protected virtual bool UpdateGameEntities(string propertyName)
@@ -228,6 +224,7 @@ namespace VelEditor.Components
         {
             _enableUpdates = false;
             UpdateMSGameEntity();
+            MakeComponentList();
             _enableUpdates = true;
         }
 
