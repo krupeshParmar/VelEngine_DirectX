@@ -40,7 +40,7 @@
                           HorizontalAlignment="Stretch"
                               VerticalAlignment="Top" Background="Transparent"/>
                 <local:ProjectLayoutView Background="{StaticResource Editor.Window.GrayBrush3}"/>
-                <local:GameEntityInspector Grid.Row="1"
+                <local:GameEntityInspecter Grid.Row="1"
                             Background="{StaticResource Editor.Window.GrayBrush3}"
                             Margin="0,5,0,0"/>
             </Grid>

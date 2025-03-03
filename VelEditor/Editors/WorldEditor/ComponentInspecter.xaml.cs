@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace VelEditor.Editors.WorldEditor
+namespace VelEditor.Editors
 {
     [ContentProperty("ComponentContent")]
     public partial class ComponentInspecter : UserControl

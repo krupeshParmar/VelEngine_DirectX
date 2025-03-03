@@ -61,6 +61,7 @@ namespace VelEditor.Components
 
         public Transform(GameEntity entity) : base(entity)
         {
+
         }
 
     }
@@ -74,7 +75,7 @@ namespace VelEditor.Components
             get => _positionX;
             set
             {
-                if (_positionX.IsTheSameAs(value))
+                if (!_positionX.IsTheSameAs(value))
                 {
                     _positionX = value;
                     OnPropertyChanged(nameof(PositionX));
@@ -88,7 +89,7 @@ namespace VelEditor.Components
             get => _positionY;
             set
             {
-                if (_positionY.IsTheSameAs(value))
+                if (!_positionY.IsTheSameAs(value))
                 {
                     _positionY = value;
                     OnPropertyChanged(nameof(PositionY));
@@ -102,7 +103,7 @@ namespace VelEditor.Components
             get => _positionZ;
             set
             {
-                if (_positionZ.IsTheSameAs(value))
+                if (!_positionZ.IsTheSameAs(value))
                 {
                     _positionZ = value;
                     OnPropertyChanged(nameof(PositionZ));
@@ -116,7 +117,7 @@ namespace VelEditor.Components
             get => _rotationX;
             set
             {
-                if (_rotationX.IsTheSameAs(value))
+                if (!_rotationX.IsTheSameAs(value))
                 {
                     _rotationX = value;
                     OnPropertyChanged(nameof(RotationX));
@@ -131,7 +132,7 @@ namespace VelEditor.Components
             get => _rotationY;
             set
             {
-                if (_rotationY.IsTheSameAs(value))
+                if (!_rotationY.IsTheSameAs(value))
                 {
                     _rotationY = value;
                     OnPropertyChanged(nameof(RotationY));
@@ -145,7 +146,7 @@ namespace VelEditor.Components
             get => _rotationZ;
             set
             {
-                if (_rotationZ.IsTheSameAs(value))
+                if (!_rotationZ.IsTheSameAs(value))
                 {
                     _rotationZ = value;
                     OnPropertyChanged(nameof(RotationZ));
@@ -159,7 +160,7 @@ namespace VelEditor.Components
             get => _scaleX;
             set
             {
-                if (_scaleX.IsTheSameAs(value))
+                if (!_scaleX.IsTheSameAs(value))
                 {
                     _scaleX = value;
                     OnPropertyChanged(nameof(ScaleX));
@@ -173,7 +174,7 @@ namespace VelEditor.Components
             get => _scaleY;
             set
             {
-                if (_scaleY.IsTheSameAs(value))
+                if (!_scaleY.IsTheSameAs(value))
                 {
                     _scaleY = value;
                     OnPropertyChanged(nameof(ScaleY));
@@ -188,7 +189,7 @@ namespace VelEditor.Components
             get => _scaleZ;
             set
             {
-                if (_scaleZ.IsTheSameAs(value))
+                if (!_scaleZ.IsTheSameAs(value))
                 {
                     _scaleZ = value;
                     OnPropertyChanged(nameof(ScaleZ));
@@ -199,7 +200,7 @@ namespace VelEditor.Components
 
         public MSTransform(MSEntity msEntity) : base(msEntity)
         {
-
+            Refresh();
         }
 
         protected override bool UpdateComponents(string propertyName)

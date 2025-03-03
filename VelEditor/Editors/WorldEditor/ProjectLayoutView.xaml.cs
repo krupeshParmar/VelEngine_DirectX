@@ -60,7 +60,7 @@ namespace VelEditor.Editors
             {
                 msEntity = new MsGameEntity(newSelection);
             }
-            GameEntityInspector.Instance.DataContext = msEntity;
+            GameEntityInspecter.Instance.DataContext = msEntity;
         }
     }
 }

@@ -47,9 +47,10 @@ namespace VelEditor.Components
                         EntityId = VelAPI.CreateGameEntity(this);
                         Debug.Assert(ID.IsValid(_entityId));
                     }
-                    else
+                    else if(ID.IsValid(EntityId))
                     {
                         VelAPI.RemoveGameEntity(this);
+                        EntityId = ID.INVALID_ID;
                     }
                     OnPropertyChanged(nameof(_isActive));
                 }
@@ -104,21 +105,6 @@ namespace VelEditor.Components
                 ComponentsList = new ReadOnlyObservableCollection<Component>(_componentsList);
                 OnPropertyChanged(nameof(ComponentsList));
             }
-
-            /*RenameCommand = new RelayCommand<string>(x =>
-            {
-                var oldName = _name;
-                Name = x;
-                Project.UndoRedoManager.Add(
-                    new UndoRedoAction(nameof(Name), this, oldName, x, $"Rename entity '{oldName}' to '{x}'"));
-            }, x=> x != _name);
-
-            IsEnableCommand = new RelayCommand<bool>(x => {
-                var oldValue = _isEnabled;
-                IsEnabled = x;
-                Project.UndoRedoManager.Add(
-                    new UndoRedoAction(nameof(IsEnabled), this, oldValue, x, x ? $"Enable {Name}" : $"Disable {Name}"));
-            });*/
         }
 
         public GameEntity(Scene scene)
@@ -165,6 +151,11 @@ namespace VelEditor.Components
         private readonly ObservableCollection<IMSComponent> _components = new ObservableCollection<IMSComponent>();
         public ReadOnlyObservableCollection<IMSComponent> ComponentsList { get; }
 
+        public T GetMSComponent<T>() where T : IMSComponent
+        {
+            return (T)ComponentsList.FirstOrDefault(x => x.GetType() == typeof(T));
+        }
+
         public List<GameEntity> SelectedEntities { get; }
 
         private void MakeComponentList()
@@ -187,7 +178,7 @@ namespace VelEditor.Components
         public static float? GetMixedValue<T>(List<T> objects, Func<T, float> getProperty)
         {
             var value = getProperty(objects.First());
-            return objects.Skip(1).Any(x => !getProperty(x).IsTheSameAs(value)) ? (float?)null : value;
+            return objects.Skip(1).Any(x => !getProperty(x).IsTheSameAs(value)) ? (float?)null : value; 
         }
 
         public static bool? GetMixedValue<T>(List<T> objects, Func<T, bool> getProperty)
@@ -199,7 +190,7 @@ namespace VelEditor.Components
         public static string GetMixedValue<T>(List<T> objects, Func<T, string> getProperty)
         {
             var value = getProperty(objects.First());
-            return objects.Skip(1).Any(x => value != getProperty(x) ) ? null :  value;
+            return objects.Skip(1).Any(x => value != getProperty(x)) ? null :  value;
         }
 
         protected virtual bool UpdateGameEntities(string propertyName)

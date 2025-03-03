@@ -21,12 +21,12 @@ namespace VelEditor.Editors
     /// <summary>
     /// Interaction logic for GameEntityInspector.xaml
     /// </summary>
-    public partial class GameEntityInspector : UserControl
+    public partial class GameEntityInspecter : UserControl
     {
         private Action _undoAction;
         private string _propertyName;
-        public static GameEntityInspector Instance { get; private set; }
-        public GameEntityInspector()
+        public static GameEntityInspecter Instance { get; private set; }
+        public GameEntityInspecter()
         {
             InitializeComponent();
             DataContext = null;
@@ -64,6 +64,7 @@ namespace VelEditor.Editors
 
         private void OnName_TextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
+            _propertyName = string.Empty;
             _undoAction = GetRenameAction();
         }
 
