@@ -1,11 +1,14 @@
 #include "Entity.h"
 #include "TransformComponent.h"
+#include "ScriptComponent.h"
 
 namespace vel::game_entity
 {
 	namespace
 	{
 		utl::vector<transform::component>	transforms_list;
+		utl::vector<script::component>	scripts_list;
+
 		utl::vector<id::generation_type>	generations;
 		utl::deque<entity_id>				free_ids;
 
@@ -13,7 +16,7 @@ namespace vel::game_entity
 
 
 	entity 
-	create_game_entity(const entity_info& info)
+	create(entity_info info)
 	{
 		assert(info.transform);		// ALl entity have transform component
 		if (!info.transform) return entity{};
@@ -23,7 +26,7 @@ namespace vel::game_entity
 		if (free_ids.size() > id::min_deleted_elements)
 		{
 			id = free_ids.front();
-			assert(!is_alive(entity{ id }));
+			assert(!is_alive(id));
 			free_ids.pop_front();
 			id = entity_id{ id::new_generation(id) };
 			++generations[id::index(id)];
@@ -43,32 +46,35 @@ namespace vel::game_entity
 
 		// create transform component
 		assert(!transforms_list[index].is_valid());
-		transforms_list[index] = transform::create_transform(*info.transform, new_entity);
+		transforms_list[index] = transform::create(*info.transform, new_entity);
 
 		if (!transforms_list[index].is_valid()) return {};
+		
+		// create script component
+		if (info.script && info.script->script_creator)
+		{
+			assert(!scripts_list[index].is_valid());
+			scripts_list[index] = script::create(*(info.script), new_entity);
+			assert(scripts_list[index].is_valid());
+		}
 
 		return new_entity;
 	}
 
 	void 
-	remove_game_entity(entity en)
+	remove(entity_id id)
 	{
-		const entity_id id{ en.get_id() };
 		const id::id_type index{ id::index(id) };
-		assert(is_alive(en));
-		if (is_alive(en))
-		{
-			transform::remove_transform(transforms_list[index]);
-			transforms_list[index] = {};
-			free_ids.push_back(id);
-		}
+		assert(is_alive(id));
+		transform::remove(transforms_list[index]);
+		transforms_list[index] = {};
+		free_ids.push_back(id);
 	}
 
 	bool 
-	is_alive(entity en)
+	is_alive(entity_id id)
 	{
-		assert(en.is_valid());
-		const entity_id id{ en.get_id() };
+		assert(id::is_valid(id));
 		const id::id_type index{ id::index(id) };
 		assert(index < generations.size());
 		assert(generations[index] == id::generation(id));
@@ -78,9 +84,16 @@ namespace vel::game_entity
 	transform::component
 		entity::transform() const
 	{
-		assert(is_alive(*this));
+		assert(is_alive(this->get_id()));
 		const id::id_type index{ id::index(_id) };
 		return transforms_list[index];
 	}
 
+	script::component
+		entity::script() const
+	{
+		assert(is_alive(this->get_id()));
+		const id::id_type index{ id::index(_id) };
+		return scripts_list[index];
+	}
 }

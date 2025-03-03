@@ -10,7 +10,7 @@ namespace vel::transform
 		utl::vector<math::v3> scales_list;
 	} // anonymous namespace
 
-	component create_transform(const init_info& info, game_entity::entity ent)
+	component create(init_info info, game_entity::entity ent)
 	{
 		assert(ent.is_valid());
 		const id::id_type entity_index{ id::index(ent.get_id()) };
@@ -30,7 +30,7 @@ namespace vel::transform
 		}
 		return component(transform_id{ (id::id_type)positions_list.size() - 1 });
 	}
-	void remove_transform(component c)
+	void remove(component c)
 	{
 		assert(c.is_valid());
 	}

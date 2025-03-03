@@ -11,9 +11,13 @@
     <ClInclude Include="VelAPI\GameEntity.h" />
     <ClInclude Include="VelAPI\TransformComponentAPI.h" />
     <ClInclude Include="Utlilities\MathTypes.h" />
+    <ClInclude Include="VelAPI\ScriptComponentAPI.h" />
+    <ClInclude Include="Components\ScriptComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\Entity.cpp" />
     <ClCompile Include="Components\TransformComponent.cpp" />
+    <ClCompile Include="Components\ScriptComponent.cpp" />
+    <ClCompile Include="Core\EntryPoint.cpp" />
   </ItemGroup>
 </Project>
