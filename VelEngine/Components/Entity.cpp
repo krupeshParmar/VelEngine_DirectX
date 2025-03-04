@@ -39,6 +39,7 @@ namespace vel::game_entity
 			// Resize Components
 			// Note: we don't call resize(), so the number of memory allocations stays low
 			transforms_list.emplace_back();
+			scripts_list.emplace_back();
 		}
 
 		const entity new_entity{ id };
@@ -66,6 +67,12 @@ namespace vel::game_entity
 	{
 		const id::id_type index{ id::index(id) };
 		assert(is_alive(id));
+		if (scripts_list[index].is_valid())
+		{
+			script::remove(scripts_list[index]);
+			scripts_list[index] = {};
+		}
+
 		transform::remove(transforms_list[index]);
 		transforms_list[index] = {};
 		free_ids.push_back(id);

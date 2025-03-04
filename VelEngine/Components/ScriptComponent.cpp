@@ -11,16 +11,16 @@ namespace vel::script
 		utl::vector<id::generation_type>	generations;
 		utl::deque<script_id>				free_ids;
 
-		using script_registery = std::unordered_map<size_t, detail::script_creator>;
+		using script_registry = std::unordered_map<size_t, detail::script_creator>;
 
-		script_registery& registery()
+		script_registry& registery()
 		{
 			/* NOTE:
 			*  we put this static variable in a function because of 
 			*  the intialization order of static data. This way, we can
 			*  be certain that the data is initialized before accessing it.
 			*/
-			static script_registery reg;
+			static script_registry reg;
 			return reg;
 		}
 
@@ -40,7 +40,7 @@ namespace vel::script
 	{
 		u8 register_script(size_t tag, script_creator func)
 		{
-			bool result{ registery().insert(script_registery::value_type{tag,func}).second };
+			bool result{ registery().insert(script_registry::value_type{tag,func}).second };
 			assert(result);
 			return result;
 		}
@@ -69,9 +69,9 @@ namespace vel::script
 		}
 
 		assert(id::is_valid(id));
+		const id::id_type index{ (id::id_type)entity_scripts_list.size()};
 		entity_scripts_list.emplace_back(info.script_creator(ent));
 		assert(entity_scripts_list.back()->get_id() == ent.get_id());
-		const id::id_type index{ (id::id_type)entity_scripts_list.size() };
 		id_mapping[id::index(id)] = index;
 		return component{};
 	}
