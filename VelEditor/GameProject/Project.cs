@@ -23,8 +23,8 @@ namespace VelEditor.GameProject
 
         [DataMember]
         public string Path { get; private set; }
-        public string FullPath => $@"{Path}{Name}\{Name}{Extension}";
-        public string SolutionName => $@"{Path}{Name}\{Name}.sln";
+        public string FullPath => $@"{Path}{Name}{Extension}";
+        public string SolutionName => $@"{Path}{Name}.sln";
 
         [DataMember (Name = "Scenes")]
         private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();

@@ -112,7 +112,7 @@ namespace {1}
                 try
                 {
                     string name = scriptName.Text;
-                    string path = Path.GetFullPath(Path.Combine(Path.Combine(Project.Current.Path, Project.Current.Name), scriptPath.Text.Trim()));
+                    string path = Path.GetFullPath(Path.Combine(Project.Current.Path, scriptPath.Text.Trim()));
                     string solution = Project.Current.SolutionName;
                     var projectName = Project.Current.Name;
 
