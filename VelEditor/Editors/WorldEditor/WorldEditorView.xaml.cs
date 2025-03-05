@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,8 +13,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
+using VelEditor.GameDev;
 using VelEditor.GameProject;
+using VelEditor.Utilities;
 
 namespace VelEditor.Editors
 {
@@ -32,6 +34,16 @@ namespace VelEditor.Editors
         {
             Loaded -= OnWorldEditorViewLoaded;
             Focus();
+        }
+
+        private void OnNewScript_Button_Clicked(object sender, RoutedEventArgs e)
+        {
+            new NewScriptDialog().ShowDialog();
+        }
+
+        private void OnOpenVSProject_Button_Clicked(object sender, RoutedEventArgs e)
+        {
+           VisualStudio.OpenVisualStudio(Project.Current.SolutionName);
         }
     }
 }

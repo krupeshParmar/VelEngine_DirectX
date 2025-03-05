@@ -23,7 +23,13 @@
             <Button Content="Undo"
                     Command="{Binding UndoCommand}"/>
             <Button Content="Redo"
-                    Command="{Binding RedoCommand}" Margin="32,0,0,0"/>
+                    Command="{Binding RedoCommand}" Margin="16,0,0,0"/>
+            <Button Content="New Script"
+                    Click="OnNewScript_Button_Clicked" Margin="16,0,0,0"/>
+            <Button Content="Open VS Project"
+                    Click="OnOpenVSProject_Button_Clicked" Margin="10,0,0,0"/>
+            <Button Content="Save"
+                    Command="{Binding SaveCommand}" Margin="32,0,0,0"/>
         </StackPanel>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>

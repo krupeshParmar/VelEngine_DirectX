@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
   <VEL_IncludePath>{2}</VEL_IncludePath>
-  <VEL_LibraryPath>{3}$(Platform)\$(Configuration)\</VEL_LibraryPath>
+  <VEL_LibraryPath>{3}\$(Platform)\$(Configuration)\</VEL_LibraryPath>
   </PropertyGroup>
   <ItemGroup>
     <BuildMacro Include="VEL_IncludePath">

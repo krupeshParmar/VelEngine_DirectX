@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using VelEditor.GameDev;
 using VelEditor.Utilities;
 
 namespace VelEditor.GameProject
@@ -23,6 +24,7 @@ namespace VelEditor.GameProject
         [DataMember]
         public string Path { get; private set; }
         public string FullPath => $@"{Path}{Name}\{Name}{Extension}";
+        public string SolutionName => $@"{Path}{Name}\{Name}.sln";
 
         [DataMember (Name = "Scenes")]
         private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();
@@ -74,6 +76,7 @@ namespace VelEditor.GameProject
 
         public void Unload()
         {
+            VisualStudio.CloseVisualStudio();
             UndoRedoManager.Reset();
         }
 
