@@ -105,9 +105,10 @@ namespace {1}
 
         private async void OnCreateBtn_Click(object sender, RoutedEventArgs e)
         {
-            if(Validate())
+            if (Validate())
             {
                 IsEnabled = false;
+                busyAnimation.Visibility = Visibility.Visible;
                 try
                 {
                     string name = scriptName.Text;
@@ -123,13 +124,16 @@ namespace {1}
                     Debug.Write(ex.Message);
                     Logger.Log(MessageType.Error, $"Failed to create {scriptName.Text} script: {ex.Message}");
                 }
+                finally
+                {
+                    NewScriptDialog.Instance.CloseDialog();
+                }
             }
             else
             {
                 messageTextBlock.Foreground = FindResource("Editor.RedBrush") as Brush;
                 messageTextBlock.Text = _errorMsg;
             }
-            NewScriptDialog.Instance.CloseDialog();
         }
 
         private void CreateScript(string name, string path, string solution, string projectName)
