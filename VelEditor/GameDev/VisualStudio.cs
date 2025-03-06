@@ -7,14 +7,18 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
+using VelEditor.GameProject;
 using VelEditor.Utilities;
 
 namespace VelEditor.GameDev
 {
     static class VisualStudio
     {
+        public static bool BuildSucceeded { get; private set; } = true;
+        public static bool BuildDone { get; private set; } = true;
         private static EnvDTE80.DTE2 _vsInstance = null;
         private static readonly string _progID = "VisualStudio.DTE.17.0";
+
 
         [DllImport("ole32.dll")]
         private static extern int CreateBindCtx(uint reserved, out IBindCtx ppbc);
@@ -74,7 +78,6 @@ namespace VelEditor.GameDev
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
                 Logger.Log(MessageType.Error, "Failed to open Visual Studio solution: " +ex.Message);
             }
             finally
@@ -132,6 +135,83 @@ namespace VelEditor.GameDev
                 return false;
             }
             return true;
+        }
+        private static void OnBuildSolutionDone(string project, string projectConfig, string platform, string solutionConfig, bool success)
+        {
+            if (BuildDone) return;
+            if (success) Logger.Log(MessageType.Info, $"Building {projectConfig} configuration succeeded");
+            else Logger.Log(MessageType.Error, $"Building {projectConfig} configuration failed");
+
+            BuildDone = true;
+            BuildSucceeded = success;
+        }
+
+        private static void OnBuildSolutionBegin(string project, string projectConfig, string platform, string solutionConfig)
+        {
+            Logger.Log(MessageType.Info, $"Building {project}, {projectConfig}, {platform}, {solutionConfig}");
+        }
+
+        public static bool IsDebugging()
+        {
+            bool result = false;
+
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    result = _vsInstance != null &&
+                        (_vsInstance.Debugger.CurrentProgram != null || _vsInstance.Debugger.CurrentMode == EnvDTE.dbgDebugMode.dbgRunMode);
+                    if (result) break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(MessageType.Error, "Failed to check Visual Studio's status");
+                    if (!result) System.Threading.Thread.Sleep(1000);
+                }
+            }
+            return result;
+        }
+
+        public static void BuildSolution(Project project, string buildConfig, bool showWindow = true)
+        {
+            if(IsDebugging())
+            {
+                Logger.Log(MessageType.Error, "Visual Studio is currently running a process");
+                return;
+            }
+
+            OpenVisualStudio(project.Solution);
+            BuildDone = BuildSucceeded = false;
+
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    if (!_vsInstance.Solution.IsOpen) _vsInstance.Solution.Open(project.Solution);
+                    _vsInstance.MainWindow.Visible = showWindow;
+
+                    _vsInstance.Events.BuildEvents.OnBuildProjConfigBegin += OnBuildSolutionBegin;
+                    _vsInstance.Events.BuildEvents.OnBuildProjConfigDone += OnBuildSolutionDone;
+
+                    try
+                    {
+                        foreach (var pdbFIle in Directory.GetFiles(Path.Combine($"{project.Path}", $@"x64\{buildConfig}"), "*.pdb"))
+                        {
+                            File.Delete(pdbFIle);
+                        }
+                    }
+                    catch (Exception ex) { Logger.Log(MessageType.Warning, ex.Message); }
+
+                    _vsInstance.Solution.SolutionBuild.SolutionConfigurations.Item(buildConfig).Activate();
+                    _vsInstance.ExecuteCommand("Build.BuildSolution");
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Logger.Log(MessageType.Error, $"Failed to build game solution, Attempt {i}: " + e.Message);
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
         }
     }
 }

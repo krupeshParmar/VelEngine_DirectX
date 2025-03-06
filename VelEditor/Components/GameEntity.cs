@@ -44,12 +44,12 @@ namespace VelEditor.Components
                     _isActive = value;
                     if(_isActive)
                     {
-                        EntityId = VelAPI.CreateGameEntity(this);
+                        EntityId = VelAPI.EntityAPI.CreateGameEntity(this);
                         Debug.Assert(ID.IsValid(_entityId));
                     }
                     else if(ID.IsValid(EntityId))
                     {
-                        VelAPI.RemoveGameEntity(this);
+                        VelAPI.EntityAPI.RemoveGameEntity(this);
                         EntityId = ID.INVALID_ID;
                     }
                     OnPropertyChanged(nameof(_isActive));

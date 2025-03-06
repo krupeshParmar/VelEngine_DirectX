@@ -30,28 +30,36 @@ namespace VelEditor.DLLWrapper
 {
     static class VelAPI
     {
-        private const string _dllName = "EngineDLL.dll";
+        private const string _engineDll = "EngineDLL.dll";
 
-        [DllImport(_dllName)]
-        private static extern int CreateGameEntity(GameEntityDescriptor desc);
-        public static int CreateGameEntity(GameEntity entity)
+        [DllImport(_engineDll, CharSet = CharSet.Ansi)]
+        public static extern int LoadGameCodeDll(string dllPath);
+        [DllImport(_engineDll)]
+        public static extern int UnloadGameCodeDll();
+
+        internal static class EntityAPI
         {
-            GameEntityDescriptor gameEntityDescriptor = new GameEntityDescriptor();
-            // transform
+            [DllImport(_engineDll)]
+            private static extern int CreateGameEntity(GameEntityDescriptor desc);
+            public static int CreateGameEntity(GameEntity entity)
             {
-                var c = entity.GetComponent<Transform>();
-                gameEntityDescriptor.Transform.Position = c.Position;
-                gameEntityDescriptor.Transform.Rotation = c.Rotation;
-                gameEntityDescriptor.Transform.Scale = c.Scale;
+                GameEntityDescriptor gameEntityDescriptor = new GameEntityDescriptor();
+                // transform
+                {
+                    var c = entity.GetComponent<Transform>();
+                    gameEntityDescriptor.Transform.Position = c.Position;
+                    gameEntityDescriptor.Transform.Rotation = c.Rotation;
+                    gameEntityDescriptor.Transform.Scale = c.Scale;
+                }
+                return CreateGameEntity(gameEntityDescriptor);
             }
-            return CreateGameEntity(gameEntityDescriptor);
-        }
 
-        [DllImport(_dllName)]
-        private static extern void RemoveGameEntity(int id);
-        public static void RemoveGameEntity(GameEntity entity)
-        {
-            RemoveGameEntity(entity.EntityId);
+            [DllImport(_engineDll)]
+            private static extern void RemoveGameEntity(int id);
+            public static void RemoveGameEntity(GameEntity entity)
+            {
+                RemoveGameEntity(entity.EntityId);
+            }
         }
     }
 }

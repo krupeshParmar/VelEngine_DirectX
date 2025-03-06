@@ -83,10 +83,8 @@ namespace VelEditor.Utilities.Controls
 
                 if (Math.Abs(d) > SystemParameters.MinimumHorizontalDragDistance)
                 {
-                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                        _multiplier = 0.001;
-                    else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-                        _multiplier = 0.1;
+                    if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) _multiplier = 0.001;
+                    else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) _multiplier = 0.1;
                     else _multiplier = 0.01;
                     var newValue = _originalValue + (d * _multiplier * Multiplier);
                     Value = newValue.ToString("0.#####");

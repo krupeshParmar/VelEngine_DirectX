@@ -18,7 +18,7 @@ namespace VelEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string VelPath { get; private set; } = @"P:\GameEngines\MyEngines\VelEngine";
+        public static string VelPath { get; private set; }
 
         public MainWindow()
         {

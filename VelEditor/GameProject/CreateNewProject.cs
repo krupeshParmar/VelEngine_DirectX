@@ -163,7 +163,6 @@ namespace VelEditor.GameProject
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
                 Logger.Log(MessageType.Error, $"Failed to Create Project {ProjectName}: {e.Message}");
                 throw;
             }
@@ -214,7 +213,6 @@ namespace VelEditor.GameProject
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
                 Logger.Log(MessageType.Error, $"Failed to load Project Templates: {ex.Message}");
                 throw;
             }

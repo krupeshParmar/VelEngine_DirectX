@@ -73,7 +73,7 @@ namespace {1}
             Close();
         }
 
-        bool Validate()
+        private bool Validate()
         {
             var name = scriptName.Text.Trim();
             var path = scriptPath.Text.Trim();
@@ -113,7 +113,7 @@ namespace {1}
                 {
                     string name = scriptName.Text;
                     string path = Path.GetFullPath(Path.Combine(Project.Current.Path, scriptPath.Text.Trim()));
-                    string solution = Project.Current.SolutionName;
+                    string solution = Project.Current.Solution;
                     var projectName = Project.Current.Name;
 
                     //Logger.Log(MessageType.Info, path + "\n" + solution + "\n" + projectName);

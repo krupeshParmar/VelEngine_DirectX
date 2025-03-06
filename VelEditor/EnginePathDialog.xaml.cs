@@ -39,7 +39,7 @@ namespace VelEditor
                 messageTextBlock.Text = "Invalid character(s) used in path";
 
             else if(!Directory.Exists(Path.Combine(path, @"VelEngine\VelAPI\")))
-                messageTextBlock.Text = "Unable to find Vel Engine at the specified path";
+                messageTextBlock.Text = "Unable to find the Vel Engine at the specified path";
             
             if(string.IsNullOrEmpty(messageTextBlock.Text))
             {

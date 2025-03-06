@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -54,6 +55,7 @@ namespace VelEditor.Utilities
             [CallerFilePath]string file="", [CallerMemberName]string caller="",
             [CallerLineNumber]int line = 0)
         {
+            Debug.WriteLine(msg);
             await Application.Current.Dispatcher.BeginInvoke(new Action(() => 
             { 
                 _messages.Add(new LogMessage(type, msg, file, caller, line));

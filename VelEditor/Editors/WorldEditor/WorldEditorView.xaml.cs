@@ -43,7 +43,7 @@ namespace VelEditor.Editors
 
         private void OnOpenVSProject_Button_Clicked(object sender, RoutedEventArgs e)
         {
-           VisualStudio.OpenVisualStudio(Project.Current.SolutionName);
+           VisualStudio.OpenVisualStudio(Project.Current.Solution);
         }
     }
 }

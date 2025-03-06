@@ -22,7 +22,6 @@ namespace VelEditor.Utilities
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
                 Logger.Log(MessageType.Error, $"Failed to Serialize {instance} to {path}: {e.Message}");
                 throw;
             }
@@ -38,7 +37,6 @@ namespace VelEditor.Utilities
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e.Message);
                 Logger.Log(MessageType.Error, $"Failed to Deserialize from {path}: {e.Message}");
                 throw;
             }

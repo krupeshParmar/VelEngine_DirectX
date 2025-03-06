@@ -9,11 +9,21 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using VelEditor.DLLWrapper;
 using VelEditor.GameDev;
 using VelEditor.Utilities;
 
 namespace VelEditor.GameProject
 {
+    enum BuildConfiguration
+    {
+        Debug,
+        DebugEditor,
+        Release,
+        ReleaseEditor,
+    }
+
+
     [DataContract(Name = "Game")]
     class Project : ViewModelBase
     {
@@ -24,7 +34,27 @@ namespace VelEditor.GameProject
         [DataMember]
         public string Path { get; private set; }
         public string FullPath => $@"{Path}{Name}{Extension}";
-        public string SolutionName => $@"{Path}{Name}.sln";
+        public string Solution => $@"{Path}{Name}.sln";
+
+        private static readonly string[] _buildConfigurationNamesList = new string[] { "Debug", "DebugEditor", "Release", "ReleaseEditor" };
+
+        private int _buildConfig;
+        [DataMember]
+        public int BuildConfig
+        {
+            get => _buildConfig;
+            set
+            {
+                if(_buildConfig != value)
+                {
+                    _buildConfig = value;
+                    OnPropertyChanged(nameof(BuildConfig));
+                }
+            }
+        }
+
+        public BuildConfiguration StandAloneBuildConfig => BuildConfig == 0 ? BuildConfiguration.Debug : BuildConfiguration.Release;
+        public BuildConfiguration DllBuildConfig => BuildConfig == 0 ? BuildConfiguration.DebugEditor : BuildConfiguration.ReleaseEditor;
 
         [DataMember (Name = "Scenes")]
         private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();
@@ -55,6 +85,46 @@ namespace VelEditor.GameProject
 
         public ICommand AddSceneCommand {  get; private set; }
         public ICommand RemoveSceneCommand { get; private set; }
+        public ICommand BuildCommand { get; private set; }
+
+        private void SetCommands()
+        {
+            AddSceneCommand = new RelayCommand<object>(x =>
+            {
+                AddSceneInternal($"New Scene {_scenesList.Count}");
+                var newScene = _scenesList.Last();
+                var sceneIndex = _scenesList.Count - 1;
+                UndoRedoManager.Add(new UndoRedoAction(
+                    () => RemoveSceneInternal(newScene),
+                    () => _scenesList.Insert(sceneIndex, newScene),
+                    $"Add {newScene.Name}"
+                    ));
+            });
+            RemoveSceneCommand = new RelayCommand<Scene>(x =>
+            {
+                var sceneIndex = _scenesList.IndexOf(x);
+                RemoveSceneInternal(x);
+                UndoRedoManager.Add(new UndoRedoAction(
+                    () => _scenesList.Insert(sceneIndex, x),
+                    () => RemoveSceneInternal(x),
+                    $"Remove {x.Name}"
+                    ));
+            }, x => !x.IsActive);
+
+            UndoCommand = new RelayCommand<object>(x => UndoRedoManager.Undo(), x => UndoRedoManager.UndoList.Any());
+            RedoCommand = new RelayCommand<object>(x => UndoRedoManager.Redo(), x => UndoRedoManager.RedoList.Any());
+            SaveCommand = new RelayCommand<object>(x => Save(this));
+            BuildCommand = new RelayCommand<bool>(async x => await BuildGameCodeDll(x), x => !VisualStudio.IsDebugging() && VisualStudio.BuildDone);
+
+            OnPropertyChanged(nameof(AddSceneCommand));
+            OnPropertyChanged(nameof(RemoveSceneCommand));
+            OnPropertyChanged(nameof(UndoCommand));
+            OnPropertyChanged(nameof(RedoCommand));
+            OnPropertyChanged(nameof(SaveCommand));
+            OnPropertyChanged(nameof(BuildCommand));
+        }
+
+        private static string GetConfigurationName(BuildConfiguration buildConfiguration) => _buildConfigurationNamesList[(int)buildConfiguration];
 
         private void AddSceneInternal(string sceneName)
         {
@@ -86,8 +156,61 @@ namespace VelEditor.GameProject
             Logger.Log(MessageType.Info, $"{project.Name} saved to {project.FullPath}");
         }
 
+        private async Task BuildGameCodeDll(bool showVSWindow = true)
+        {
+            try
+            {
+                UnloadGameCodeDll_Internal();
+                // Build the game code dll
+                await Task.Run(() =>
+                    {
+                        VisualStudio.BuildSolution(this, GetConfigurationName(DllBuildConfig), showVSWindow);
+                        while (!VisualStudio.BuildDone)
+                        {
+                            // Waiting for the build to finish
+                        }
+
+                        if (VisualStudio.BuildSucceeded)
+                        {
+                            LoadGameCodeDll_Internal();
+                        }
+                    }
+                );            }
+            catch (Exception ex)
+            {
+                Logger.Log(MessageType.Error, $"Failed to build the game solution: {ex.Message}");
+            }
+        }
+
+        public void LoadGameCodeDll()
+        {
+            LoadGameCodeDll_Internal();
+        }
+
+        private void LoadGameCodeDll_Internal()
+        {
+            var configName = GetConfigurationName(DllBuildConfig);
+            var dll = $@"{Path}x64\{configName}\{Name}.dll";
+            if(File.Exists(dll) && VelAPI.LoadGameCodeDll(dll) != 0)
+            {
+                Logger.Log(MessageType.Info, "Game code DLL successfully loaded");
+            }
+            else
+            {
+                Logger.Log(MessageType.Warning, "Failed to load game code DLL. Try to build the game project first");
+            }
+        }
+
+        private void UnloadGameCodeDll_Internal()
+        {
+            if(VelAPI.UnloadGameCodeDll() != 0)
+            {
+                Logger.Log(MessageType.Info, "Game code DLL unloaded");
+            }
+        }
+
         [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
+        private async void OnDeserialized(StreamingContext context)
         {
             if(_scenesList != null)
             {
@@ -96,31 +219,8 @@ namespace VelEditor.GameProject
             }
             ActiveScene = ScenesList.FirstOrDefault(x => x.IsActive);
 
-            AddSceneCommand = new RelayCommand<object>(x =>
-            {
-                AddSceneInternal($"New Scene {_scenesList.Count}");
-                var newScene = _scenesList.Last();
-                var sceneIndex = _scenesList.Count - 1;
-                UndoRedoManager.Add(new UndoRedoAction(
-                    () => RemoveSceneInternal(newScene),
-                    () => _scenesList.Insert(sceneIndex, newScene),
-                    $"Add {newScene.Name}"
-                    ));
-            });
-            RemoveSceneCommand = new RelayCommand<Scene>(x =>
-            {
-                var sceneIndex = _scenesList.IndexOf(x);
-                RemoveSceneInternal(x);
-                UndoRedoManager.Add(new UndoRedoAction(
-                    () => _scenesList.Insert(sceneIndex, x),
-                    () => RemoveSceneInternal(x),
-                    $"Remove {x.Name}"
-                    ));
-            }, x => !x.IsActive);
-
-            UndoCommand = new RelayCommand<object>(x => UndoRedoManager.Undo());
-            RedoCommand = new RelayCommand<object>(x => UndoRedoManager.Redo());
-            SaveCommand = new RelayCommand<object>(x => Save(this));
+            await BuildGameCodeDll(false);
+            SetCommands();
         }
 
         public Project(string name, string path)
