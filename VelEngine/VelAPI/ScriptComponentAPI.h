@@ -12,6 +12,10 @@ namespace vel::script
 		constexpr component() : _id{ id::invalid_id } {}
 		constexpr script_id get_id() const { return _id; }
 		constexpr bool is_valid() const { return id::is_valid(_id); }
+		component(const component& c)
+		{
+			_id = c.get_id();
+		}
 
 	private:
 		script_id _id;

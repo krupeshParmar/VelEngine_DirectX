@@ -55,7 +55,7 @@ namespace vel::game_entity
 		if (info.script && info.script->script_creator)
 		{
 			assert(!scripts_list[index].is_valid());
-			scripts_list[index] = script::create(*(info.script), new_entity);
+			scripts_list[index] = script::create(*info.script, new_entity);;
 			assert(scripts_list[index].is_valid());
 		}
 

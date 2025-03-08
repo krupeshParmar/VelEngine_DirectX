@@ -62,7 +62,7 @@ namespace vel::id
 		};
 	}
 #define DEFINE_TYPE_ID(name)									\
-		struct name final : id::detail::id_base				\
+		struct name final : id::detail::id_base					\
 		{														\
 			constexpr explicit name(id::id_type id)				\
 				:id_base{ id } {}								\

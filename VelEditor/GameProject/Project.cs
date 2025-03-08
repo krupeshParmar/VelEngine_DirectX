@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using VelEditor.Components;
 using VelEditor.DLLWrapper;
 using VelEditor.GameDev;
 using VelEditor.Utilities;
@@ -55,6 +56,20 @@ namespace VelEditor.GameProject
 
         public BuildConfiguration StandAloneBuildConfig => BuildConfig == 0 ? BuildConfiguration.Debug : BuildConfiguration.Release;
         public BuildConfiguration DllBuildConfig => BuildConfig == 0 ? BuildConfiguration.DebugEditor : BuildConfiguration.ReleaseEditor;
+
+        private string[] _availableScripts;
+        public string[] AvailableScripts
+        {
+            get => _availableScripts;
+            set
+            {
+                if(_availableScripts != value)
+                {
+                    _availableScripts = value;
+                    OnPropertyChanged(nameof(AvailableScripts));
+                }
+            }
+        }
 
         [DataMember (Name = "Scenes")]
         private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();
@@ -146,6 +161,7 @@ namespace VelEditor.GameProject
 
         public void Unload()
         {
+            UnloadGameCodeDll_Internal();
             VisualStudio.CloseVisualStudio();
             UndoRedoManager.Reset();
         }
@@ -165,17 +181,19 @@ namespace VelEditor.GameProject
                 await Task.Run(() =>
                     {
                         VisualStudio.BuildSolution(this, GetConfigurationName(DllBuildConfig), showVSWindow);
-                        while (!VisualStudio.BuildDone)
-                        {
-                            // Waiting for the build to finish
-                        }
-
-                        if (VisualStudio.BuildSucceeded)
-                        {
-                            LoadGameCodeDll_Internal();
-                        }
                     }
-                );            }
+                );
+
+                while (!VisualStudio.BuildDone)
+                {
+                    // Waiting for the build to finish
+                }
+
+                if (VisualStudio.BuildSucceeded)
+                {
+                    LoadGameCodeDll_Internal();
+                }
+            }
             catch (Exception ex)
             {
                 Logger.Log(MessageType.Error, $"Failed to build the game solution: {ex.Message}");
@@ -191,8 +209,12 @@ namespace VelEditor.GameProject
         {
             var configName = GetConfigurationName(DllBuildConfig);
             var dll = $@"{Path}x64\{configName}\{Name}.dll";
+            AvailableScripts = null;
+
             if(File.Exists(dll) && VelAPI.LoadGameCodeDll(dll) != 0)
             {
+                AvailableScripts = VelAPI.GetScriptNames();
+                ActiveScene.GameEntityList.Where(x => x.GetComponent<Script>() != null).ToList().ForEach(x => x.IsActive = true);
                 Logger.Log(MessageType.Info, "Game code DLL successfully loaded");
             }
             else
@@ -203,9 +225,11 @@ namespace VelEditor.GameProject
 
         private void UnloadGameCodeDll_Internal()
         {
+            ActiveScene.GameEntityList.Where(x => x.GetComponent<Script>() != null).ToList().ForEach(x => x.IsActive = false);
             if(VelAPI.UnloadGameCodeDll() != 0)
             {
                 Logger.Log(MessageType.Info, "Game code DLL unloaded");
+                AvailableScripts = null;
             }
         }
 
@@ -218,6 +242,7 @@ namespace VelEditor.GameProject
                 OnPropertyChanged(nameof(ScenesList));
             }
             ActiveScene = ScenesList.FirstOrDefault(x => x.IsActive);
+            Debug.Assert(ActiveScene != null);
 
             await BuildGameCodeDll(false);
             SetCommands();

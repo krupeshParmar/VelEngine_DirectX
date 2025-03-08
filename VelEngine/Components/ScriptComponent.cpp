@@ -24,6 +24,20 @@ namespace vel::script
 			return reg;
 		}
 
+#ifdef USE_WITH_EDITOR
+utl::vector<std::string>&
+script_names()
+{
+	/* NOTE:
+			*  we put this static variable in a function because of 
+			*  the intialization order of static data. This way, we can
+			*  be certain that the data is initialized before accessing it.
+			*/
+	static utl::vector<std::string> names_list;
+	return names_list;
+}
+#endif
+
 		bool exists(script_id id)
 		{
 			assert(id::is_valid(id));
@@ -44,6 +58,20 @@ namespace vel::script
 			assert(result);
 			return result;
 		}
+		script_creator get_script_creator(size_t tag)
+		{
+			auto script = vel::script::registery().find(tag);
+			assert(script != vel::script::registery().end() && script->first == tag);
+			return script->second;
+		}
+
+#ifdef USE_WITH_EDITOR
+u8 add_script_name(const char* name)
+{
+	script_names().emplace_back(name);
+	return true;
+}
+#endif
 
 	} // detail
 
@@ -57,7 +85,7 @@ namespace vel::script
 		{
 			id = free_ids.front();
 			assert(!exists(id));
-			free_ids.pop_front();
+			free_ids.pop_back();
 			id = script_id{ id::new_generation(id) };
 			++generations[id::index(id)];
 		}
@@ -69,11 +97,11 @@ namespace vel::script
 		}
 
 		assert(id::is_valid(id));
-		const id::id_type index{ (id::id_type)entity_scripts_list.size()};
 		entity_scripts_list.emplace_back(info.script_creator(ent));
 		assert(entity_scripts_list.back()->get_id() == ent.get_id());
+		const id::id_type index{ (id::id_type)entity_scripts_list.size()};
 		id_mapping[id::index(id)] = index;
-		return component{};
+		return component(id);
 	}
 
 	void script::remove(component c)
@@ -87,3 +115,21 @@ namespace vel::script
 		id_mapping[id::index(id)] = id::invalid_id;
 	}
 }
+
+#ifdef USE_WITH_EDITOR
+#include <atlsafe.h>
+
+extern "C" __declspec(dllexport)
+LPSAFEARRAY
+get_script_names()
+{
+	const u32 size{ (u32)vel::script::script_names().size() };
+	if (!size) return nullptr;
+	CComSafeArray<BSTR> names_list(size);
+	for (u32 i{ 0 }; i < size; ++i)
+	{
+		names_list.SetAt(i, A2BSTR(vel::script::script_names()[i].c_str()), false);
+	}
+	return names_list.Detach();
+}
+#endif

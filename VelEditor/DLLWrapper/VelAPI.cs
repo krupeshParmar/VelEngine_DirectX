@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VelEditor.Components;
 using VelEditor.EngineAPIStructs;
+using VelEditor.GameProject;
+using VelEditor.Utilities;
 
 namespace VelEditor.EngineAPIStructs
 {
@@ -18,11 +20,18 @@ namespace VelEditor.EngineAPIStructs
         public Vector3 Scale = new Vector3(1,1,1);
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    class ScriptComponent
+    {
+        public IntPtr ScriptCreator;
+    }
+
 
     [StructLayout(LayoutKind.Sequential)]
     class GameEntityDescriptor
     {
         public TransformComponent Transform = new TransformComponent();
+        public ScriptComponent Script = new ScriptComponent();
     }
 }
 
@@ -34,8 +43,16 @@ namespace VelEditor.DLLWrapper
 
         [DllImport(_engineDll, CharSet = CharSet.Ansi)]
         public static extern int LoadGameCodeDll(string dllPath);
+
         [DllImport(_engineDll)]
         public static extern int UnloadGameCodeDll();
+
+        [DllImport(_engineDll)]
+        public static extern IntPtr GetScriptCreator(string name);
+
+        [DllImport(_engineDll)]
+        [return: MarshalAs(UnmanagedType.SafeArray)]
+        public static extern string[] GetScriptNames();
 
         internal static class EntityAPI
         {
@@ -51,6 +68,24 @@ namespace VelEditor.DLLWrapper
                     gameEntityDescriptor.Transform.Rotation = c.Rotation;
                     gameEntityDescriptor.Transform.Scale = c.Scale;
                 }
+                // script component
+                {
+                    // NOTE: we check if project is not null, hence the game code dll has been loaded
+                    //       If not then creation of script component is deferred until the dll has been loaded
+                    var c = entity.GetComponent<Script>();
+                    if (c != null && Project.Current != null)
+                    {
+                        if (Project.Current.AvailableScripts.Contains(c.Name))
+                        {
+                            gameEntityDescriptor.Script.ScriptCreator = GetScriptCreator(c.Name);
+                        }
+                        else
+                        {
+                            Logger.Log(MessageType.Error, $"Unable to find script with name {c.Name}. Game Object will be created without the script");
+                        }
+                    }
+                }
+
                 return CreateGameEntity(gameEntityDescriptor);
             }
 

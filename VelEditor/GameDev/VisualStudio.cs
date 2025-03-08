@@ -138,12 +138,12 @@ namespace VelEditor.GameDev
         }
         private static void OnBuildSolutionDone(string project, string projectConfig, string platform, string solutionConfig, bool success)
         {
+            BuildSucceeded = success;
             if (BuildDone) return;
             if (success) Logger.Log(MessageType.Info, $"Building {projectConfig} configuration succeeded");
             else Logger.Log(MessageType.Error, $"Building {projectConfig} configuration failed");
 
             BuildDone = true;
-            BuildSucceeded = success;
         }
 
         private static void OnBuildSolutionBegin(string project, string projectConfig, string platform, string solutionConfig)
@@ -154,19 +154,20 @@ namespace VelEditor.GameDev
         public static bool IsDebugging()
         {
             bool result = false;
+            bool tryAgain = true;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 3 && tryAgain; i++)
             {
                 try
                 {
                     result = _vsInstance != null &&
                         (_vsInstance.Debugger.CurrentProgram != null || _vsInstance.Debugger.CurrentMode == EnvDTE.dbgDebugMode.dbgRunMode);
-                    if (result) break;
+                    tryAgain = false;
                 }
                 catch (Exception ex)
                 {
                     Logger.Log(MessageType.Error, "Failed to check Visual Studio's status");
-                    if (!result) System.Threading.Thread.Sleep(1000);
+                    System.Threading.Thread.Sleep(1000);
                 }
             }
             return result;
@@ -183,7 +184,7 @@ namespace VelEditor.GameDev
             OpenVisualStudio(project.Solution);
             BuildDone = BuildSucceeded = false;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 3 && !BuildDone; i++)
             {
                 try
                 {
@@ -204,7 +205,6 @@ namespace VelEditor.GameDev
 
                     _vsInstance.Solution.SolutionBuild.SolutionConfigurations.Item(buildConfig).Activate();
                     _vsInstance.ExecuteCommand("Build.BuildSolution");
-                    break;
                 }
                 catch (Exception e)
                 {

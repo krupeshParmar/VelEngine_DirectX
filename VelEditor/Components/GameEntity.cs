@@ -15,6 +15,7 @@ namespace VelEditor.Components
 {
     [DataContract]
     [KnownType(typeof(Transform))]
+    [KnownType(typeof(Script))]
     class GameEntity : ViewModelBase
     {
         private int _entityId = ID.INVALID_ID;
@@ -96,6 +97,34 @@ namespace VelEditor.Components
 
         public Component GetComponent(Type type) => ComponentsList.FirstOrDefault(c => c.GetType() == type);
         public T GetComponent<T>() where T : Component => GetComponent(typeof(T)) as T;
+
+        public bool AddComponent(Component component)
+        {
+            Debug.Assert(component != null);
+            if(!ComponentsList.Any(x=>x.GetType() == component.GetType()))
+            {
+                IsActive = false;
+                _componentsList.Add(component);
+                IsActive = true;
+                return true;
+            }
+            Logger.Log(MessageType.Warning, $"Entity {Name} already as {component.GetType().Name} component");
+            return false;
+        }
+
+        public void RemoveComponent(Component component)
+        {
+            Debug.Assert(component != null);
+            if (component is Transform) return;     // Cannot remove Transform component
+            if (!ComponentsList.Contains(component))
+            {
+                IsActive = false;
+                _componentsList.Remove(component);
+                IsActive = true;
+                return;
+            }
+            Logger.Log(MessageType.Warning, $"Entity {Name} does not have {component.GetType().Name} component");
+        }
 
         [OnDeserialized]
         void OnDersialized(StreamingContext context)

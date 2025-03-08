@@ -28,11 +28,10 @@ namespace vel
 		class entity_script : public game_entity::entity
 		{
 		public:
-			entity_script() {};
 			virtual ~entity_script() = default;
 			virtual void begin_play() {}
 			virtual void update(float) {}
-		protected:
+		public:
 			constexpr explicit entity_script(game_entity::entity entity)
 				: game_entity::entity{ entity.get_id()}{};
 		};
@@ -43,21 +42,39 @@ namespace vel
 
 			u8 register_script(size_t, script_creator);
 
+#ifdef USE_WITH_EDITOR
+			extern "C" __declspec(dllexport)
+#endif
+			script_creator get_script_creator(size_t tag);
+
 			template<class script_class>
 			Scope<entity_script> create_script(game_entity::entity entity)
 			{
 				assert(entity.is_valid());
-				return CreateScope<entity_script>();
+				return CreateScope<entity_script>(entity);
 			}
 
+#ifdef USE_WITH_EDITOR
+u8 add_script_name(const char* name);
+
 #define REGISTER_SCRIPT(TYPE)													\
-		class TYPE;																\
+		namespace {																\
+		const u8 _reg_##TYPE													\
+		{ vel::script::detail::register_script(									\
+					vel::string_hash()(#TYPE),									\
+					&vel::script::detail::create_script<TYPE>) };				\
+		const u8 _name_##TYPE													\
+		{ vel::script::detail::add_script_name(#TYPE) };						\
+		}
+#else
+#define REGISTER_SCRIPT(TYPE)													\
 		namespace {																\
 		const u8 _reg##TYPE														\
 		{ vel::script::detail::register_script(									\
 					vel::string_hash()(#TYPE),									\
 					&vel::script::detail::create_script<TYPE>) };				\
 		}
+#endif
 
 		} // namespace detail																	
 
