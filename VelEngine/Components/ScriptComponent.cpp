@@ -97,11 +97,19 @@ u8 add_script_name(const char* name)
 		}
 
 		assert(id::is_valid(id));
+		const id::id_type index{ (id::id_type)entity_scripts_list.size()};		// take the index first before adding any new script
 		entity_scripts_list.emplace_back(info.script_creator(ent));
 		assert(entity_scripts_list.back()->get_id() == ent.get_id());
-		const id::id_type index{ (id::id_type)entity_scripts_list.size()};
 		id_mapping[id::index(id)] = index;
-		return component(id);
+		return component{ id };
+	}
+
+	void update_scripts(float dt)
+	{
+		for (auto& ptr : entity_scripts_list)
+		{
+			ptr->update(dt);
+		}
 	}
 
 	void script::remove(component c)

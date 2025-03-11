@@ -210,8 +210,20 @@ namespace VelEditor.GameDev
                 {
                     Logger.Log(MessageType.Error, $"Failed to build game solution, Attempt {i}: " + e.Message);
                     System.Threading.Thread.Sleep(1000);
+                    if (i == 2)
+                        BuildDone = true;
                 }
             }
+        }
+        public static void Run(Project project, string configName, bool debug)
+        {
+            if (_vsInstance == null || IsDebugging() || !BuildDone || !BuildSucceeded) return;
+            _vsInstance.ExecuteCommand(debug ? "Debug.Start" : "Debug.StartWithoutDebugging");
+        }
+        public static void Stop()
+        {
+            if (_vsInstance == null || !IsDebugging()) return;
+            _vsInstance.ExecuteCommand("Debug.StopDebugging");
         }
     }
 }

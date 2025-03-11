@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.Serialization;
@@ -58,6 +59,13 @@ namespace VelEditor.Components
             }
         }
         public override IMSComponent GetMultiSelectionComponent(MSEntity msEntity) => new MSTransform(msEntity);
+
+        public override void WriteToBinaray(BinaryWriter bw)
+        {
+            bw.Write(_position.X); bw.Write(_position.Y); bw.Write(_position.Z);
+            bw.Write(_rotation.X); bw.Write(_rotation.Y); bw.Write(_rotation.Z);
+            bw.Write(_scale.X); bw.Write(_scale.Y); bw.Write(_scale.Z);
+        }
 
         public Transform(GameEntity entity) : base(entity)
         {

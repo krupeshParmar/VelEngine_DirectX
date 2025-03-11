@@ -100,6 +100,9 @@ namespace VelEditor.GameProject
 
         public ICommand AddSceneCommand {  get; private set; }
         public ICommand RemoveSceneCommand { get; private set; }
+        public ICommand DebugStartCommand { get; private set; }
+        public ICommand DebugStartWithoutDebuggingCommand { get; private set; }
+        public ICommand DebugStopCommand { get; private set; }
         public ICommand BuildCommand { get; private set; }
 
         private void SetCommands()
@@ -130,12 +133,18 @@ namespace VelEditor.GameProject
             RedoCommand = new RelayCommand<object>(x => UndoRedoManager.Redo(), x => UndoRedoManager.RedoList.Any());
             SaveCommand = new RelayCommand<object>(x => Save(this));
             BuildCommand = new RelayCommand<bool>(async x => await BuildGameCodeDll(x), x => !VisualStudio.IsDebugging() && VisualStudio.BuildDone);
+            DebugStartCommand = new RelayCommand<object>(async x => await RunGame(true), x => !VisualStudio.IsDebugging() && VisualStudio.BuildDone);
+            DebugStartWithoutDebuggingCommand = new RelayCommand<object>(async x => await RunGame(false), x => !VisualStudio.IsDebugging() && VisualStudio.BuildDone);
+            DebugStopCommand = new RelayCommand<object>(async x => await StopGame(), x => VisualStudio.IsDebugging());
 
             OnPropertyChanged(nameof(AddSceneCommand));
             OnPropertyChanged(nameof(RemoveSceneCommand));
             OnPropertyChanged(nameof(UndoCommand));
             OnPropertyChanged(nameof(RedoCommand));
             OnPropertyChanged(nameof(SaveCommand));
+            OnPropertyChanged(nameof(DebugStartCommand));
+            OnPropertyChanged(nameof(DebugStartWithoutDebuggingCommand));
+            OnPropertyChanged(nameof(DebugStopCommand));
             OnPropertyChanged(nameof(BuildCommand));
         }
 
@@ -171,6 +180,46 @@ namespace VelEditor.GameProject
             Serializer.ToFile(project, project.FullPath);
             Logger.Log(MessageType.Info, $"{project.Name} saved to {project.FullPath}");
         }
+
+        private void SaveToBinary()
+        {
+            var configName = GetConfigurationName(StandAloneBuildConfig);
+            var bin = $@"{Path}x64\{configName}\game.bin";
+
+            using (var bw = new BinaryWriter(File.Open(bin, FileMode.Create, FileAccess.Write)))
+            {
+                bw.Write(ActiveScene.GameEntityList.Count);
+                foreach(var entity in ActiveScene.GameEntityList)
+                {
+                    bw.Write(0);        // entity type reserved for later
+                    bw.Write(entity.ComponentsList.Count);
+                    foreach(var component in entity.ComponentsList)
+                    {
+                        bw.Write((int)component.ToEnumType());
+                        component.WriteToBinaray(bw);
+                    }
+                }
+            }
+        }
+
+        private async Task RunGame(bool debug)
+        {
+            var configName = GetConfigurationName(StandAloneBuildConfig);
+            await Task.Run(() => VisualStudio.BuildSolution(this, configName, debug));
+
+            while (!VisualStudio.BuildDone)
+            {
+                // Waiting for the build to finish
+            }
+
+            if (VisualStudio.BuildSucceeded)
+            {
+                SaveToBinary();
+                await Task.Run(() => VisualStudio.Run(this,configName,debug));
+            }
+        }
+
+        private async Task StopGame() => await Task.Run(() => VisualStudio.Stop());
 
         private async Task BuildGameCodeDll(bool showVSWindow = true)
         {

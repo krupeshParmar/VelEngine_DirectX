@@ -29,8 +29,8 @@ namespace vel
 		{
 		public:
 			virtual ~entity_script() = default;
-			virtual void begin_play() {}
-			virtual void update(float) {}
+			virtual void begin_play() {};
+			virtual void update(float) {};
 		public:
 			constexpr explicit entity_script(game_entity::entity entity)
 				: game_entity::entity{ entity.get_id()}{};
@@ -51,7 +51,7 @@ namespace vel
 			Scope<entity_script> create_script(game_entity::entity entity)
 			{
 				assert(entity.is_valid());
-				return CreateScope<entity_script>(entity);
+				return CreateScope<script_class>(entity);
 			}
 
 #ifdef USE_WITH_EDITOR

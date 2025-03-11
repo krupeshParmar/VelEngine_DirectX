@@ -9,6 +9,7 @@ namespace vel::script
 	};
 
 	component create(init_info info, game_entity::entity ent);
+	void update_scripts(float dt);
 	void remove(component c);
 }
 

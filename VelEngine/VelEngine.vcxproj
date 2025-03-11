@@ -26,6 +26,7 @@
     <ClInclude Include="Components\Entity.h" />
     <ClInclude Include="Components\TransformComponent.h" />
     <ClInclude Include="Components\ScriptComponent.h" />
+    <ClInclude Include="Content\ContentLoader.h" />
     <ClInclude Include="Utlilities\MathTypes.h" />
     <ClInclude Include="Utlilities\Utilities.h" />
     <ClInclude Include="VelAPI\GameEntity.h" />
@@ -36,7 +37,9 @@
     <ClCompile Include="Components\Entity.cpp" />
     <ClCompile Include="Components\TransformComponent.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
+    <ClCompile Include="Content\ContentLoader.cpp" />
     <ClCompile Include="Core\EntryPoint.cpp" />
+    <ClCompile Include="Core\VelEngine.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -106,7 +109,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;USE_WITH_EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>

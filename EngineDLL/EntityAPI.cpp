@@ -19,14 +19,14 @@ namespace
 			using namespace DirectX;
 
 			transform::init_info info{};
-			memcpy(&info.position[0], &position[0], sizeof(f32) * _countof(position));
-			memcpy(&info.scale[0], &scale[0], sizeof(f32) * _countof(position));
+			memcpy(&info.position[0], &position[0], sizeof(position));
+			memcpy(&info.scale[0], &scale[0], sizeof(position));
 			XMFLOAT3A rot{ &rotation[0] };
 			XMVECTOR quat{ XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3A(&rot)) };
 			// quaternion_rotation_roll_pitch_yaw_from_vector()
 			XMFLOAT4 rot_quat{};
 			XMStoreFloat4(&rot_quat, quat);
-			memcpy(&info.rotation[0], &rot_quat.x, sizeof(f32) * _countof(info.rotation));
+			memcpy(&info.rotation[0], &rot_quat.x, sizeof(info.rotation));
 			return info;
 		}
 	};
