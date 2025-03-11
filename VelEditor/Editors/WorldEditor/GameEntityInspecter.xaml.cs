@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using VelEditor.Components;
+using VelEditor.GameDev;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
 
@@ -148,6 +149,16 @@ namespace VelEditor.Editors
         private void OnAddScriptComponent(object sender, RoutedEventArgs e)
         {
             AddComponent(ComponentType.Script, (sender as MenuItem).Header.ToString());
+        }
+
+        private void OnAddNewScript_Menu_Clicked(object sender, RoutedEventArgs e)
+        {
+            NewScriptDialog.FinalName = string.Empty;
+            new NewScriptDialog().ShowDialog();
+            if(NewScriptDialog.FinalName != string.Empty)
+            {
+                AddComponent(ComponentType.Script, NewScriptDialog.FinalName);
+            }
         }
     }
 }

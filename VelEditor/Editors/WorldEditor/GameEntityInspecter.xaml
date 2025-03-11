@@ -45,6 +45,7 @@
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
+            <MenuItem Header="New Script" Click="OnAddNewScript_Menu_Clicked"/>
         </ContextMenu>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

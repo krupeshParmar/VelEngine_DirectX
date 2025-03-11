@@ -57,6 +57,7 @@ namespace {1}
         private string _errorMsg = string.Empty;
 
         private static readonly string _namespace = GetNamespaceFromProjectName();
+        public static string FinalName = string.Empty;
 
 
         /// <summary>
@@ -115,12 +116,14 @@ namespace {1}
                     string path = Path.GetFullPath(Path.Combine(Project.Current.Path, scriptPath.Text.Trim()));
                     string solution = Project.Current.Solution;
                     var projectName = Project.Current.Name;
+                    FinalName = name;
 
                     //Logger.Log(MessageType.Info, path + "\n" + solution + "\n" + projectName);
                     await Task.Run(() => CreateScript(name, path, solution, projectName));
                 }
                 catch (Exception ex)
                 {
+                    FinalName = string.Empty;
                     Debug.Write(ex.Message);
                     Logger.Log(MessageType.Error, $"Failed to create {scriptName.Text} script: {ex.Message}");
                 }
