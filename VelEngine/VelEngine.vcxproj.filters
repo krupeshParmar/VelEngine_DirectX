@@ -14,6 +14,9 @@
     <ClInclude Include="VelAPI\ScriptComponentAPI.h" />
     <ClInclude Include="Components\ScriptComponent.h" />
     <ClInclude Include="Content\ContentLoader.h" />
+    <ClInclude Include="Platform\window.h" />
+    <ClInclude Include="Platform\Platform.h" />
+    <ClInclude Include="Platform\PlatformTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\Entity.cpp" />
@@ -22,5 +25,6 @@
     <ClCompile Include="Core\EntryPoint.cpp" />
     <ClCompile Include="Core\VelEngine.cpp" />
     <ClCompile Include="Content\ContentLoader.cpp" />
+    <ClCompile Include="Platform\Platform.cpp" />
   </ItemGroup>
 </Project>

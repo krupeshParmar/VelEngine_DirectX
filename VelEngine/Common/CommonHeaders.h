@@ -18,6 +18,7 @@
 #include "PrimitiveTypes.h"
 #include "../Utlilities/Utilities.h"
 #include "../Utlilities/MathTypes.h"
+#include "id.h"
 
 namespace vel
 {

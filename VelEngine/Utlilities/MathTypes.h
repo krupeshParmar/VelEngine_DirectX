@@ -14,7 +14,7 @@ namespace vel::math
 	using v4a = DirectX::XMFLOAT4A;
 	using u32v2 = DirectX::XMUINT2;
 	using u32v3 = DirectX::XMUINT3;
-	using u32v4 = DirectX::XMINT4;
+	using u32v4 = DirectX::XMUINT4;
 	using s32v2 = DirectX::XMINT2;
 	using s32v3 = DirectX::XMINT3;
 	using s32v4 = DirectX::XMINT4;
