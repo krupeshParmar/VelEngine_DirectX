@@ -61,14 +61,28 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <local:ProjectLayoutView Background="{StaticResource Editor.Window.GrayBrush3}" MinWidth="175" Margin="0,0,5,0"/>
-                    <GridSplitter Grid.Column="1" Width="5" 
+                    <local:ProjectLayoutView Background="{StaticResource Editor.Window.GrayBrush3}" MinWidth="175"/>
+                    <GridSplitter Grid.Column="1" Width="6" 
                       VerticalAlignment="Stretch"
                           HorizontalAlignment="Left" Background="Transparent"/>
-                    <utl:RenderSurfaceView Grid.Column="1"/>
-                    <!--<Border Background="{StaticResource Editor.Selected.BackgroundBrush}" Margin="5,0,0,0" Grid.Column="1">
-                        <StackPanel></StackPanel>
-                    </Border>-->
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <GridSplitter Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Background="Transparent"
+                                      VerticalAlignment="Stretch" HorizontalAlignment="Right" Width="5"/>
+                        <GridSplitter Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Background="Transparent"
+                                      VerticalAlignment="Top" HorizontalAlignment="Stretch" Height="5"/>
+                        <utl:RenderSurfaceView Grid.Row="0" Grid.Column="0" Margin="0,0,5,0"/>
+                        <utl:RenderSurfaceView Grid.Row="0" Grid.Column="1" Margin="0,0,0,0"/>
+                        <utl:RenderSurfaceView Grid.Row="1" Grid.Column="0" Margin="0,5,5,0"/>
+                        <utl:RenderSurfaceView Grid.Row="1" Grid.Column="1" Margin="0,5,0,0"/>
+                    </Grid>
                 </Grid>
                 <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Top" Background="Transparent"/>
                 <Grid Grid.Row="1" Margin="0,5,0,0" MinHeight="250">

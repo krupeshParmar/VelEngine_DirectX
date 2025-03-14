@@ -82,6 +82,15 @@ RemoveRenderSurface(u32 id)
 	platform::remove_window(win.get_id());
 }
 
+VEL_EDITOR_API void
+ResizeRenderSurface(u32 id)
+{
+	assert(id < surfaces_list.size());
+	platform::window& win = surfaces_list[id].window;
+	assert(win.is_valid());
+	win.resize(0, 0);
+}
+
 VEL_EDITOR_API HWND
 GetWindowHandle(u32 id)
 {

@@ -30,7 +30,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|x64'">
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
-
   <ItemGroup>
     <COMReference Include="EnvDTE80">
       <WrapperTool>tlbimp</WrapperTool>

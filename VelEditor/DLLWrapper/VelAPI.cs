@@ -61,6 +61,9 @@ namespace VelEditor.DLLWrapper
         public static extern void RemoveRenderSurface(int surfaceId);
 
         [DllImport(_engineDll)]
+        public static extern void ResizeRenderSurface(int surfaceId);
+
+        [DllImport(_engineDll)]
         public static extern IntPtr GetWindowHandle(int surfaceId);
 
         internal static class EntityAPI

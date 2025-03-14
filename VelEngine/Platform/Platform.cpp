@@ -164,11 +164,21 @@ namespace vel::platform
 		{
 			window_info& info{ get_window_info_from_id(id) };
 
-			// we may also resize while in fullscreen
-			RECT& area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
-			area.bottom = area.top + height;
-			area.right = area.left + width;
-			resize_window(info, area);
+			// NOTE: when we host the window in the level editor we just update
+			//		 the internal data (i.e. the client area dimensions).
+
+			if (info.style & WS_CHILD)
+			{
+				GetClientRect(info.hwnd, &info.client_area);
+			}
+			else
+			{
+				// we may also resize while in fullscreen
+				RECT& area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
+				area.bottom = area.top + height;
+				area.right = area.left + width;
+				resize_window(info, area);
+			}
 		}
 
 		bool is_window_closed(window_id id)
