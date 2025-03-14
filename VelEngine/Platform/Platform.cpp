@@ -125,13 +125,11 @@ namespace vel::platform
 					GetWindowRect(info.hwnd, &rect);
 					info.top_left.x = rect.left;
 					info.top_left.y = rect.top;
-					info.style = 0;
-					SetWindowLongPtr(info.hwnd, GWL_STYLE, info.style);
+					SetWindowLongPtr(info.hwnd, GWL_STYLE, 0);
 					ShowWindow(info.hwnd, SW_MAXIMIZE);
 				}
 				else
 				{
-					info.style = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
 					SetWindowLongPtr(info.hwnd, GWL_STYLE, info.style);
 					resize_window(info, info.client_area);
 					ShowWindow(info.hwnd, SW_SHOWNORMAL);
@@ -158,7 +156,7 @@ namespace vel::platform
 		math::u32v4 get_window_size(window_id id)
 		{
 			window_info& info{ get_window_info_from_id(id) };
-			RECT area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
+			RECT& area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
 			return { (u32)area.left, (u32)area.top, (u32)area.right, (u32)area.bottom };
 		}
 
@@ -167,7 +165,7 @@ namespace vel::platform
 			window_info& info{ get_window_info_from_id(id) };
 
 			// we may also resize while in fullscreen
-			RECT area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
+			RECT& area{ info.is_fullscreen ? info.full_screen_area : info.client_area };
 			area.bottom = area.top + height;
 			area.right = area.left + width;
 			resize_window(info, area);
@@ -204,18 +202,21 @@ namespace vel::platform
 		// Register the window class
 		RegisterClassEx(&wc);
 
-		// adjust the window size for the correct device size
 		window_info info{};
-		RECT rc{ info.client_area };
-
-		AdjustWindowRect(&rc, info.style, FALSE);
-		const wchar_t* caption{ (init_info && init_info->caption) ? init_info->caption : L"Vel Game" };
-		const s32 left{ (init_info && init_info->left) ? init_info->left : info.client_area.left };
-		const s32 top{ (init_info && init_info->top) ? init_info->top :  info.client_area.top };
-		const s32 width{ (init_info && init_info->width) ? init_info->width : rc.right - rc.left };
-		const s32 height{ (init_info && init_info->height) ? init_info->height : rc.bottom - rc.top };
-
+		info.client_area.right = (init_info && init_info->width) ? info.client_area.left + init_info->width : info.client_area.right;
+		info.client_area.bottom = (init_info && init_info->height) ? info.client_area.top + init_info->height : info.client_area.bottom;
 		info.style |= parent ? WS_CHILD : WS_OVERLAPPEDWINDOW;
+		
+		RECT rect{ info.client_area };
+		
+		// adjust the window size for the correct device size
+		AdjustWindowRect(&rect, info.style, FALSE);
+
+		const wchar_t* caption{ (init_info && init_info->caption) ? init_info->caption : L"Vel Game" };
+		const s32 left{ init_info ? init_info->left : info.top_left.x };
+		const s32 top{ init_info ? init_info->top :  info.top_left.y };
+		const s32 width{ rect.right - rect.left };
+		const s32 height{ rect.bottom - rect.top };
 
 		// Create an instance of the window class
 		info.hwnd = CreateWindowEx(
@@ -235,7 +236,7 @@ namespace vel::platform
 
 		if (info.hwnd)
 		{
-			SetLastError(0);
+			DEBUG_OP(SetLastError(0));
 			window_id id{ add_to_windows(info) };
 			SetWindowLongPtr(info.hwnd, GWLP_USERDATA, (LONG_PTR)id);
 
@@ -281,7 +282,7 @@ namespace vel::platform
 		assert(is_valid());
 		set_window_caption(_id, caption);
 	}
-	const math::u32v4 window::size() const
+	math::u32v4 window::size() const
 	{
 		assert(is_valid());
 		return get_window_size(_id);
@@ -291,13 +292,13 @@ namespace vel::platform
 		assert(is_valid());
 		resize_window(_id, width, height);
 	}
-	const u32 window::width() const
+	u32 window::width() const
 	{
 		assert(is_valid());
 		math::u32v4 s{ size() };
 		return s.z - s.x;
 	}
-	const u32 window::height() const
+	u32 window::height() const
 	{
 		math::u32v4 s{ size() };
 		return s.w - s.y;

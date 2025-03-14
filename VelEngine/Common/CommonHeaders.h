@@ -20,6 +20,12 @@
 #include "../Utlilities/MathTypes.h"
 #include "id.h"
 
+#ifdef _DEBUG
+#define DEBUG_OP(x) x
+#else
+#define DEBUG_OP(x)
+#endif
+
 namespace vel
 {
 	using string_hash = std::hash<std::string>;

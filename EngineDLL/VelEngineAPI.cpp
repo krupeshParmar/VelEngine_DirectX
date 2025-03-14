@@ -2,6 +2,9 @@
 #include <atlsafe.h>
 #include "Common.h"
 #include "..\VelEngine\Components\ScriptComponent.h"
+#include "..\Platform\PlatformTypes.h"
+#include "..\Platform\Platform.h"
+#include "..\Graphics\Renderer.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -17,6 +20,8 @@ namespace
 	_get_script_creator get_script_creator{ nullptr };
 	using _get_script_names = LPSAFEARRAY(*)(void);
 	_get_script_names get_script_names{ nullptr };
+
+	utl::vector<graphics::render_surface> surfaces_list;
 } // annonymous namespace
 
 VEL_EDITOR_API u32
@@ -56,4 +61,31 @@ VEL_EDITOR_API LPSAFEARRAY
 GetScriptNames()
 {
 	return (game_code_dll && get_script_names) ? get_script_names() : nullptr;
+}
+
+VEL_EDITOR_API u32
+CreateRenderSurface(HWND host, s32 width, s32 height)
+{
+	platform::window_init_info info{ nullptr, host, nullptr, 0, 0, width, height };
+	graphics::render_surface surface{ platform::create_window(&info),{} };
+	assert(surface.window.is_valid());
+	surfaces_list.emplace_back(surface);
+	return (u32)surfaces_list.size() - 1;
+}
+
+VEL_EDITOR_API void
+RemoveRenderSurface(u32 id)
+{
+	assert(id < surfaces_list.size());
+	platform::window& win = surfaces_list[id].window;
+	assert(win.is_valid());
+	platform::remove_window(win.get_id());
+}
+
+VEL_EDITOR_API HWND
+GetWindowHandle(u32 id)
+{
+	assert(id < surfaces_list.size());
+	platform::window& win = surfaces_list[id].window;
+	return (HWND)win.handle();
 }
