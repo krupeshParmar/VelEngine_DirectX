@@ -31,6 +31,7 @@
     <ClInclude Include="Platform\Platform.h" />
     <ClInclude Include="Platform\PlatformTypes.h" />
     <ClInclude Include="Platform\window.h" />
+    <ClInclude Include="Utlilities\Math.h" />
     <ClInclude Include="Utlilities\MathTypes.h" />
     <ClInclude Include="Utlilities\Utilities.h" />
     <ClInclude Include="VelAPI\GameEntity.h" />

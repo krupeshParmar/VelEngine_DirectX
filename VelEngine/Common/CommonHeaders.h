@@ -18,6 +18,7 @@
 #include "PrimitiveTypes.h"
 #include "../Utlilities/Utilities.h"
 #include "../Utlilities/MathTypes.h"
+#include "../Utlilities/Math.h"
 #include "id.h"
 
 #ifdef _DEBUG
