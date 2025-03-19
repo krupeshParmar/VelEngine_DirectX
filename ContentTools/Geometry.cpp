@@ -10,7 +10,7 @@ namespace vel::tools
 		void recalculate_normals(mesh& m)
 		{
 			const u32 num_indices{ (u32)m.raw_indices.size() };
-			m.normals.reserve(num_indices);
+			m.normals.resize(num_indices);
 
 			for (u32 i{ 0 }; i < num_indices; ++i)
 			{
@@ -26,7 +26,7 @@ namespace vel::tools
 				XMVECTOR e1{ v2 - v0 };
 				XMVECTOR n{ XMVector3Normalize(XMVector3Cross(e0, e1)) };
 
-				XMStoreFloat3(&m.normals[i], n);
+				XMStoreFloat3(&(m.normals[i]), n);
 				m.normals[i - 1] = m.normals[i];
 				m.normals[i - 2] = m.normals[i];
 			}
@@ -103,7 +103,7 @@ namespace vel::tools
 			for (u32 i{ 0 }; i < num_indices; ++i)
 				idx_ref[old_indices[i]].emplace_back(i);
 
-			for (u32 i{ 0 }; i < num_indices; ++i)
+			for (u32 i{ 0 }; i < num_vertices; ++i)
 			{
 				auto& refs{ idx_ref[i] };
 				u32 num_refs{ (u32)refs.size() };

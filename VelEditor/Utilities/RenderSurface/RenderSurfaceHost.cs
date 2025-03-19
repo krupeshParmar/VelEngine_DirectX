@@ -13,20 +13,20 @@ namespace VelEditor.Utilities
 {
     class RenderSurfaceHost : HwndHost
     {
+        private readonly int VK_LBUTTON = 0x01;
         private IntPtr _winHandle = IntPtr.Zero;
         private readonly int _width = 800;
         private readonly int _height = 600;
         private DelayEventTimer _resizeTimer;
 
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
+
         public int SurfaceId { get; private set; } = ID.INVALID_ID;
 
-        public void Resize()
-        {
-            _resizeTimer.Trigger();
-        }
         private void Resize(object? sender, DelayEventTimerArgs e)
         {
-            e.RepeatEvent = Mouse.LeftButton == MouseButtonState.Pressed;
+            e.RepeatEvent = GetAsyncKeyState(VK_LBUTTON) < 0;
             if (!e.RepeatEvent)
             {
                 VelAPI.ResizeRenderSurface(SurfaceId);
@@ -39,6 +39,8 @@ namespace VelEditor.Utilities
             _height = (int)height;
             _resizeTimer = new DelayEventTimer(TimeSpan.FromMilliseconds(250.0));
             _resizeTimer.Triggered += Resize;
+
+            SizeChanged += (s, e) => _resizeTimer.Trigger();
         }
 
 

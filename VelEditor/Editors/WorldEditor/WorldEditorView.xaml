@@ -43,6 +43,7 @@
                 <ComboBoxItem Content="Debug" IsSelected="True"/>
                 <ComboBoxItem Content="Release"/>
             </ComboBox>
+            <Button Content="Primitive Mesh" Click="OnCreatePrimitiveMesh_Button_Click" Margin="10,0"/>
             <Button Content="Save"
                 Command="{Binding SaveCommand}" Margin="32,0,0,0"/>
         </StackPanel>
@@ -61,11 +62,11 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <local:ProjectLayoutView Background="{StaticResource Editor.Window.GrayBrush3}" MinWidth="175"/>
+                    <local:ProjectLayoutView Background="{StaticResource Editor.Window.GrayBrush3}" MinWidth="175" Margin="0,5,0,0"/>
                     <GridSplitter Grid.Column="1" Width="6" 
                       VerticalAlignment="Stretch"
                           HorizontalAlignment="Left" Background="Transparent"/>
-                    <Grid Grid.Column="1">
+                    <Grid Grid.Column="1" Margin="5,5,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -102,7 +103,7 @@
             <GridSplitter Grid.Column="1" Width="5" 
                       HorizontalAlignment="Left"
                         VerticalAlignment="Stretch" Background="Transparent"/>
-            <Grid Grid.Column="1" MinWidth="225">
+            <Grid Grid.Column="1" MinWidth="275">
                 <local:GameEntityInspecter Grid.Row="1"
                         Background="{StaticResource Editor.Window.GrayBrush3}"
                         Margin="5,5,0,0"/>

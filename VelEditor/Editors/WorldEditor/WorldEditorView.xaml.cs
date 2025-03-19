@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using VelEditor.Content;
 using VelEditor.GameDev;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
@@ -44,6 +45,12 @@ namespace VelEditor.Editors
         private void OnOpenVSProject_Button_Clicked(object sender, RoutedEventArgs e)
         {
            VisualStudio.OpenVisualStudio(Project.Current.Solution);
+        }
+
+        private void OnCreatePrimitiveMesh_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new PrimitiveMeshDialog();
+            dlg.ShowDialog();
         }
     }
 }
