@@ -8,13 +8,22 @@
     <Color x:Key="Editor.Window.GrayColor6">#ff6a6a6a</Color>
     
     <Color x:Key="Editor.Disabled.FontColor">#ff868686</Color>
+    <Color x:Key="Editor.FontColor">#f3f4f4</Color>
+    <Color x:Key="Editor.RedColor">#ffff5a6a</Color>
+    <Color x:Key="Editor.GreenColor">#ff90ee90</Color>
+    <Color x:Key="Editor.BlueColor">#ff80deff</Color>
+    <Color x:Key="Editor.OrangeColor">#ffffd067</Color>
+    <Color x:Key="Editor.Selected.BackgroundColor">#9e3f94</Color>
+    <Color x:Key="Editor.Selected.PrimaryColor1">#edb926</Color>
+    
+    <!--<Color x:Key="Editor.Disabled.FontColor">#ff868686</Color>
     <Color x:Key="Editor.FontColor">#ffdddddd</Color>
     <Color x:Key="Editor.RedColor">#ffff5a6a</Color>
     <Color x:Key="Editor.GreenColor">#ff90ee90</Color>
     <Color x:Key="Editor.BlueColor">#ff80deff</Color>
     <Color x:Key="Editor.OrangeColor">#ffffd067</Color>
     <Color x:Key="Editor.Selected.BackgroundColor">#ff3c67b6</Color>
-    <Color x:Key="Editor.Selected.PrimaryColor1">#edb926</Color>
+    <Color x:Key="Editor.Selected.PrimaryColor1">#edb926</Color>-->
     
     <SolidColorBrush Color="{StaticResource Editor.Window.GrayColor1}" x:Key="Editor.Window.GrayBrush1"/>
     <SolidColorBrush Color="{StaticResource Editor.Window.GrayColor2}" x:Key="Editor.Window.GrayBrush2"/>

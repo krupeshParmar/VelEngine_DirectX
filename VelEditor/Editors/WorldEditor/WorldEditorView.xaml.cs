@@ -34,6 +34,7 @@ namespace VelEditor.Editors
         private void OnWorldEditorViewLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnWorldEditorViewLoaded;
+            var giWindow = new RenderSurfaceView();
             Focus();
         }
 
