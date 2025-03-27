@@ -53,11 +53,18 @@ namespace VelEditor.Content
                         info.Size.Z = Value(lengthScalarBoxPlane,0.001f);
                     }
                     break;
-                /*case PrimitiveMeshType.Cube:
-                    break;
+                case PrimitiveMeshType.Cube:
+                    return;
                 case PrimitiveMeshType.UVSphere:
+                    {
+                        info.SegmentX = (int)xSliderUVSphere.Value;
+                        info.SegmentY = (int)ySliderUVSphere.Value;
+                        info.Size.X = Value(xScalarBoxUVSphere, 0.001f);
+                        info.Size.Y = Value(yScalarBoxUVSphere, 0.001f);
+                        info.Size.Z = Value(zScalarBoxUVSphere, 0.001f);
+                    }
                     break;
-                case PrimitiveMeshType.ICOSphere:
+                /*case PrimitiveMeshType.ICOSphere:
                     break;
                 case PrimitiveMeshType.Cylinder:
                     break;
@@ -76,6 +83,8 @@ namespace VelEditor.Content
         {
             var uris = new List<Uri>
             {
+                new Uri("pack://application:,,,/Resources/PrimitiveMeshView/Plane.png"),
+                new Uri("pack://application:,,,/Resources/PrimitiveMeshView/Plane.png"),
                 new Uri("pack://application:,,,/Resources/PrimitiveMeshView/Plane.png"),
             };
 
