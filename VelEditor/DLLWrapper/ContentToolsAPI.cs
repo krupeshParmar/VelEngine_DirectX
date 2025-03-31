@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using VelEditor.Content;
@@ -21,6 +22,19 @@ namespace VelEditor.ContentToolsAPIStruct
         public byte ReverseHandedness = 0;
         public byte ImportEmbededTextures = 1;
         public byte ImportAnimations = 1;
+        private byte ToByte(bool value) => value ? (byte)1 : (byte)0;
+
+        public void FromContenteSettings(Content.Geometry geometry)
+        {
+            var settings = geometry.ImportSettings;
+
+            SmoothingAngle = settings.SmoothingAngle;
+            CalculateNormals = ToByte(settings.CalculateNormals);
+            CalculateTangents = ToByte(settings.CalculateTangents);
+            ReverseHandedness = ToByte(settings.ReverseHandedness);
+            ImportEmbededTextures = ToByte(settings.ImportEmbededTextures);
+            ImportAnimations = ToByte(settings.ImportAnimations);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -71,6 +85,7 @@ namespace VelEditor.DLLWrapper
             using var sceneData = new SceneData();
             try
             {
+                sceneData.ImportSettings.FromContenteSettings(geometry);
                 CreatePrimitiveMesh(sceneData, info);
                 Debug.Assert(sceneData.Data != IntPtr.Zero && sceneData.Data > 0);
                 var data = new byte[sceneData.DataSize];

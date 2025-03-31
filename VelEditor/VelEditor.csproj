@@ -22,6 +22,9 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Resources\PrimitiveMeshView\plane_deformation.png" />
+  </ItemGroup>
+  <ItemGroup>
     <COMReference Include="EnvDTE80">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>0</VersionMinor>
@@ -43,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\PrimitiveMeshView\plane.png" />
+    <Resource Include="Resources\PrimitiveMeshView\plane_deformation.png" />
   </ItemGroup>
 
   <ItemGroup>
