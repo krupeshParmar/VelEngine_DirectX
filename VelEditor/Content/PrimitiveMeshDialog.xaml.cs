@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,8 @@ using VelEditor.ContentToolsAPIStruct;
 using VelEditor.DLLWrapper;
 using VelEditor.Editors;
 using VelEditor.Utilities.Controls;
+using VelEditor.GameProject;
+using System.Diagnostics;
 
 namespace VelEditor.Content
 {
@@ -131,6 +134,22 @@ namespace VelEditor.Content
             foreach (var mesh in vm.meshRenderer.Meshes)
             {
                 mesh.Diffuse = brush;
+            }
+        }
+
+        private void OnSave_Button_Clicked(object sender, RoutedEventArgs e)
+        {
+            var dlg = new SaveFileDialog()
+            { 
+                InitialDirectory = Project.Current?.ContentPath,
+                Filter = "Asset file (*.velasset)|*.velasset",
+            };
+            if(dlg.ShowDialog() == true)
+            {
+                Debug.Assert( !string.IsNullOrEmpty(dlg.FileName));
+                var asset = (DataContext as IAssetEditor).Asset;
+                Debug.Assert(asset != null);
+                asset.Save(dlg.FileName);
             }
         }
     }

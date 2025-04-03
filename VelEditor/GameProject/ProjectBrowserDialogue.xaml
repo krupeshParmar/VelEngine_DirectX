@@ -101,7 +101,7 @@
                 <DropShadowEffect Opacity="0.6" BlurRadius="15" ShadowDepth="2"/>
             </StackPanel.Effect>-->
             <local:OpenProjectView x:Name="openProjectView"/>
-            <local:NewProjectView x:Name="createProjectView" Margin="800,0,0,0"/>
+            <local:NewProjectView x:Name="createProjectView" IsEnabled="False" Margin="800,0,0,0"/>
         </StackPanel>
     </Grid>
 </Window>

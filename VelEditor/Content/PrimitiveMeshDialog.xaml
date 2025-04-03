@@ -99,7 +99,7 @@
                            HorizontalAlignment="Left" Padding="5,0" 
                            Foreground="{StaticResource Editor.FontBrush}"/>
                 </Grid>
-                <Button Content="Save Asset" Width="96" Margin="5,0"/>
+                <Button Content="Save Asset" Width="96" Margin="5,0" Click="OnSave_Button_Clicked"/>
             </StackPanel>
             <!-- Cube Settings -->
             <!-- UVSphere Settings -->
@@ -173,7 +173,7 @@
                         HorizontalAlignment="Left" Padding="5,0" 
                         Foreground="{StaticResource Editor.FontBrush}"/>
                 </Grid>
-                <Button Content="Save Asset" Width="96" Margin="5,0"/>
+                <Button Content="Save Asset" Width="96" Margin="5,0" Click="OnSave_Button_Clicked"/>
             </StackPanel>
             <!-- ICOSphere Settings -->
             <!-- Cylinder Settings -->

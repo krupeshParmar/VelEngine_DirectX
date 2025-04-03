@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -45,6 +46,32 @@ namespace VelEditor
                 sb.Append(Path.GetRandomFileName().Replace(".", ""));
             }
             return sb.ToString(0, length);
+        }
+
+        public static byte[] ComputeHash(byte[] data, int offset = 0, int count = 0)
+        {
+            if(data.Length > 0)
+            {
+                using var sha256 = SHA256.Create();
+                return sha256.ComputeHash(data, offset, count > 0 ? count : data.Length);
+            }
+            return null;
+        }
+
+        internal static string SanitizeFileName(string filename)
+        {
+            var path = new StringBuilder(filename.Substring(0, filename.LastIndexOf(Path.DirectorySeparatorChar) + 1));
+            var file = new StringBuilder(filename[(filename.LastIndexOf(Path.DirectorySeparatorChar) + 1)..]);
+            var invalidChars = Path.GetInvalidPathChars();
+            foreach (var c in invalidChars)
+            {
+                path.Replace(c, '_');
+            }
+            foreach (var c in invalidChars)
+            {
+                file.Replace(c, '_');
+            }
+            return path.Append(file).ToString();
         }
     }
 }

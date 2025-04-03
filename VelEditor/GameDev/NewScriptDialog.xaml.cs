@@ -66,6 +66,7 @@ namespace {1}
         private static string GetNamespaceFromProjectName()
         {
             var projectName = Project.Current.Name;
+            projectName = projectName.Replace(" ", "");
             return projectName.Trim();
         }
 
