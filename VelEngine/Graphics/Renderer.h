@@ -4,6 +4,13 @@
 
 namespace vel::graphics
 {
+	enum class graphics_platform
+	{
+		direct3d12 = 0,
+		vulkan = 1,
+		opengl = 2,
+	};
+
 	class surface
 	{
 
@@ -14,4 +21,8 @@ namespace vel::graphics
 		platform::window window{};
 		surface surface{};
 	};
+
+	bool initialize(graphics_platform platform);
+
+	void shutdown();
 }
