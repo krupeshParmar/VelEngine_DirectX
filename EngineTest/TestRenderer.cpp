@@ -1,7 +1,8 @@
+#include "TestRenderer.h"
 #include "..\Platform\platformtypes.h"
 #include "..\Platform\Platform.h"
 #include "..\Graphics\Renderer.h"
-#include "TestRenderer.h"
+#if TEST_RENDERER
 
 using namespace vel;
 
@@ -74,6 +75,7 @@ bool engine_test::initialize()
 void engine_test::run()
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	graphics::render();
 }
 void engine_test::shutdown()
 {
@@ -82,3 +84,4 @@ void engine_test::shutdown()
 
 	graphics::shutdown();
 }
+#endif // TESt_RENDERER

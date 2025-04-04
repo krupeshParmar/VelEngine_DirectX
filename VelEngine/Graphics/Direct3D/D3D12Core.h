@@ -7,6 +7,7 @@ namespace vel::graphics::d3d12::core
 	bool initialize();
 	// Function to shutdown Direct3D 12
 	void shutdown();
+	void render();
 
 	template<typename T>
 	constexpr void release(T*& ptr)

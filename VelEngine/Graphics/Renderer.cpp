@@ -37,4 +37,9 @@ namespace vel::graphics
 	{
 		gfx.shutdown();
 	}
+
+	void render()
+	{
+		gfx.render();
+	}
 }

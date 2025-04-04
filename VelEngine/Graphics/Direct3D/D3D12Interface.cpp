@@ -11,6 +11,7 @@ namespace vel::graphics
 		{
 			pi.initialize = core::initialize;
 			pi.shutdown = core::shutdown;
+			pi.render = core::render;
 		}
 		bool initialize()
 		{

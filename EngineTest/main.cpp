@@ -1,7 +1,5 @@
+#include "Test.h"
 #pragma comment(lib,"VelEngine.lib")
-#define TEST_ENTITY_COMPONENTS 0
-#define TEST_WINDOWS 0
-#define TEST_RENDERER 1
 
 #if TEST_ENTITY_COMPONENTS
 #include "TestEntityComponents.h"
