@@ -1,5 +1,7 @@
 #include "D3D12Core.h"
 #include "D3D12Resources.h"
+#include "D3D12Surface.h"
+
 using namespace Microsoft::WRL;
 namespace vel::graphics::d3d12::core
 {
@@ -159,18 +161,21 @@ namespace vel::graphics::d3d12::core
 			u32							_frame_index{ 0 };
 		};
 
-		ID3D12Device10*			main_device{ nullptr };
-		IDXGIFactory7*			dxgi_factory{ nullptr };
-		d3d12_command			gfx_command; 
-		descriptor_heap			rtv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
-		descriptor_heap			dsv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
-		descriptor_heap			srv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
-		descriptor_heap			uav_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+		ID3D12Device10*				main_device{ nullptr };
+		IDXGIFactory7*				dxgi_factory{ nullptr };
+		d3d12_command				gfx_command;
+		utl::vector<d3d12_surface>	surfaces_list;
 
-		utl::vector<IUnknown*>	deferred_releases_list[frame_buffer_count];
-		u32						deferred_releases_flag[frame_buffer_count]{};
-		std::mutex				deferred_releases_mutx{};
+		descriptor_heap				rtv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
+		descriptor_heap				dsv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
+		descriptor_heap				srv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+		descriptor_heap				uav_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
 
+		utl::vector<IUnknown*>		deferred_releases_list[frame_buffer_count];
+		u32							deferred_releases_flag[frame_buffer_count]{};
+		std::mutex					deferred_releases_mutx{};
+
+		constexpr DXGI_FORMAT		render_target_format{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
 		constexpr D3D_FEATURE_LEVEL minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
 
 		bool failed_init()
@@ -229,12 +234,12 @@ namespace vel::graphics::d3d12::core
 
 			// NOTE: we clear this flag in the beginning to prevent overwriting.
 			deferred_releases_flag[frame_idx] = 0;
-			
+
 			rtv_desc_heap.process_deferred_free(frame_idx);
 			dsv_desc_heap.process_deferred_free(frame_idx);
 			srv_desc_heap.process_deferred_free(frame_idx);
 			uav_desc_heap.process_deferred_free(frame_idx);
-			
+
 			utl::vector<IUnknown*>& resources_list{ deferred_releases_list[frame_idx] };
 			if (!resources_list.empty())
 			{
@@ -357,7 +362,7 @@ namespace vel::graphics::d3d12::core
 		//		 shutdown/reset/clear. To finally release these resources we call
 		//		 process_deferred_releases once more.
 		process_deferred_releases(0);
-		
+
 #ifdef _DEBUG
 		{
 			{
@@ -380,31 +385,31 @@ namespace vel::graphics::d3d12::core
 		release(main_device);
 	}
 
-	void render()
-	{
-		// Wait for the GPU to finish the command allocator and
-		// reset the allocator once the GPU is done with it.
-		// This frees the memory that was used to store commands.
-		gfx_command.begin_frame();
-		ID3D12GraphicsCommandList6* cmd_list{ gfx_command.command_list() };
-		
-		const u32 frame_idx{ current_frame_index() };
-		if (deferred_releases_flag[frame_idx])
-		{
-			process_deferred_releases(frame_idx);
-		}
-
-		// Record commands
-		// ...
-		// 
-		// Donce recording commands. Now execute commands,
-		// signal and increment the fence value for next frame.
-		gfx_command.end_frame();
-	}
-
 	ID3D12Device* const device()
 	{
 		return main_device;
+	}
+
+	descriptor_heap& rtv_heap()
+	{
+		return rtv_desc_heap;
+	}
+	descriptor_heap& dsv_heap()
+	{
+		return dsv_desc_heap;
+	}
+	descriptor_heap& srv_heap()
+	{
+		return srv_desc_heap;
+	}
+	descriptor_heap& uav_heap()
+	{
+		return uav_desc_heap;
+	}
+
+	DXGI_FORMAT default_render_target_format()
+	{
+		return render_target_format;
 	}
 
 	u32 current_frame_index()
@@ -415,5 +420,58 @@ namespace vel::graphics::d3d12::core
 	void set_deferred_releases_flag()
 	{
 		deferred_releases_flag[current_frame_index()] = 1;
+	}
+
+	surface create_surface(platform::window window)
+	{
+		surfaces_list.emplace_back(window);
+		surface_id id{ (u32)surfaces_list.size() - 1 };
+		surfaces_list[id].create_swap_chain(dxgi_factory, gfx_command.command_queue(), render_target_format);
+		return surface{ id };
+	}
+	void remove_surface(surface_id id)
+	{
+		gfx_command.flush();
+		//TODO: implement a free list container for this
+		surfaces_list[id].~d3d12_surface();	// TEMP
+	}
+	void resize_surface(surface_id id, u32 width, u32 height)
+	{
+		gfx_command.flush();
+		surfaces_list[id].resize(width, height);
+	}
+	u32 surface_width(surface_id id)
+	{
+		return surfaces_list[id].width();
+	}
+	u32 surface_height(surface_id id)
+	{
+		return surfaces_list[id].height();
+	}
+	void render_surface(surface_id id)
+	{
+		// Wait for the GPU to finish the command allocator and
+		// reset the allocator once the GPU is done with it.
+		// This frees the memory that was used to store commands.
+		gfx_command.begin_frame();
+		ID3D12GraphicsCommandList6* cmd_list{ gfx_command.command_list() };
+
+		const u32 frame_idx{ current_frame_index() };
+		if (deferred_releases_flag[frame_idx])
+		{
+			process_deferred_releases(frame_idx);
+		}
+
+		const d3d12_surface& surface{ surfaces_list[id] };
+
+		// Presenting swap chain buffers happens in lockstep with frame buffers.
+		surface.present();
+
+		// Record commands
+		// ...
+		// 
+		// Donce recording commands. Now execute commands,
+		// signal and increment the fence value for next frame.
+		gfx_command.end_frame();
 	}
 }

@@ -6,7 +6,10 @@
 
 using namespace vel;
 
-graphics::render_surface _surfaces[4];
+graphics::render_surface _surfaces_list[4];
+time_it timer{};
+
+void destroy_render_surface(graphics::render_surface& surface);
 
 LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -15,12 +18,18 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_DESTROY:
 	{
 		bool all_closed{ true };
-		for (u32 i{ 0 }; i < _countof(_surfaces); ++i)
+		for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
 		{
-			if (!_surfaces[i].window.is_closed())
+			if (_surfaces_list[i].window.is_valid())
 			{
-				all_closed = false;
-				break;
+				if (_surfaces_list[i].window.is_closed())
+				{
+					destroy_render_surface(_surfaces_list[i]);
+				}
+				else
+				{
+					all_closed = false;
+				}
 			}
 		}
 		if (all_closed)
@@ -38,6 +47,12 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			return 0;
 		}
 		break;
+	case WM_KEYDOWN:
+		if (wparam == VK_ESCAPE)
+		{
+			PostMessage(hwnd, WM_CLOSE, 0, 0);
+			return 0;
+		}
 	}
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
@@ -45,11 +60,16 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 void create_render_surface(graphics::render_surface& surface, platform::window_init_info& info)
 {
 	surface.window = platform::create_window(&info);
+	surface.surface = graphics::create_surface(surface.window);
 }
 
 void destroy_render_surface(graphics::render_surface& surface)
 {
-	platform::remove_window(surface.window.get_id());
+	graphics::render_surface temp{ surface };
+	surface = {};
+
+	if(temp.surface.is_valid()) graphics::remove_surface(temp.surface.get_id());
+	if(temp.window.is_valid()) platform::remove_window(temp.window.get_id());
 }
 
 bool engine_test::initialize()
@@ -65,22 +85,31 @@ bool engine_test::initialize()
 		{&win_proc, nullptr, L"Render Window 4", 250, 250, 800, 600},
 	};
 
-	static_assert(_countof(info) == _countof(_surfaces));
+	static_assert(_countof(info) == _countof(_surfaces_list));
 
-	for (u32 i{ 0 }; i < _countof(_surfaces); ++i)
-		create_render_surface(_surfaces[i], info[i]);
+	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
+		create_render_surface(_surfaces_list[i], info[i]);
 	return result;
 }
 
 void engine_test::run()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	graphics::render();
+	timer.begin();
+	//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
+	{
+		if (_surfaces_list[i].surface.is_valid())
+		{
+			_surfaces_list[i].surface.render();
+		}
+	}
+	timer.end();
 }
 void engine_test::shutdown()
 {
-	for (u32 i{ 0 }; i < _countof(_surfaces); ++i)
-		destroy_render_surface(_surfaces[i]);
+	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
+		destroy_render_surface(_surfaces_list[i]);
 
 	graphics::shutdown();
 }
