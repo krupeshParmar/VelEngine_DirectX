@@ -18,37 +18,10 @@ namespace vel::platform
 			bool	is_closed{ false };
 		};
 
-		utl::vector<window_info> windows_list;
-		//////////////////////////////////////////////////////////////////
-		// TODO: This part will be handled by a free-list container later
-		utl::vector<u32> available_slots;
-		u32 add_to_windows(window_info info)
-		{
-			u32 id{ u32_invalid_id };
-			if (available_slots.empty())
-			{
-				id = (u32)windows_list.size();
-				windows_list.emplace_back(info);
-			}
-			else
-			{
-				id = available_slots.back();
-				available_slots.pop_back();
-				assert(id != u32_invalid_id);
-				windows_list[id] = info;
-			}
-			return id;
-		}
-
-		void remove_window_info(u32 id)
-		{
-			assert(id < windows_list.size());
-			available_slots.emplace_back(id);
-		}
-		//////////////////////////////////////////////////////////////////
+		utl::free_list<window_info> windows_list;
+		
 		window_info& get_window_info_from_id(window_id id)
 		{
-			assert(id < windows_list.size());
 			assert(windows_list[id].hwnd);
 			return windows_list[id];
 		}
@@ -247,7 +220,7 @@ namespace vel::platform
 		if (info.hwnd)
 		{
 			DEBUG_OP(SetLastError(0));
-			window_id id{ add_to_windows(info) };
+			window_id id{ windows_list.add(info) };
 			SetWindowLongPtr(info.hwnd, GWLP_USERDATA, (LONG_PTR)id);
 
 			if(callback) SetWindowLongPtr(info.hwnd, 0, (LONG_PTR)callback);
@@ -265,7 +238,7 @@ namespace vel::platform
 	{
 		window_info& info{ get_window_info_from_id(id) };
 		DestroyWindow(info.hwnd);
-		remove_window_info(id);
+		windows_list.remove(id);
 	}
 #elif _X124xsfas
 #else
