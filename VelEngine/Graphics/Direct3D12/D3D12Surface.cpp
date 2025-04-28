@@ -12,24 +12,27 @@ namespace vel::graphics::d3d12
 		}
 	} // annonymous namespace
 
-	void d3d12_surface::create_swap_chain(IDXGIFactory7 * factory, ID3D12CommandQueue * cmd_queue, DXGI_FORMAT format)
+	void d3d12_surface::create_swap_chain(IDXGIFactory7 * factory, ID3D12CommandQueue * cmd_queue, 
+		DXGI_FORMAT format /*= default_back_buffer_format*/)
 	{
 		assert(factory && cmd_queue);
 		release();
 
-		if (SUCCEEDED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &_allow_tearing, sizeof(u32)) && _allow_tearing))
+		if (SUCCEEDED(factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &_allow_tearing, sizeof(u32))) && _allow_tearing)
 		{
 			_present_flags = DXGI_PRESENT_ALLOW_TEARING;
 		}
 
+		_format = format;
+
 		DXGI_SWAP_CHAIN_DESC1 desc{};
 		desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-		desc.BufferCount = frame_buffer_count;
+		desc.BufferCount = buffer_count;
 		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		desc.Flags = _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 		desc.Format = to_non_srgb(format);
-		desc.Width = _window.width();
 		desc.Height = _window.height();
+		desc.Width = _window.width();
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.Scaling = DXGI_SCALING_STRETCH;
@@ -45,7 +48,7 @@ namespace vel::graphics::d3d12
 
 		_current_bb_index = _swap_chain->GetCurrentBackBufferIndex();
 
-		for (u32 i{ 0 }; i < frame_buffer_count; ++i)
+		for (u32 i{ 0 }; i < buffer_count; ++i)
 		{
 			_render_target_data_list[i].rtv = core::rtv_heap().allocate();
 		}
@@ -66,15 +69,14 @@ namespace vel::graphics::d3d12
 	{
 		// create RTVs for back-buffers
 
-		for (u32 i{ 0 }; i < frame_buffer_count; ++i)
+		for (u32 i{ 0 }; i < buffer_count; ++i)
 		{
 			render_target_data& data{ _render_target_data_list[i] };
+			assert(!data.resource);
 			DXCall(_swap_chain->GetBuffer(i, IID_PPV_ARGS(&data.resource)));
-			assert(data.resource);
 			D3D12_RENDER_TARGET_VIEW_DESC desc{};
-			desc.Format = core::default_render_target_format();
-			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			
+			desc.Format = _format;
+			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;			
 			core::device()->CreateRenderTargetView(data.resource, &desc, data.rtv.cpu);
 		}
 
@@ -96,7 +98,7 @@ namespace vel::graphics::d3d12
 	}
 	void d3d12_surface::release()
 	{
-		for (u32 i{ 0 }; i < frame_buffer_count; ++i)
+		for (u32 i{ 0 }; i < buffer_count; ++i)
 		{
 			render_target_data& data{ _render_target_data_list[i] };
 			core::release(data.resource);

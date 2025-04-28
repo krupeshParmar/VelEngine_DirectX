@@ -37,7 +37,7 @@ namespace vel::graphics::d3d12::core
 		}
 	}
 
-	ID3D12Device* const device();
+	id3d12_device* const device();
 	descriptor_heap& rtv_heap();
 	descriptor_heap& dsv_heap();
 	descriptor_heap& srv_heap();

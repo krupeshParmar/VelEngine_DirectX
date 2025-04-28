@@ -49,10 +49,10 @@ Global
 		{95F0DE61-894F-4C5E-BB01-A3443556AD9B}.ReleaseEditor|x64.Build.0 = ReleaseEditor|x64
 		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.Debug|x64.ActiveCfg = Debug|x64
 		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.Debug|x64.Build.0 = Debug|x64
-		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.DebugEditor|x64.ActiveCfg = DebugEditor|x64
+		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.DebugEditor|x64.ActiveCfg = Debug|x64
 		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.Release|x64.ActiveCfg = Release|x64
 		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.Release|x64.Build.0 = Release|x64
-		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.ReleaseEditor|x64.ActiveCfg = ReleaseEditor|x64
+		{0AD12CA8-2ACE-4E4C-A464-74822D8C82A8}.ReleaseEditor|x64.ActiveCfg = Release|x64
 		{1CA0DA23-3191-4971-8B24-20F8F6B00210}.Debug|x64.ActiveCfg = DebugEditor|x64
 		{1CA0DA23-3191-4971-8B24-20F8F6B00210}.DebugEditor|x64.ActiveCfg = DebugEditor|x64
 		{1CA0DA23-3191-4971-8B24-20F8F6B00210}.DebugEditor|x64.Build.0 = DebugEditor|x64
@@ -68,5 +68,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0DCE8DC9-FC13-4DB2-A09D-7A515928B6D1}
 	EndGlobalSection
 EndGlobal

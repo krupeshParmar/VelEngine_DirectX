@@ -14,6 +14,8 @@
 namespace vel::graphics::d3d12
 {
 	constexpr u32 frame_buffer_count{ 3 }; // number of back buffers
+    using id3d12_device = ID3D12Device8;
+    using id3d12_graphics_command_list = ID3D12GraphicsCommandList6;
 }
 
 // Assert that COM call to D3D API succeeded
@@ -22,7 +24,7 @@ namespace vel::graphics::d3d12
 #define DXCall(x)												\
 if(FAILED(x)) {													\
      char line_number[32];					                    \
-     sprintf(line_number, "%d", __LINE__);	                    \
+     sprintf_s(line_number, "%d", __LINE__);	                \
      OutputDebugStringA("Error in: ");                          \
      OutputDebugStringA(__FILE__);                              \
      OutputDebugStringA("Line: ");                              \
@@ -52,3 +54,6 @@ if(swprintf_s(name_buffer, L"%s[%u]", name, indx) > 0){         \
 #define NAME_D3D12_OBJECT(obj, name)
 #define NAME_D3D12_OBJECT_INDEXED(obj, indx, name)
 #endif // _DEBUG
+
+#include "D3D12Helpers.h"
+#include "D3D12Resources.h"

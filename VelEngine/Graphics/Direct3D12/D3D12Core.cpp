@@ -1,10 +1,12 @@
 #include "D3D12Core.h"
-#include "D3D12Resources.h"
 #include "D3D12Surface.h"
+#include "D3D12Shaders.h"
 
 using namespace Microsoft::WRL;
 namespace vel::graphics::d3d12::core
 {
+	void create_a_root_signature();
+	void create_a_root_signature2();
 	namespace
 	{
 		class d3d12_command
@@ -12,7 +14,7 @@ namespace vel::graphics::d3d12::core
 		public:
 			d3d12_command() = default;
 			DISABLE_COPY_AND_MOVE(d3d12_command);
-			explicit d3d12_command(ID3D12Device10 *const device, D3D12_COMMAND_LIST_TYPE type)
+			explicit d3d12_command(id3d12_device  *const device, D3D12_COMMAND_LIST_TYPE type)
 			{
 				HRESULT hr{ S_OK };
 				D3D12_COMMAND_QUEUE_DESC desc{};
@@ -120,7 +122,7 @@ namespace vel::graphics::d3d12::core
 			}
 
 			constexpr ID3D12CommandQueue *const command_queue() const { return _cmd_queue; }
-			constexpr ID3D12GraphicsCommandList6 *const command_list() const { return _cmd_list; }
+			constexpr id3d12_graphics_command_list *const command_list() const { return _cmd_list; }
 			constexpr u32 frame_index() const { return _frame_index; }
 
 		private:
@@ -152,19 +154,21 @@ namespace vel::graphics::d3d12::core
 					fence_value = 0;
 				}
 			};
-			ID3D12CommandQueue*			_cmd_queue{ nullptr };
-			ID3D12GraphicsCommandList6* _cmd_list{ nullptr };
-			ID3D12Fence1*			    _fence{ nullptr };
-			u64 					    _fence_value{ 0 };
-			HANDLE						_fence_event{ nullptr };
-			command_frame				_cmd_frames_list[frame_buffer_count]{};
-			u32							_frame_index{ 0 };
+			ID3D12CommandQueue*				_cmd_queue{ nullptr };
+			id3d12_graphics_command_list*	_cmd_list{ nullptr };
+			ID3D12Fence1*					_fence{ nullptr };
+			u64 							_fence_value{ 0 };
+			HANDLE							_fence_event{ nullptr };
+			command_frame					_cmd_frames_list[frame_buffer_count]{};
+			u32								_frame_index{ 0 };
 		};
 
-		ID3D12Device10*				main_device{ nullptr };
+		using surface_collection = utl::free_list<d3d12_surface>;
+
+		id3d12_device*				main_device{ nullptr };
 		IDXGIFactory7*				dxgi_factory{ nullptr };
 		d3d12_command				gfx_command;
-		utl::vector<d3d12_surface>	surfaces_list;
+		surface_collection	surfaces_list;
 
 		descriptor_heap				rtv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
 		descriptor_heap				dsv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
@@ -175,7 +179,6 @@ namespace vel::graphics::d3d12::core
 		u32							deferred_releases_flag[frame_buffer_count]{};
 		std::mutex					deferred_releases_mutx{};
 
-		constexpr DXGI_FORMAT		render_target_format{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
 		constexpr D3D_FEATURE_LEVEL minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
 
 		bool failed_init()
@@ -331,6 +334,10 @@ namespace vel::graphics::d3d12::core
 		new (&gfx_command) d3d12_command(main_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
 		if (!gfx_command.command_queue()) return failed_init();
 
+		// initialize modules
+		if (!shaders::initialize())
+			return failed_init();
+
 		NAME_D3D12_OBJECT(main_device, L"MAIN D3D12 DEVICE");
 		NAME_D3D12_OBJECT(rtv_desc_heap.heap(), L"RTV DESCRIPTOR HEAP");
 		NAME_D3D12_OBJECT(dsv_desc_heap.heap(), L"DSV DESCRIPTOR HEAP");
@@ -351,7 +358,17 @@ namespace vel::graphics::d3d12::core
 			process_deferred_releases(i);
 		}
 
+		//shutdown modules
+		shaders::shutdown();
+
 		release(dxgi_factory);
+
+		// NOTE: some modules free their descriptors when they shutdown.
+		//       We process those by calling process_deferred_free once more.
+		rtv_desc_heap.process_deferred_free(0);
+		dsv_desc_heap.process_deferred_free(0);
+		srv_desc_heap.process_deferred_free(0);
+		uav_desc_heap.process_deferred_free(0);
 
 		rtv_desc_heap.release();
 		dsv_desc_heap.release();
@@ -385,7 +402,7 @@ namespace vel::graphics::d3d12::core
 		release(main_device);
 	}
 
-	ID3D12Device* const device()
+	id3d12_device* const device()
 	{
 		return main_device;
 	}
@@ -407,11 +424,6 @@ namespace vel::graphics::d3d12::core
 		return uav_desc_heap;
 	}
 
-	DXGI_FORMAT default_render_target_format()
-	{
-		return render_target_format;
-	}
-
 	u32 current_frame_index()
 	{
 		return gfx_command.frame_index();
@@ -424,9 +436,8 @@ namespace vel::graphics::d3d12::core
 
 	surface create_surface(platform::window window)
 	{
-		surfaces_list.emplace_back(window);
-		surface_id id{ (u32)surfaces_list.size() - 1 };
-		surfaces_list[id].create_swap_chain(dxgi_factory, gfx_command.command_queue(), render_target_format);
+		surface_id id{ surfaces_list.add(window)};
+		surfaces_list[id].create_swap_chain(dxgi_factory, gfx_command.command_queue());
 		return surface{ id };
 	}
 	void remove_surface(surface_id id)
@@ -454,7 +465,7 @@ namespace vel::graphics::d3d12::core
 		// reset the allocator once the GPU is done with it.
 		// This frees the memory that was used to store commands.
 		gfx_command.begin_frame();
-		ID3D12GraphicsCommandList6* cmd_list{ gfx_command.command_list() };
+		id3d12_graphics_command_list* cmd_list{ gfx_command.command_list() };
 
 		const u32 frame_idx{ current_frame_index() };
 		if (deferred_releases_flag[frame_idx])

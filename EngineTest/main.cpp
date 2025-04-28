@@ -16,11 +16,27 @@
 #define WIN32_LEAN_AND_MEAN
 #endif // WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <filesystem>
+
+// TODO: duplicate!
+std::filesystem::path
+set_current_directory_to_executable_path()
+{
+    // set the working directory to the executable path
+    wchar_t path[MAX_PATH];
+    const uint32_t length{ GetModuleFileName(0, &path[0], MAX_PATH) };
+    if (!length || GetLastError() == ERROR_INSUFFICIENT_BUFFER) return {};
+    std::filesystem::path p{ path };
+    std::filesystem::current_path(p.parent_path());
+    return std::filesystem::current_path();
+}
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
 {
 #if _DEBUG
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif  // _DEBUG
+    set_current_directory_to_executable_path();
     engine_test test{};
     if (test.initialize())
     {
