@@ -22,6 +22,10 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Resources\ContentBrowser\FolderLarge.png" />
+    <None Remove="Resources\ContentBrowser\FolderSmall.png" />
+    <None Remove="Resources\ContentBrowser\ListView.png" />
+    <None Remove="Resources\ContentBrowser\TileView.png" />
     <None Remove="Resources\PrimitiveMeshView\plane_deformation.png" />
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +49,12 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\ContentBrowser\TileView.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\ContentBrowser\FolderLarge.png" />
+    <Resource Include="Resources\ContentBrowser\FolderSmall.png" />
+    <Resource Include="Resources\ContentBrowser\ListView.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane_deformation.png" />
   </ItemGroup>

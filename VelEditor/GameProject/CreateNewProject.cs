@@ -101,14 +101,14 @@ namespace VelEditor.GameProject
             var path = ProjectPath;
             if (!Path.EndsInDirectorySeparator(path)) path += @"\";
             path += $@"{ProjectName}\";
-            var nameRegex = new Regex(@"[^A-Za-z0-9_]");
+            var nameRegex = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*$");
             IsValid = false;
 
             if(string.IsNullOrWhiteSpace(ProjectName.Trim()))
             {
                 ErrorMessage = "Type in a project name.";
             }
-            else if(nameRegex.IsMatch(ProjectName))
+            else if(!nameRegex.IsMatch(ProjectName))
             {
                 ErrorMessage = "Invalid character(s) used in project name.";
             }

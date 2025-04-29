@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -9,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using VelEditor.Content;
 using VelEditor.GameProject;
 
 namespace VelEditor
@@ -86,7 +88,10 @@ namespace VelEditor
             else
             {
                 Project.Current?.Unload();
-                DataContext = projectBrowser.DataContext;
+                var project = projectBrowser.DataContext as Project;
+                Debug.Assert(project != null);
+                AssetRegistry.Reset(project.ContentPath);
+                DataContext = project;
             }
         }
     }

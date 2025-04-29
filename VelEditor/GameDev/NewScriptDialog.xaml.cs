@@ -81,7 +81,7 @@ namespace {1}
         {
             var name = scriptName.Text.Trim();
             var path = scriptPath.Text.Trim();
-            var nameRegex = new Regex(@"[^A-Za-z0-9_]");
+            var nameRegex = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*$");
 
             if (string.IsNullOrEmpty(name))
                 _errorMsg = "Empty name";
@@ -89,7 +89,7 @@ namespace {1}
             else if (string.IsNullOrEmpty(path))
                 _errorMsg = "Empty path";
 
-            else if (nameRegex.IsMatch(name))
+            else if (!nameRegex.IsMatch(name))
                 _errorMsg = "Invalid character(s) used in script name";
 
             else if (path.IndexOfAny(Path.GetInvalidPathChars()) != -1)
@@ -160,13 +160,7 @@ namespace {1}
             }
             string[] files = new string[] { cpp, h };
 
-            for(int i = 0; i < 3; ++i)
-            {
-
-                if (!VisualStudio.AddFilesToSolution(solution, projectName, files))
-                    System.Threading.Thread.Sleep(1000);
-                else break;
-            }
+            VisualStudio.AddFilesToSolution(solution, projectName, files);
         }
 
         private void OnScriptName_TextBox_TextChanged(object sender, TextChangedEventArgs e)
