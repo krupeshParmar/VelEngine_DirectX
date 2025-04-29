@@ -16,19 +16,11 @@ using VelEditor.Utilities;
 
 namespace VelEditor.GameProject
 {
-    enum BuildConfiguration
-    {
-        Debug,
-        DebugEditor,
-        Release,
-        ReleaseEditor,
-    }
-
 
     [DataContract(Name = "Game")]
     class Project : ViewModelBase
     {
-        public static string Extension { get; } = ".vel";
+        public static string Extension => ".vel";
         [DataMember]
         public string Name { get; private set; } = "New Project";
 
@@ -37,8 +29,6 @@ namespace VelEditor.GameProject
         public string FullPath => $@"{Path}{Name}{Extension}";
         public string Solution => $@"{Path}{Name}.sln";
         public string ContentPath => $@"{Path}Content\";
-
-        private static readonly string[] _buildConfigurationNamesList = new string[] { "Debug", "DebugEditor", "Release", "ReleaseEditor" };
 
         private int _buildConfig;
         [DataMember]
@@ -56,13 +46,13 @@ namespace VelEditor.GameProject
         }
 
         public BuildConfiguration StandAloneBuildConfig => BuildConfig == 0 ? BuildConfiguration.Debug : BuildConfiguration.Release;
-        public BuildConfiguration DllBuildConfig => BuildConfig == 0 ? BuildConfiguration.DebugEditor : BuildConfiguration.ReleaseEditor;
+        public BuildConfiguration DLLBuildConfig => BuildConfig == 0 ? BuildConfiguration.DebugEditor : BuildConfiguration.ReleaseEditor;
 
         private string[] _availableScripts;
         public string[] AvailableScripts
         {
             get => _availableScripts;
-            set
+            private set
             {
                 if(_availableScripts != value)
                 {
@@ -72,7 +62,7 @@ namespace VelEditor.GameProject
             }
         }
 
-        [DataMember (Name = "Scenes")]
+        [DataMember (Name = nameof(ScenesList))]
         private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();
         public ReadOnlyObservableCollection<Scene> ScenesList { get; private set; }
 
@@ -91,7 +81,7 @@ namespace VelEditor.GameProject
             }
         }
 
-        public static Project? Current => Application.Current.MainWindow.DataContext as Project;
+        public static Project? Current => Application.Current.MainWindow?.DataContext as Project;
 
         public static UndoRedo UndoRedoManager { get; } = new UndoRedo();
 
@@ -149,8 +139,6 @@ namespace VelEditor.GameProject
             OnPropertyChanged(nameof(BuildCommand));
         }
 
-        private static string GetConfigurationName(BuildConfiguration buildConfiguration) => _buildConfigurationNamesList[(int)buildConfiguration];
-
         private void AddSceneInternal(string sceneName)
         {
             Debug.Assert(!string.IsNullOrEmpty(sceneName.Trim()));
@@ -176,7 +164,7 @@ namespace VelEditor.GameProject
             UndoRedoManager.Reset();
         }
 
-        public static void Save(Project project)
+        private static void Save(Project project)
         {
             Serializer.ToFile(project, project.FullPath);
             Logger.Log(MessageType.Info, $"{project.Name} saved to {project.FullPath}");
@@ -184,7 +172,7 @@ namespace VelEditor.GameProject
 
         private void SaveToBinary()
         {
-            var configName = GetConfigurationName(StandAloneBuildConfig);
+            var configName = VisualStudio.GetConfigurationName(StandAloneBuildConfig);
             var bin = $@"{Path}x64\{configName}\game.bin";
 
             using (var bw = new BinaryWriter(File.Open(bin, FileMode.Create, FileAccess.Write)))
@@ -205,8 +193,7 @@ namespace VelEditor.GameProject
 
         private async Task RunGame(bool debug)
         {
-            var configName = GetConfigurationName(StandAloneBuildConfig);
-            await Task.Run(() => VisualStudio.BuildSolution(this, configName, debug));
+            await Task.Run(() => VisualStudio.BuildSolution(this, StandAloneBuildConfig, debug));
 
             while (!VisualStudio.BuildDone)
             {
@@ -216,7 +203,7 @@ namespace VelEditor.GameProject
             if (VisualStudio.BuildSucceeded)
             {
                 SaveToBinary();
-                await Task.Run(() => VisualStudio.Run(this,configName,debug));
+                await Task.Run(() => VisualStudio.Run(this, StandAloneBuildConfig, debug));
             }
         }
 
@@ -230,10 +217,11 @@ namespace VelEditor.GameProject
                 // Build the game code dll
                 await Task.Run(() =>
                     {
-                        VisualStudio.BuildSolution(this, GetConfigurationName(DllBuildConfig), showVSWindow);
+                        VisualStudio.BuildSolution(this, DLLBuildConfig, showVSWindow);
                     }
                 );
 
+                // NOTE: This is too risky....
                 while (!VisualStudio.BuildDone)
                 {
                     // Waiting for the build to finish
@@ -257,7 +245,7 @@ namespace VelEditor.GameProject
 
         private void LoadGameCodeDll_Internal()
         {
-            var configName = GetConfigurationName(DllBuildConfig);
+            var configName = VisualStudio.GetConfigurationName(DLLBuildConfig);
             var dll = $@"{Path}x64\{configName}\{Name}.dll";
             AvailableScripts = null;
 
@@ -269,7 +257,7 @@ namespace VelEditor.GameProject
             }
             else
             {
-                Logger.Log(MessageType.Warning, "Failed to load game code DLL. Try to build the game project first");
+                Logger.Log(MessageType.Warning, "Failed to load game code DLL. Try to build the game project first!");
             }
         }
 
@@ -291,7 +279,7 @@ namespace VelEditor.GameProject
                 ScenesList = new ReadOnlyObservableCollection<Scene>(_scenesList);
                 OnPropertyChanged(nameof(ScenesList));
             }
-            ActiveScene = ScenesList.FirstOrDefault(x => x.IsActive);
+            ActiveScene = _scenesList.FirstOrDefault(x => x.IsActive);
             Debug.Assert(ActiveScene != null);
 
             await BuildGameCodeDll(false);
@@ -302,7 +290,7 @@ namespace VelEditor.GameProject
         {
             Name = name;
             Path = path;
-
+            Debug.Assert(File.Exists((Path + Name + Extension).ToLower()));
             OnDeserialized(new StreamingContext());
         }
     }

@@ -21,6 +21,7 @@ namespace VelEditor.GameProject
     public partial class ProjectBrowserDialogue : Window
     {
         private readonly CubicEase _easing = new CubicEase() { EasingMode = EasingMode.EaseInOut };
+        public static bool GotoNewProjectTab { get; set; }
         public ProjectBrowserDialogue()
         {
             InitializeComponent();
@@ -30,12 +31,16 @@ namespace VelEditor.GameProject
         private void OnProjectBrowserLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnProjectBrowserLoaded;
-            if(!OpenProject.Projects.Any())
+            if(!OpenProject.Projects.Any() || GotoNewProjectTab)
             {
-                openProjectButton.IsEnabled = false;
-                openProjectView.Visibility = Visibility.Hidden;
+                if (!GotoNewProjectTab)
+                {
+                    openProjectButton.IsEnabled = false;
+                    openProjectView.Visibility = Visibility.Hidden;
+                }
                 OnToggleButton_Click(createProjectButton, new RoutedEventArgs());
             }
+            GotoNewProjectTab = false;
         }
         private void AnimateToCreateProject()
         {

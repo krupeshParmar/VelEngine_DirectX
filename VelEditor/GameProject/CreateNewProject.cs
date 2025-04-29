@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using VelEditor.Utilities;
+using System.Text.RegularExpressions;
 
 namespace VelEditor.GameProject
 {
@@ -62,7 +63,7 @@ namespace VelEditor.GameProject
             } 
         }
 
-        private ObservableCollection<ProjectTemplate> _projectTemplates = new ObservableCollection<ProjectTemplate>();
+        private readonly ObservableCollection<ProjectTemplate> _projectTemplates = new ObservableCollection<ProjectTemplate>();
         public ReadOnlyObservableCollection<ProjectTemplate> ProjectTemplates { get; }
 
         private bool _isValid;
@@ -100,13 +101,14 @@ namespace VelEditor.GameProject
             var path = ProjectPath;
             if (!Path.EndsInDirectorySeparator(path)) path += @"\";
             path += $@"{ProjectName}\";
+            var nameRegex = new Regex(@"[^A-Za-z0-9_]");
             IsValid = false;
 
             if(string.IsNullOrWhiteSpace(ProjectName.Trim()))
             {
                 ErrorMessage = "Type in a project name.";
             }
-            else if(ProjectName.IndexOfAny(Path.GetInvalidFileNameChars()) != -1)
+            else if(nameRegex.IsMatch(ProjectName))
             {
                 ErrorMessage = "Invalid character(s) used in project name.";
             }
@@ -173,13 +175,13 @@ namespace VelEditor.GameProject
             Debug.Assert(File.Exists(Path.Combine(template.TemplatePath, "MSVCSolution")));
             Debug.Assert(File.Exists(Path.Combine(template.TemplatePath, "MSVCProject")));
 
-            var engineAPIPath = Path.Combine(MainWindow.VelPath, @"VelEngine\VelAPI\");
+            var engineAPIPath = @"$(VEL_ENGINE)VelEngine\VelAPI\";
             Debug.Assert(Directory.Exists(engineAPIPath));
 
             var _0 = ProjectName;
             var _1 = "{" + Guid.NewGuid().ToString().ToUpper() + "}";
             var _2 = engineAPIPath;
-            var _3 = MainWindow.VelPath;
+            var _3 = "$(PRIMAL_ENGINE)";
 
             var solution = File.ReadAllText(Path.Combine(template.TemplatePath, "MSVCSolution"));
             solution = string.Format(solution, _0, _1);

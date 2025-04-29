@@ -58,8 +58,22 @@ namespace VelEditor
 
         private void OnMainWindowClosing(object? sender, CancelEventArgs e)
         {
-            Closing -= OnMainWindowClosing;
-            Project.Current?.Unload();
+            if (DataContext == null)
+            {
+                e.Cancel = true;
+                Application.Current.MainWindow.Hide();
+                OpenProjectBrowserDialog();
+                if (DataContext != null)
+                {
+                    Application.Current.MainWindow.Show();
+                }
+            }
+            else
+            {
+                Closing -= OnMainWindowClosing;
+                Project.Current?.Unload();
+                DataContext = null;
+            }
         }
 
         private void OpenProjectBrowserDialog()
