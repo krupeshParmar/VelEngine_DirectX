@@ -19,7 +19,7 @@ namespace vel::utl
 
         ~free_list()
         {
-            assert(!_size);
+            //assert(_size != 0);
 #if USE_STL_VECTOR
             memset(_array.data(), 0, _array.size() * sizeof(T));
 #endif

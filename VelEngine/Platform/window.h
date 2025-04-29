@@ -23,11 +23,6 @@ namespace vel::platform
 		u32 height() const;
 		bool is_closed() const;
 
-		/*window(window& w)
-		{
-			_id = w.get_id();
-		}*/
-
 	private:
 		window_id _id{ id::invalid_id };
 	};

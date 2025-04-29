@@ -63,7 +63,19 @@ namespace vel::graphics::d3d12
 	}
 	void d3d12_surface::resize(u32 width, u32 height)
 	{
+		assert(_swap_chain);
+		for (u32 i{ 0 }; i < buffer_count; ++i)
+		{
+			core::release(_render_target_data_list[i].resource);
+		}
 
+		const u32 flags{ _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0ul };
+		DXCall(_swap_chain->ResizeBuffers(buffer_count, 0, 0, DXGI_FORMAT_UNKNOWN, flags));
+		_current_bb_index = _swap_chain->GetCurrentBackBufferIndex();
+
+		finalise();
+
+		DEBUG_OP(OutputDebugString(L"::D3D12 Surface Resized.\n"));
 	}
 	void d3d12_surface::finalise()
 	{

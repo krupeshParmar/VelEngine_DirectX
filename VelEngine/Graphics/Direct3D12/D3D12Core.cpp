@@ -1,6 +1,8 @@
 #include "D3D12Core.h"
 #include "D3D12Surface.h"
 #include "D3D12Shaders.h"
+#include "D3D12GPass.h"
+#include "D3D12PostProcess.h"
 
 using namespace Microsoft::WRL;
 namespace vel::graphics::d3d12::core
@@ -79,11 +81,14 @@ namespace vel::graphics::d3d12::core
 			}
 
 			// Signal the fence with the new fence value
-			void end_frame()
+			void end_frame(const d3d12_surface& surface)
 			{
 				DXCall(_cmd_list->Close());
 				ID3D12CommandList* const cmd_lists[]{ _cmd_list };
 				_cmd_queue->ExecuteCommandLists(_countof(cmd_lists), &cmd_lists[0]);
+
+				// Presenting swap chain buffers happens in lockstep with frame buffers.
+				surface.present();
 
 				u64& fence_value{ _fence_value };
 				++fence_value;
@@ -121,9 +126,9 @@ namespace vel::graphics::d3d12::core
 				}
 			}
 
-			constexpr ID3D12CommandQueue *const command_queue() const { return _cmd_queue; }
-			constexpr id3d12_graphics_command_list *const command_list() const { return _cmd_list; }
-			constexpr u32 frame_index() const { return _frame_index; }
+			 [[nodiscard]] constexpr ID3D12CommandQueue *const command_queue() const { return _cmd_queue; }
+			 [[nodiscard]] constexpr id3d12_graphics_command_list *const command_list() const { return _cmd_list; }
+			 [[nodiscard]] constexpr u32 frame_index() const { return _frame_index; }
 
 		private:
 			struct command_frame
@@ -165,21 +170,22 @@ namespace vel::graphics::d3d12::core
 
 		using surface_collection = utl::free_list<d3d12_surface>;
 
-		id3d12_device*				main_device{ nullptr };
-		IDXGIFactory7*				dxgi_factory{ nullptr };
-		d3d12_command				gfx_command;
-		surface_collection	surfaces_list;
+		id3d12_device*					main_device{ nullptr };
+		IDXGIFactory7*					dxgi_factory{ nullptr };
+		d3d12_command					gfx_command;
+		surface_collection				surfaces_list;
+		d3dx::d3d12_resource_barrier    resource_barriers{};
 
-		descriptor_heap				rtv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
-		descriptor_heap				dsv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
-		descriptor_heap				srv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
-		descriptor_heap				uav_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+		descriptor_heap					rtv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV };
+		descriptor_heap					dsv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_DSV };
+		descriptor_heap					srv_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
+		descriptor_heap					uav_desc_heap{ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV };
 
-		utl::vector<IUnknown*>		deferred_releases_list[frame_buffer_count];
-		u32							deferred_releases_flag[frame_buffer_count]{};
-		std::mutex					deferred_releases_mutx{};
+		utl::vector<IUnknown*>			deferred_releases_list[frame_buffer_count];
+		u32								deferred_releases_flag[frame_buffer_count]{};
+		std::mutex						deferred_releases_mutx{};
 
-		constexpr D3D_FEATURE_LEVEL minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
+		constexpr D3D_FEATURE_LEVEL		minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
 
 		bool failed_init()
 		{
@@ -275,10 +281,14 @@ namespace vel::graphics::d3d12::core
 #ifdef _DEBUG
 		// Enable debugging layer. Requires the Graphics Tools "optional feature" to be installed.
 		{
-			ComPtr<ID3D12Debug> debug_interface;
+			ComPtr<ID3D12Debug3> debug_interface;
 			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_interface))))
 			{
 				debug_interface->EnableDebugLayer();
+#if 0
+#pragma message("WARNING: GPU_based validation is enabled. This will considerably slow down the renderer!")
+				debug_interface->SetEnableGPUBasedValidation(1);
+#endif
 			}
 			else
 			{
@@ -292,7 +302,7 @@ namespace vel::graphics::d3d12::core
 
 		DXCall(hr = CreateDXGIFactory2(dxgi_factory_flags, IID_PPV_ARGS(&dxgi_factory)));
 
-		if (FAILED(hr)) failed_init;
+		if (FAILED(hr)) return failed_init();
 
 		// determine which adapter (i.e. GPU) to use
 		ComPtr<IDXGIAdapter4> main_adapter;
@@ -335,7 +345,9 @@ namespace vel::graphics::d3d12::core
 		if (!gfx_command.command_queue()) return failed_init();
 
 		// initialize modules
-		if (!shaders::initialize())
+		if (!(shaders::initialize() &&
+				gpass::initialize() &&
+				fx::initialize()))
 			return failed_init();
 
 		NAME_D3D12_OBJECT(main_device, L"MAIN D3D12 DEVICE");
@@ -359,6 +371,8 @@ namespace vel::graphics::d3d12::core
 		}
 
 		//shutdown modules
+		fx::shutdown();
+		gpass::shutdown();
 		shaders::shutdown();
 
 		release(dxgi_factory);
@@ -474,15 +488,55 @@ namespace vel::graphics::d3d12::core
 		}
 
 		const d3d12_surface& surface{ surfaces_list[id] };
+		ID3D12Resource *const current_back_buffer{ surface.back_buffer() };
 
-		// Presenting swap chain buffers happens in lockstep with frame buffers.
-		surface.present();
+		d3d12_frame_info frame_info
+		{
+			surface.width(),
+			surface.height()
+		};
+
+		gpass::set_size({ frame_info.surface_width, frame_info.surface_height });
+		d3dx::d3d12_resource_barrier& barriers{ resource_barriers };
 
 		// Record commands
-		// ...
-		// 
+		ID3D12DescriptorHeap *const heaps[]{ srv_desc_heap.heap() };
+		cmd_list->SetDescriptorHeaps(1, &heaps[0]);
+
+		cmd_list->RSSetViewports(1, &surface.viewport());
+		cmd_list->RSSetScissorRects(1, &surface.scissor_rect());
+
+		// Depth prepass
+		barriers.add(current_back_buffer,
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY);
+		gpass::add_transitions_for_depth_prepass(barriers);
+		barriers.apply(cmd_list);
+		gpass::set_render_targets_for_depth_prepass(cmd_list);
+		gpass::depth_prepass(cmd_list, frame_info);
+
+		// Geometry and lighting pass
+		gpass::add_transitions_for_gpass(barriers);
+		barriers.apply(cmd_list);
+		gpass::set_render_targets_for_gpass(cmd_list);
+		gpass::render(cmd_list, frame_info);
+
+		// Post-process
+		barriers.add(current_back_buffer,
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_BARRIER_FLAG_END_ONLY);
+		gpass::add_transitions_for_post_process(barriers);
+		barriers.apply(cmd_list);
+		// Will write to the current back buffer, so back buffer is a render target
+		fx::post_process(cmd_list, surface.rtv());
+		// after post process
+		d3dx::transition_resource(cmd_list, current_back_buffer,
+									D3D12_RESOURCE_STATE_RENDER_TARGET,
+									D3D12_RESOURCE_STATE_PRESENT);
 		// Donce recording commands. Now execute commands,
 		// signal and increment the fence value for next frame.
-		gfx_command.end_frame();
+		gfx_command.end_frame(surface);
 	}
 }

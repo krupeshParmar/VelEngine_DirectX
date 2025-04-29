@@ -28,9 +28,9 @@ namespace vel::transform
 			positions_list.emplace_back(info.position);
 			scales_list.emplace_back(info.scale);
 		}
-		return component(transform_id{ (id::id_type)positions_list.size() - 1 });
+		return component{ transform_id{ ent.get_id()}};
 	}
-	void remove(component c)
+	void remove([[maybe_unused]]component c)
 	{
 		assert(c.is_valid());
 	}
