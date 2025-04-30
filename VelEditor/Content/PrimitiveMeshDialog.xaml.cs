@@ -139,17 +139,13 @@ namespace VelEditor.Content
 
         private void OnSave_Button_Clicked(object sender, RoutedEventArgs e)
         {
-            var dlg = new SaveFileDialog()
-            { 
-                InitialDirectory = Project.Current?.ContentPath,
-                Filter = "Asset file (*.velasset)|*.velasset",
-            };
-            if(dlg.ShowDialog() == true)
+            var dlg = new SaveDialog();
+            if (dlg.ShowDialog() == true)
             {
-                Debug.Assert( !string.IsNullOrEmpty(dlg.FileName));
+                Debug.Assert( !string.IsNullOrEmpty(dlg.SaveFilePath));
                 var asset = (DataContext as IAssetEditor).Asset;
                 Debug.Assert(asset != null);
-                asset.Save(dlg.FileName);
+                asset.Save(dlg.SaveFilePath);
             }
         }
     }

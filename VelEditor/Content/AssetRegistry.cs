@@ -12,7 +12,6 @@ namespace VelEditor.Content
 {
     static class AssetRegistry
     {
-        private static readonly DelayEventTimer _refreshTimer = new DelayEventTimer(TimeSpan.FromMilliseconds(250));
         private static readonly Dictionary<string, AssetInfo> _assetDictionary = new Dictionary<string, AssetInfo>();
         private static readonly ObservableCollection<AssetInfo> _assets = new ObservableCollection<AssetInfo>();
         private static readonly FileSystemWatcher _contentWatcher = new FileSystemWatcher()
@@ -76,14 +75,31 @@ namespace VelEditor.Content
         }
 
 
-        private static async void OnContentModified(object sender, FileSystemEventArgs e)
+        private static void OnContentModified(object sender, ContentModifiedEventArgs e)
         {
-            if (Path.GetExtension(e.FullPath) != Asset.AssetFileExtension) return;
-
-            await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            if (ContentHelper.IsDirectory(e.FullPath))
             {
-                _refreshTimer.Trigger(e);
-            }));
+                RegisterAllAssets(e.FullPath);
+            }
+            else if (File.Exists(e.FullPath))
+            {
+                RegisterAsset(e.FullPath);
+            }
+
+        _assets.Where(x => !File.Exists(x.FullPath)).ToList().ForEach(x => UnregisterAsset(x.FullPath));
+
+        }
+
+        public static void Reset(string contentFolder)
+        {
+            ContentWatcher.ContentModified -= OnContentModified;
+
+            _assetDictionary.Clear();
+            _assets.Clear();
+            Debug.Assert(Directory.Exists(contentFolder));
+            RegisterAllAssets(contentFolder);
+
+            ContentWatcher.ContentModified += OnContentModified;
         }
 
         private static void Refresh(object sender, DelayEventTimerArgs e)
@@ -114,27 +130,8 @@ namespace VelEditor.Content
             _assets.Clear();
         }
 
-        public static void Reset(string contentFolder)
-        {
-            Clear();
-            Debug.Assert(Directory.Exists(contentFolder));
-            RegisterAllAssets(contentFolder);
-            _contentWatcher.Path = contentFolder;
-            _contentWatcher.EnableRaisingEvents = true;
-        }
-
         public static AssetInfo GetAssetInfo(string file) => _assetDictionary.ContainsKey(file) ? _assetDictionary[file] : null;
 
         public static AssetInfo GetAssetInfo(Guid guid) => _assets.FirstOrDefault(x => x.Guid == guid);
-
-        static AssetRegistry()
-        {
-            _contentWatcher.Changed += OnContentModified;
-            _contentWatcher.Created += OnContentModified;
-            _contentWatcher.Deleted += OnContentModified;
-            _contentWatcher.Renamed += OnContentModified;
-
-            _refreshTimer.Triggered += Refresh;
-        }
     }
 }

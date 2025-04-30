@@ -367,7 +367,9 @@ namespace VelEditor.Content
                 {
                     Debug.Assert(lodgroup.LODsList.Any());
                     // use the name of most detailed LOD for file name
-                    var meshFileName = ContentHelper.SanitizeFileName(path + fileName + "_" + lodgroup.LODsList[0].Name + AssetFileExtension);
+                    var meshFileName = ContentHelper.SanitizeFileName(_lodGroups.Count > 1 ?
+                                            path + fileName + "_" + lodgroup.LODsList[0].Name + AssetFileExtension :
+                                            path + fileName + AssetFileExtension);
                     GUID = Guid.NewGuid();
                     byte[] data = null;
                     using (var writer = new BinaryWriter(new MemoryStream()))
