@@ -6,6 +6,6 @@ namespace VelEditor.Editors
     {
         Asset Asset { get; }
 
-        void SetAsset(Asset asset);
+        void SetAsset(AssetInfo asset);
     }
 }

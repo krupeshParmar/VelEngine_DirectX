@@ -24,11 +24,18 @@ namespace VelEditor.GameProject
         [DataMember]
         public string Name { get; private set; } = "New Project";
 
+        /// <summary>
+        /// Gets the root folder that contains the current project.
+        /// </summary>
         [DataMember]
         public string Path { get; private set; }
+        /// <summary>
+        /// Gets the full path of the current Vel project file, including its file name and extension.
+        /// </summary>
         public string FullPath => $@"{Path}{Name}{Extension}";
         public string Solution => $@"{Path}{Name}.sln";
         public string ContentPath => $@"{Path}Content\";
+        public string TempFolder => $@"{Path}.Vel\Temp\";
 
         private int _buildConfig;
         [DataMember]
@@ -162,6 +169,16 @@ namespace VelEditor.GameProject
             UnloadGameCodeDll_Internal();
             VisualStudio.CloseVisualStudio();
             UndoRedoManager.Reset();
+            Logger.Clear();
+            DeleteTempFolder();
+        }
+
+        private void DeleteTempFolder()
+        {
+            if (Directory.Exists(TempFolder))
+            {
+                Directory.Delete(TempFolder, true);
+            }
         }
 
         private static void Save(Project project)

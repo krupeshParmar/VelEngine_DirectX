@@ -181,7 +181,7 @@ namespace VelEditor.GameProject
             var _0 = ProjectName;
             var _1 = "{" + Guid.NewGuid().ToString().ToUpper() + "}";
             var _2 = engineAPIPath;
-            var _3 = "$(PRIMAL_ENGINE)";
+            var _3 = "$(VEL_ENGINE)";
 
             var solution = File.ReadAllText(Path.Combine(template.TemplatePath, "MSVCSolution"));
             solution = string.Format(solution, _0, _1);

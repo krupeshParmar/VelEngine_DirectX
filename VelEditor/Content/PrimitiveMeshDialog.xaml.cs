@@ -131,7 +131,7 @@ namespace VelEditor.Content
             }
 
             var vm = DataContext as GeometryEditor;
-            foreach (var mesh in vm.meshRenderer.Meshes)
+            foreach (var mesh in vm.mMeshRenderer.Meshes)
             {
                 mesh.Diffuse = brush;
             }

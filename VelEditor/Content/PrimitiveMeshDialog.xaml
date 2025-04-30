@@ -178,17 +178,17 @@
             <!-- ICOSphere Settings -->
             <!-- Cylinder Settings -->
             <!-- Capsule Settings -->
-            <edt:GeometryView DataContext="{Binding meshRenderer}" Grid.Column="1"/>
+            <edt:GeometryView DataContext="{Binding mMeshRenderer}" Grid.Column="1"/>
             <StackPanel Grid.Column="1"  Margin="5" Orientation="Vertical" VerticalAlignment="Top"
                             HorizontalAlignment="Left" IsHitTestVisible="False">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{Binding meshRenderer.CameraPosition.X, StringFormat=G5}" Foreground="{StaticResource Editor.RedBrush}"/>
-                    <TextBlock Text="{Binding meshRenderer.CameraPosition.Y, StringFormat=G5}" Foreground="{StaticResource Editor.GreenBrush}" Margin="10,0"/>
-                    <TextBlock Text="{Binding meshRenderer.CameraPosition.Z, StringFormat=G5}" Foreground="{StaticResource Editor.BlueBrush}"/>
+                    <TextBlock Text="{Binding mMeshRenderer.CameraPosition.X, StringFormat=G5}" Foreground="{StaticResource Editor.RedBrush}"/>
+                    <TextBlock Text="{Binding mMeshRenderer.CameraPosition.Y, StringFormat=G5}" Foreground="{StaticResource Editor.GreenBrush}" Margin="10,0"/>
+                    <TextBlock Text="{Binding mMeshRenderer.CameraPosition.Z, StringFormat=G5}" Foreground="{StaticResource Editor.BlueBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{Binding meshRenderer.Meshes[0].Positons.Count}" Foreground="{StaticResource Editor.OrangeBrush}"/>
-                    <TextBlock Text="{Binding meshRenderer.Meshes[0].Indices.Count}" Foreground="{StaticResource Editor.OrangeBrush}" Margin="10,0"/>
+                    <TextBlock Text="{Binding mMeshRenderer.Meshes[0].Positons.Count}" Foreground="{StaticResource Editor.OrangeBrush}"/>
+                    <TextBlock Text="{Binding mMeshRenderer.Meshes[0].Indices.Count}" Foreground="{StaticResource Editor.OrangeBrush}" Margin="10,0"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

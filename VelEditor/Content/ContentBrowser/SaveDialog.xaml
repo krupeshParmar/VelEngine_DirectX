@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VelEditor.Content"
-        mc:Ignorable="d" Foreground="{StaticResource Editor.Disabled.FontBrush}"
+        mc:Ignorable="d" Foreground="{StaticResource Editor.FontBrush}"
         WindowStartupLocation="CenterScreen" UseLayoutRounding="True"
         Title="Save" Height="600" Width="800" MinWidth="600" MinHeight="400"
         Style="{StaticResource VelDialogStyle}">
@@ -13,7 +13,8 @@
             <RowDefinition/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        <local:ContentBrowserView x:Name="contentBrowserView" SelectionMode="Single" FileAccess="Write"
+        <local:ContentBrowserView x:Name="contentBrowserView" SelectionMode="Single" 
+                                  FileAccess="Write" AllowDrop="False"
                                   MouseDoubleClick="OnContentBrowser_Mouse_DoubleClick"/>
 
         <Border Grid.Row="1" Background="{StaticResource Editor.Window.GrayBrush3}">

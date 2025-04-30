@@ -6,6 +6,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using VelEditor.Content;
 
 namespace VelEditor.Editors
 {
@@ -249,7 +250,7 @@ namespace VelEditor.Editors
 
     class GeometryEditor : ViewModelBase, IAssetEditor
     {
-        public Content.Asset Asset => Geometry;
+        Asset IAssetEditor.Asset => Geometry;
 
 
         private Content.Geometry _geometry;
@@ -267,7 +268,7 @@ namespace VelEditor.Editors
         }
 
         private MeshRenderer _meshRenderer;
-        public MeshRenderer meshRenderer
+        public MeshRenderer mMeshRenderer
         {
             get => _meshRenderer;
             set
@@ -275,7 +276,68 @@ namespace VelEditor.Editors
                 if (_meshRenderer != value)
                 {
                     _meshRenderer = value;
-                    OnPropertyChanged(nameof(meshRenderer));
+                    OnPropertyChanged(nameof(mMeshRenderer));
+                    var lods = Geometry.GetLODGroup().LODsList;
+                    MaxLODIndex = (lods.Count > 0) ? lods.Count - 1 : 0;
+                    OnPropertyChanged(nameof(MaxLODIndex));
+                    if (lods.Count > 1)
+                    {
+                        mMeshRenderer.PropertyChanged += (s, e) =>
+                        {
+                            if (e.PropertyName == nameof(mMeshRenderer.OffsetCameraPosition) && AutoLOD) ComputeLOD(lods);
+                        };
+
+                        ComputeLOD(lods);
+                    }
+                }
+            }
+        }
+
+        private bool _autoLOD = true;
+        public bool AutoLOD
+        {
+            get => _autoLOD;
+            set
+            {
+                if (_autoLOD != value)
+                {
+                    _autoLOD = value;
+                    OnPropertyChanged(nameof(AutoLOD));
+                }
+            }
+        }
+
+        public int MaxLODIndex { get; private set; }
+
+        private int _lodIndex;
+        public int LODIndex
+        {
+            get => _lodIndex;
+            set
+            {
+                var lods = Geometry.GetLODGroup().LODsList;
+                value = Math.Clamp(value, 0, lods.Count);
+                if (_lodIndex != value)
+                {
+                    _lodIndex = value;
+                    OnPropertyChanged(nameof(LODIndex));
+                    mMeshRenderer = new MeshRenderer(lods[value], mMeshRenderer);
+                }
+            }
+        }
+
+        private void ComputeLOD(IList<MeshLOD> lods)
+        {
+            if (!AutoLOD) return;
+
+            var p = mMeshRenderer.OffsetCameraPosition;
+            var distance = new Vector3D(p.X, p.Y, p.Z).Length;
+            for (int i = MaxLODIndex; i >= 0; --i)
+            {
+                if (lods[i].LodThreshold < distance)
+                {
+                    LODIndex = i;
+                    break;
                 }
             }
         }
@@ -286,7 +348,34 @@ namespace VelEditor.Editors
             if(asset  is Content.Geometry geometry)
             {
                 Geometry = geometry;
-                meshRenderer = new MeshRenderer(Geometry.GetLODGroup().LODsList[0], meshRenderer);
+                var numLods = geometry.GetLODGroup().LODsList.Count;
+                if (LODIndex >= numLods)
+                {
+                    LODIndex = numLods - 1;
+                }
+                else
+                {
+                    mMeshRenderer = new MeshRenderer(Geometry.GetLODGroup().LODsList[0], mMeshRenderer);
+                }
+            }
+        }
+
+        public async void SetAsset(AssetInfo info)
+        {
+            try
+            {
+                Debug.Assert(info != null && File.Exists(info.FullPath));
+                var geometry = new Content.Geometry();
+                await Task.Run(() =>
+                {
+                    geometry.Load(info.FullPath);
+                });
+
+                SetAsset(geometry);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
             }
         }
     }
