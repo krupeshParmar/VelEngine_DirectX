@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VelEditor.Components;
 using VelEditor.EngineAPIStructs;
+using VelEditor.GameDev;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
 
@@ -87,13 +88,16 @@ namespace VelEditor.DLLWrapper
                     var c = entity.GetComponent<Script>();
                     if (c != null && Project.Current != null)
                     {
-                        if (Project.Current.AvailableScripts.Contains(c.Name))
+                        if (Project.Current.AvailableScripts != null)
                         {
-                            gameEntityDescriptor.Script.ScriptCreator = GetScriptCreator(c.Name);
-                        }
-                        else
-                        {
-                            Logger.Log(MessageType.Error, $"Unable to find script with name {c.Name}. Game Object will be created without the script");
+                            if (Project.Current.AvailableScripts.Contains(c.Name))
+                            {
+                                gameEntityDescriptor.Script.ScriptCreator = GetScriptCreator(c.Name);
+                            }
+                            else
+                            {
+                                Logger.Log(MessageType.Error, $"Unable to find script with name {c.Name}. Game Object will be created without the script");
+                            }
                         }
                     }
                 }
