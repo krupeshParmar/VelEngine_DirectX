@@ -27,11 +27,14 @@
     <ClInclude Include="Components\TransformComponent.h" />
     <ClInclude Include="Components\ScriptComponent.h" />
     <ClInclude Include="Content\ContentLoader.h" />
+    <ClInclude Include="Content\ContentToEngine.h" />
+    <ClInclude Include="Graphics\Direct3D12\D3D12Content.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12GPass.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Helpers.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12PostProcess.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Shaders.h" />
-    <ClInclude Include="Utlilities\FreeList.h" />
+    <ClInclude Include="Graphics\Direct3D12\D3D12Upload.h" />
+    <ClInclude Include="Utilities\FreeList.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12CommonHeaders.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Core.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Interface.h" />
@@ -42,10 +45,11 @@
     <ClInclude Include="Platform\Platform.h" />
     <ClInclude Include="Platform\PlatformTypes.h" />
     <ClInclude Include="Platform\window.h" />
-    <ClInclude Include="Utlilities\Math.h" />
-    <ClInclude Include="Utlilities\MathTypes.h" />
-    <ClInclude Include="Utlilities\Utilities.h" />
-    <ClInclude Include="Utlilities\Vector.h" />
+    <ClInclude Include="Utilities\IOStream.h" />
+    <ClInclude Include="Utilities\Math.h" />
+    <ClInclude Include="Utilities\MathTypes.h" />
+    <ClInclude Include="Utilities\Utilities.h" />
+    <ClInclude Include="Utilities\Vector.h" />
     <ClInclude Include="VelAPI\GameEntity.h" />
     <ClInclude Include="VelAPI\ScriptComponentAPI.h" />
     <ClInclude Include="VelAPI\TransformComponentAPI.h" />
@@ -55,8 +59,10 @@
     <ClCompile Include="Components\TransformComponent.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
     <ClCompile Include="Content\ContentLoader.cpp" />
+    <ClCompile Include="Content\ContentToEngine.cpp" />
     <ClCompile Include="Core\EntryPoint.cpp" />
     <ClCompile Include="Core\VelEngine.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\D3D12Content.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Core.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12GPass.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Helpers.cpp" />
@@ -65,6 +71,7 @@
     <ClCompile Include="Graphics\Direct3D12\D3D12Resources.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Shaders.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Surface.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\D3D12Upload.cpp" />
     <ClCompile Include="Graphics\Renderer.cpp" />
     <ClCompile Include="Platform\PlatformWin32.cpp" />
   </ItemGroup>

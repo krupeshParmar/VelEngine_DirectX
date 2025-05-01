@@ -26,7 +26,7 @@ namespace VelEditor.Editors
         private bool _capturedRight;
         private bool _capturedLeft;
 
-        private void SetGeometry(int index = -1)
+        public void SetGeometry(int index = -1)
         {
             if (!(DataContext is MeshRenderer vm)) return;
 
@@ -46,7 +46,7 @@ namespace VelEditor.Editors
                 }
                 var mesh3D = new MeshGeometry3D()
                 {
-                    Positions = mesh.Positons,
+                    Positions = mesh.Positions,
                     Normals = mesh.Normals,
                     TriangleIndices = mesh.Indices,
                     TextureCoordinates = mesh.UVs,

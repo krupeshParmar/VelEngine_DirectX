@@ -102,6 +102,9 @@ xcopy /Y /D $(SolutionDir)packages\DirectXShaderCompiler\bin\x64\dxil.dll $(OutD
     <ClInclude Include="TestRenderer.h" />
     <ClInclude Include="WindowTest.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="model.model" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

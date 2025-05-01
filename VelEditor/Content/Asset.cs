@@ -58,7 +58,7 @@ namespace VelEditor.Content
         public abstract void Load(string file);
 
         public abstract IEnumerable<string> Save(string file);
-
+        public abstract byte[] PackForEngine();
         private static AssetInfo GetAssetInfo(BinaryReader reader)
         {
             reader.BaseStream.Position = 0;

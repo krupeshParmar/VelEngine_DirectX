@@ -12,4 +12,7 @@
     <ClInclude Include="TestRenderer.h" />
     <ClInclude Include="ShaderCompilation.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="model.model" />
+  </ItemGroup>
 </Project>

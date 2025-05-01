@@ -50,4 +50,7 @@ namespace vel::graphics
 
 	surface create_surface(platform::window window);
 	void remove_surface(surface_id id);
+
+	id::id_type add_submesh(const u8*& data);
+	void remove_submesh(id::id_type id);
 }
