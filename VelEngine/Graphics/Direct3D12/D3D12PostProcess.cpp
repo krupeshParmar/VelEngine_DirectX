@@ -11,7 +11,6 @@ namespace vel::graphics::d3d12::fx {
         {
             enum : u32 {
                 root_constants,
-                descriptor_table,
 
                 count
             };
@@ -25,19 +24,12 @@ namespace vel::graphics::d3d12::fx {
         {
             assert(!fx_root_sig && !fx_pso);
             // Create FX root signature
-            d3dx::d3d12_descriptor_range range
-            {
-                D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-                D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND, 0, 0,
-                D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE
-            };
-
             using idx = fx_root_param_indices;
             d3dx::d3d12_root_parameter parameters[idx::count]{};
             parameters[idx::root_constants].as_constants(1, D3D12_SHADER_VISIBILITY_PIXEL, 1);
-            parameters[idx::descriptor_table].as_descriptor_table(D3D12_SHADER_VISIBILITY_PIXEL, &range, 1);
 
-            const d3dx::d3d12_root_signature_desc root_signature{ &parameters[0], _countof(parameters) };
+            d3dx::d3d12_root_signature_desc root_signature{ &parameters[0], _countof(parameters) };
+            root_signature.Flags &= ~D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
             fx_root_sig = root_signature.create();
             assert(fx_root_sig);
             NAME_D3D12_OBJECT(fx_root_sig, L"Post-process FX Root Signature");
@@ -79,15 +71,15 @@ namespace vel::graphics::d3d12::fx {
         core::release(fx_pso);
     }
 
-    void
-        post_process(id3d12_graphics_command_list* cmd_list, D3D12_CPU_DESCRIPTOR_HANDLE target_rtv)
+    void post_process(id3d12_graphics_command_list* cmd_list,
+        const d3d12_frame_info& d3d12_info,
+        D3D12_CPU_DESCRIPTOR_HANDLE target_rtv)
     {
         cmd_list->SetGraphicsRootSignature(fx_root_sig);
         cmd_list->SetPipelineState(fx_pso);
 
         using idx = fx_root_param_indices;
         cmd_list->SetGraphicsRoot32BitConstant(idx::root_constants, gpass::main_buffer().srv().index, 0);
-        cmd_list->SetGraphicsRootDescriptorTable(idx::descriptor_table, core::srv_heap().gpu_start());
         cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         // NOTE: we don't need to clear the render target, because each pixel will 
         //       be overwritten by pixels from gpass main buffer.

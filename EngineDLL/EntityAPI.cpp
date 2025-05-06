@@ -1,8 +1,8 @@
 
 #include "Common.h"
-#include "..\VelEngine\Components\Entity.h"
-#include "..\VelEngine\Components\TransformComponent.h"
-#include "..\VelEngine\Components\ScriptComponent.h"
+#include "Components/Entity.h"
+#include "Components/TransformComponent.h"
+#include "Components/ScriptComponent.h"
 
 using namespace vel;
 

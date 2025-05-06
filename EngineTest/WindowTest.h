@@ -1,7 +1,7 @@
 #pragma once
 #include "Test.h"
-#include "..\Platform\platformtypes.h"
-#include "..\Platform\Platform.h"
+#include "../Platform/platformtypes.h"
+#include "../Platform/Platform.h"
 
 using namespace vel;
 

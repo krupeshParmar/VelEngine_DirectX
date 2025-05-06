@@ -1,5 +1,5 @@
 #include "Geometry.h"
-#include "..\Utilities\IOStream.h"
+#include "../Utilities/IOStream.h"
 
 namespace vel::tools
 {
@@ -566,7 +566,6 @@ namespace vel::tools
 
 	void pack_data(const scene& scene, scene_data& data)
 	{
-		constexpr u64 su32{ sizeof(u32) };
 		const u64 scene_size{ get_scene_size(scene) };
 		data.buffer_size = (u32)scene_size;
 		data.buffer = (u8*)CoTaskMemAlloc(scene_size);

@@ -4,15 +4,18 @@
 
 // C/C++
 // NOTE: don't put here any headers that include std::vector or std::deque
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <assert.h>
 #include <typeinfo>
 #include <memory>
 #include <unordered_map>
+#include <mutex>
+#include <cstring>
 
 #if defined(_WIN64)
 #include <DirectXMath.h>
+#pragma warning(disable: 4530) // disable exception warning
 #endif
 
 #ifndef DISABLE_COPY
@@ -36,7 +39,6 @@
 #else
 #define DEBUG_OP(x)
 #endif
-
 
 // common headers
 #include "PrimitiveTypes.h"

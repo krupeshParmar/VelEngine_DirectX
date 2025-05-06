@@ -1,11 +1,11 @@
 #include <thread>
 
-#if !defined(SHIPPING)
-#include "..\Content\ContentLoader.h"
-#include "..\Components\ScriptComponent.h"
-#include "..\Platform\PlatformTypes.h"
-#include "..\Platform\Platform.h"
-#include "..\Graphics\Renderer.h"
+#if !defined(SHIPPING) && defined(_WIN64)
+#include "../Content/ContentLoader.h"
+#include "../Components/ScriptComponent.h"
+#include "../Platform/PlatformTypes.h"
+#include "../Platform/Platform.h"
+#include "../Graphics/Renderer.h"
 
 using namespace vel;
 

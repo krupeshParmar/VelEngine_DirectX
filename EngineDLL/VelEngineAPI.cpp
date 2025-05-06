@@ -1,10 +1,10 @@
 
 #include <atlsafe.h>
 #include "Common.h"
-#include "..\VelEngine\Components\ScriptComponent.h"
-#include "..\Platform\PlatformTypes.h"
-#include "..\Platform\Platform.h"
-#include "..\Graphics\Renderer.h"
+#include "Components/ScriptComponent.h"
+#include "Platform/PlatformTypes.h"
+#include "Platform/Platform.h"
+#include "Graphics/Renderer.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

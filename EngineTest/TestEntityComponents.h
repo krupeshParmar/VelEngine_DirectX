@@ -1,7 +1,7 @@
 #pragma once
 #include "Test.h"
-#include "..\VelEngine\Components\Entity.h"
-#include "..\VelEngine\Components\TransformComponent.h"
+#include "../VelEngine/Components/Entity.h"
+#include "../VelEngine/Components/TransformComponent.h"
 
 #include <iostream>
 #include <ctime>

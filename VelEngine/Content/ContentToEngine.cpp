@@ -1,7 +1,6 @@
 #include "ContentToEngine.h"
 #include "Graphics/Renderer.h"
 #include "Utilities/IOStream.h"
-#include <mutex>
 
 namespace vel::content {
     namespace {
@@ -9,12 +8,6 @@ namespace vel::content {
         class geometry_hierarchy_stream
         {
         public:
-            struct lod_offset
-            {
-                u16 offset;
-                u16 count;
-            };
-
             DISABLE_COPY_AND_MOVE(geometry_hierarchy_stream);
             geometry_hierarchy_stream(u8 *const buffer, u32 lods = u32_invalid_id)
                 : _buffer{ buffer }
@@ -34,14 +27,14 @@ namespace vel::content {
             void gpu_ids(u32 lod, id::id_type*& ids, u32& id_count)
             {
                 assert(lod < _lod_count);
-                ids = (id::id_type*)(_buffer + _lod_offsets[lod].offset);
+                ids = &_gpu_ids[_lod_offsets[lod].offset];
                 id_count = _lod_offsets[lod].count;
             }
 
             u32 lod_from_threshold(f32 threshold)
             {
                 assert(threshold > 0);
-
+                if (_lod_count == 1) return 0;
                 for (u32 i{ _lod_count - 1 }; i > 0; --i)
                 {
                     if (_thresholds[i] <= threshold) return i;
@@ -65,9 +58,12 @@ namespace vel::content {
         };
 
         // This constant indicates that an element in geometry_hierarchies is not a pointer, but a gpu_id
-        constexpr uintptr_t single_mesh_marker{ (uintptr_t)0x01 };
-        utl::free_list<u8*> geometry_hierarchies;
-        std::mutex          geometry_mutex;
+        constexpr uintptr_t     single_mesh_marker{ (uintptr_t)0x01 };
+        utl::free_list<u8*>     geometry_hierarchies;
+        std::mutex              geometry_mutex;
+
+        utl::free_list < Scope<u8[]>>   shaders_list;
+        std::mutex                      shader_mutex;
 
         // NOTE: expects the same data as create_geometry_resource()
         u32
@@ -78,7 +74,7 @@ namespace vel::content {
             const u32 lod_count{ blob.read<u32>() };
             assert(lod_count);
             // add size of  lod_count, thresholds and lod offsets to the size of hierarchy.
-            u32 size{ sizeof(u32) + (sizeof(f32) + sizeof(geometry_hierarchy_stream::lod_offset)) * lod_count };
+            u32 size{ sizeof(u32) + (sizeof(f32) + sizeof(lod_offset)) * lod_count };
 
             for (u32 lod_idx{ 0 }; lod_idx < lod_count; ++lod_idx)
             {
@@ -106,7 +102,7 @@ namespace vel::content {
             const u32 lod_count{ blob.read<u32>() };
             assert(lod_count);
             geometry_hierarchy_stream stream{ hierarchy_buffer, lod_count };
-            u16 submesh_index{ 0 };
+            u32 submesh_index{ 0 };
             id::id_type *const gpu_ids{ stream.gpu_ids() };
 
             for (u32 lod_idx{ 0 }; lod_idx < lod_count; ++lod_idx)
@@ -114,7 +110,7 @@ namespace vel::content {
                 stream.thresholds()[lod_idx] = blob.read<f32>();
                 const u32 id_count{ blob.read<u32>() };
                 assert(id_count < (1 << 16));
-                stream.lod_offsets()[lod_idx] = { submesh_index, (u16)id_count };
+                stream.lod_offsets()[lod_idx] = { (u16)submesh_index, (u16)id_count };
                 blob.skip(sizeof(u32)); // skip over size_of_submeshes
                 for (u32 id_idx{ 0 }; id_idx < id_count; ++id_idx)
                 {
@@ -178,8 +174,7 @@ namespace vel::content {
             return submesh_count == 1;
         }
 
-        id::id_type
-            gpu_id_from_fake_pointer(u8 *const pointer)
+        constexpr id::id_type gpu_id_from_fake_pointer(u8 *const pointer)
         {
             assert((uintptr_t)pointer & single_mesh_marker);
             static_assert(sizeof(uintptr_t) > sizeof(id::id_type));
@@ -256,10 +251,28 @@ namespace vel::content {
             geometry_hierarchies.remove(id);
         }
 
+        // NOTE: expects data to contain
+        // struct {
+        //  material_type::type type,
+        //  u32                 texture_count,
+        //  id::id_type         shader_ids[shader_type::count],
+        //  id::id_type*        texture_ids;
+        // } material_init_info
+
+        id::id_type create_material_resource(const void *const data)
+        {
+            assert(data);
+            return graphics::add_material(*(const graphics::material_init_info *const)data);
+        }
+
+        void destroy_material_resource(id::id_type id)
+        {
+            graphics::remove_material(id);
+        }
+
     } // anonymous namespace
 
-    id::id_type
-        create_resource(const void *const data, asset_type::type type)
+    id::id_type create_resource(const void *const data, asset_type::type type)
     {
         assert(data);
         id::id_type id{ id::invalid_id };
@@ -268,7 +281,7 @@ namespace vel::content {
         {
         case asset_type::animation: break;
         case asset_type::audio:	break;
-        case asset_type::material: break;
+        case asset_type::material: id = create_material_resource(data);  break;
         case asset_type::mesh:	id = create_geometry_resource(data); break;
         case asset_type::skeleton: break;
         case asset_type::texture: break;
@@ -278,21 +291,92 @@ namespace vel::content {
         return id;
     }
 
-    void
-        destroy_resource(id::id_type id, asset_type::type type)
+    void destroy_resource(id::id_type id, asset_type::type type)
     {
         assert(id::is_valid(id));
         switch (type)
         {
         case asset_type::animation: break;
         case asset_type::audio:	break;
-        case asset_type::material: break;
+        case asset_type::material:destroy_material_resource(id);  break;
         case asset_type::mesh:	destroy_geometry_resource(id); break;
         case asset_type::skeleton: break;
         case asset_type::texture: break;
         default:
             assert(false);
             break;
+        }
+    }
+
+    id::id_type add_shader(const u8* data)
+    {
+        const compiled_shader_ptr shader_ptr{ (const compiled_shader_ptr)data };
+        const u64 size{ sizeof(u64) + compiled_shader::hash_length + shader_ptr->byte_code_size() };
+        std::unique_ptr<u8[]> shader{ std::make_unique<u8[]>(size) };
+        memcpy(shader.get(), data, size);
+        std::lock_guard lock{ shader_mutex };
+        return shaders_list.add(std::move(shader));
+    }
+
+    void remove_shader(id::id_type id)
+    {
+        std::lock_guard lock{ shader_mutex };
+        assert(id::is_valid(id));
+        shaders_list.remove(id);
+    }
+
+    compiled_shader_ptr get_shader(id::id_type id)
+    {
+        std::lock_guard lock{ shader_mutex };
+        assert(id::is_valid(id));
+        return (const compiled_shader_ptr)(shaders_list[id].get());
+    }
+
+    void get_submesh_gpu_ids(id::id_type geometry_content_id, u32 id_count, id::id_type *const gpu_ids)
+    {
+        std::lock_guard lock{ geometry_mutex };
+        u8 *const pointer{ geometry_hierarchies[geometry_content_id] };
+        if ((uintptr_t)pointer & single_mesh_marker)
+        {
+            assert(id_count == 1);
+            *gpu_ids = gpu_id_from_fake_pointer(pointer);
+        }
+        else
+        {
+            geometry_hierarchy_stream stream{ pointer };
+
+            assert([&]() {
+                const u32 lod_count{ stream.lod_count() };
+                const lod_offset lod_offset{ stream.lod_offsets()[lod_count - 1] };
+                const u32 gpu_id_count{ (u32)lod_offset.offset + (u32)lod_offset.count };
+                return gpu_id_count == id_count;
+                }());
+
+            memcpy(gpu_ids, stream.gpu_ids(), sizeof(id::id_type) * id_count);
+        }
+    }
+
+    void get_lod_offsets(const id::id_type *const geometry_ids, const f32 *const thresholds, u32 id_count, utl::vector<lod_offset>& offsets)
+    {
+        assert(geometry_ids && thresholds && id_count);
+        assert(offsets.empty());
+
+        std::lock_guard lock{ geometry_mutex };
+
+        for (u32 i{ 0 }; i < id_count; ++i)
+        {
+            u8 *const pointer{ geometry_hierarchies[geometry_ids[i]] };
+            if ((uintptr_t)pointer & single_mesh_marker)
+            {
+                assert(id_count == 1);
+                offsets.emplace_back(lod_offset{ 0, 1 });
+            }
+            else
+            {
+                geometry_hierarchy_stream stream{ pointer };
+                const u32 lod{ stream.lod_from_threshold(thresholds[i]) };
+                offsets.emplace_back(stream.lod_offsets()[lod]);
+            }
         }
     }
 }

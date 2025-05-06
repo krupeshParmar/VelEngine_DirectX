@@ -1,10 +1,12 @@
-#include "TestRenderer.h"
-#include "..\Platform\platformtypes.h"
-#include "..\Platform\Platform.h"
-#include "..\Graphics\Renderer.h"
-#include "..\Graphics\Direct3D12\D3D12Core.h"
-#include "..\Content\ContentToEngine.h"
+#include "Platform/platformtypes.h"
+#include "Platform/Platform.h"
+#include "Graphics/Renderer.h"
+#include "Graphics/Direct3D12/D3D12Core.h"
+#include "Content/ContentToEngine.h"
+#include "Components/Entity.h"
+#include "Components/TransformComponent.h"
 #include "ShaderCompilation.h"
+#include "TestRenderer.h"
 #include <filesystem>
 #include <fstream>
 #if TEST_RENDERER
@@ -50,15 +52,24 @@ void joint_test_workers()
 }
 /////////////////////////////////////////////////////////////////////////////////////
 
+struct camera_surface {
+	game_entity::entity entity{};
+	graphics::camera camera{};
+	graphics::render_surface surface{};
+};
+
+id::id_type item_id{ id::invalid_id };
 id::id_type model_id{ id::invalid_id };
-graphics::render_surface _surfaces_list[4];
+camera_surface _surfaces_list[4]{};
 time_it timer{};
 bool resized{ false };
 bool is_restarting{ false };
 
-void destroy_render_surface(graphics::render_surface& surface);
+void destroy_camera_surface(camera_surface& surface);
 bool test_initialize();
 void test_shutdown();
+id::id_type create_render_item(id::id_type entity_id);
+void destroy_render_item(id::id_type item_id);
 LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	bool toggle_fullscreen{ false };
@@ -69,11 +80,11 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		bool all_closed{ true };
 		for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
 		{
-			if (_surfaces_list[i].window.is_valid())
+			if (_surfaces_list[i].surface.window.is_valid())
 			{
-				if (_surfaces_list[i].window.is_closed())
+				if (_surfaces_list[i].surface.window.is_closed())
 				{
-					destroy_render_surface(_surfaces_list[i]);
+					destroy_camera_surface(_surfaces_list[i]);
 				}
 				else
 				{
@@ -113,7 +124,7 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		platform::window win{ platform::window_id{(id::id_type)GetWindowLongPtr(hwnd, GWLP_USERDATA)} };
 		for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
 		{
-			if (win.get_id() == _surfaces_list[i].window.get_id())
+			if (win.get_id() == _surfaces_list[i].surface.window.get_id())
 			{
 				if (toggle_fullscreen)
 				{
@@ -126,7 +137,8 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				}
 				else
 				{
-					_surfaces_list[i].surface.resize(win.width(), win.height());
+					_surfaces_list[i].surface.surface.resize(win.width(), win.height());
+					_surfaces_list[i].camera.aspect_ratio((f32)win.width() / win.height());
 					resized = false;
 				}
 				break;
@@ -136,14 +148,37 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-bool read_file(std::filesystem::path path, std::unique_ptr<u8[]>& data, u64& size)
+game_entity::entity
+create_one_game_entity(bool is_camera)
+{
+	transform::init_info transform_info{};
+	math::v3a rot{ 0,is_camera ? 3.14f : 0.f, 0 };
+	DirectX::XMVECTOR quat{ DirectX::XMQuaternionRotationRollPitchYawFromVector(DirectX::XMLoadFloat3A(&rot)) };
+	math::v4a rot_quat;
+	DirectX::XMStoreFloat4A(&rot_quat, quat);
+	memcpy(&transform_info.rotation[0], &rot_quat.x, sizeof(transform_info.rotation));
+
+	if (is_camera)
+	{
+		transform_info.position[1] = 1.f;
+		transform_info.position[2] = 3.f;
+	}
+
+	game_entity::entity_info entity_info{};
+	entity_info.transform = &transform_info;
+	game_entity::entity ntt{ game_entity::create(entity_info) };
+	assert(ntt.is_valid());
+	return ntt;
+}
+
+bool read_file(std::filesystem::path path, Scope<u8[]>& data, u64& size)
 {
 	if (!std::filesystem::exists(path)) return false;
 
 	size = std::filesystem::file_size(path);
 	assert(size);
 	if (!size) return false;
-	data = std::make_unique<u8[]>(size);
+	data = CreateScope<u8[]>(size);
 	std::ifstream file{ path, std::ios::in | std::ios::binary };
 	if (!file || !file.read((char*)data.get(), size))
 	{
@@ -155,19 +190,24 @@ bool read_file(std::filesystem::path path, std::unique_ptr<u8[]>& data, u64& siz
 	return true;
 }
 
-void create_render_surface(graphics::render_surface& surface, platform::window_init_info& info)
+void create_camera_surface(camera_surface& surface, platform::window_init_info& info)
 {
-	surface.window = platform::create_window(&info);
-	surface.surface = graphics::create_surface(surface.window);
+	surface.surface.window = platform::create_window(&info);
+	surface.surface.surface = graphics::create_surface(surface.surface.window);
+	surface.entity = create_one_game_entity(true);
+	surface.camera = graphics::create_camera(graphics::perspective_camera_init_info{ surface.entity.get_id() });
+	surface.camera.aspect_ratio((f32)surface.surface.window.width() / surface.surface.window.height());
 }
 
-void destroy_render_surface(graphics::render_surface& surface)
+void destroy_camera_surface(camera_surface& surface)
 {
-	graphics::render_surface temp{ surface };
+	camera_surface temp{ surface };
 	surface = {};
 
-	if (temp.surface.is_valid()) graphics::remove_surface(temp.surface.get_id());
-	if (temp.window.is_valid()) platform::remove_window(temp.window.get_id());
+	if (temp.surface.surface.is_valid())graphics::remove_surface(temp.surface.surface.get_id());
+	if (temp.surface.window.is_valid())platform::remove_window(temp.surface.window.get_id());
+	if (temp.camera.is_valid()) graphics::remove_camera(temp.camera.get_id());
+	if (temp.entity.is_valid()) game_entity::remove(temp.entity.get_id());
 }
 
 bool engine_test::initialize()
@@ -177,6 +217,8 @@ bool engine_test::initialize()
 
 void test_shutdown()
 {
+	destroy_render_item(item_id);
+
 	joint_test_workers();
 
 	if (id::is_valid(model_id))
@@ -184,7 +226,7 @@ void test_shutdown()
 		content::destroy_resource(model_id, content::asset_type::mesh);
 	}
 	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
-		destroy_render_surface(_surfaces_list[i]);
+		destroy_camera_surface(_surfaces_list[i]);
 
 	graphics::shutdown();
 }
@@ -211,10 +253,10 @@ bool test_initialize()
 	static_assert(_countof(info) == _countof(_surfaces_list));
 
 	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
-		create_render_surface(_surfaces_list[i], info[i]);
+		create_camera_surface(_surfaces_list[i], info[i]);
 
 	// load test model
-	std::unique_ptr<u8[]> model;
+	Scope<u8[]> model;
 	u64 size{ 0 };
 	if (!read_file("..\\..\\enginetest\\model.model", model, size)) return false;
 
@@ -222,6 +264,8 @@ bool test_initialize()
 	if (!id::is_valid(model_id)) return false;
 
 	init_test_workers(buffer_test_worker);
+
+	item_id = create_render_item(create_one_game_entity(false).get_id());
 
 	is_restarting = false;
 	return true;
@@ -234,9 +278,10 @@ void engine_test::run()
 
 	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
 	{
-		if (_surfaces_list[i].surface.is_valid())
+		if (_surfaces_list[i].surface.surface.is_valid())
 		{
-			_surfaces_list[i].surface.render();
+			f32 threshold{ 10 };
+			_surfaces_list[i].surface.surface.render({ &item_id, &threshold, 1, _surfaces_list[i].camera.get_id() });
 		}
 	}
 	timer.end();

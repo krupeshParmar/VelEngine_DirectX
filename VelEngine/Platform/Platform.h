@@ -1,5 +1,5 @@
 #pragma once
-#include "..\Common\CommonHeaders.h"
+#include "Common/CommonHeaders.h"
 #include "window.h"
 
 namespace vel::platform

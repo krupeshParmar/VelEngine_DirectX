@@ -1,6 +1,6 @@
 #include "FbxImporter.h"
 #include "Geometry.h"
-#include <mutex>
+#include <iostream>
 
 // If you get any compilation or linker errors than make sure that
 // 1) FBX SDK 2020.2 or later is installed on your system
@@ -19,61 +19,117 @@
 // by disabling this warning in linker options (Linker command line: /ignore:4099).
 
 namespace vel::tools {
-	namespace {
+    namespace {
 
-		std::mutex fbx_mutex{};
+        std::mutex fbx_mutex{};
 
-	} // anonymous namespace
+        bool HasZeroAreaPolygon(FbxMesh* mesh) {
+            FbxVector4* verts = mesh->GetControlPoints();
 
-	bool fbx_context::initialize_fbx()
-	{
-		assert(!is_valid());
+            for (int i = 0; i < mesh->GetPolygonCount(); ++i) {
+                int polySize = mesh->GetPolygonSize(i);
+                if (polySize < 3)
+                    return true;
 
-		_fbx_manager = FbxManager::Create();
-		if (!_fbx_manager)
-		{
-			return false;
-		}
+                std::vector<FbxVector4> points;
+                for (int j = 0; j < polySize; ++j) {
+                    int idx = mesh->GetPolygonVertex(i, j);
+                    points.push_back(verts[idx]);
+                }
 
-		FbxIOSettings* ios{ FbxIOSettings::Create(_fbx_manager, IOSROOT) };
-		assert(ios);
-		_fbx_manager->SetIOSettings(ios);
+                // Naive normal-based zero-area test for triangle or quad
+                if (points.size() >= 3) {
+                    FbxVector4 a = points[1] - points[0];
+                    FbxVector4 b = points[2] - points[0];
+                    FbxVector4 normal = a.CrossProduct(b);
+                    double area = normal.Length();
+                    if (area < 1e-8)  // threshold for near-zero area
+                        return true;
+                }
+            }
 
-		return true;
-	}
+            return false;
+        }
 
-	void fbx_context::load_fbx_file(const char* file)
-	{
-		assert(_fbx_manager && !_fbx_scene);
-		_fbx_scene = FbxScene::Create(_fbx_manager, "Importer Scene");
-		if (!_fbx_scene)
-		{
-			return;
-		}
+        FbxMesh* TryTriangulateMesh(FbxMesh* mesh, FbxGeometryConverter& converter) {
+            if (!mesh) return nullptr;
 
-		FbxImporter* importer{ FbxImporter::Create(_fbx_manager, "Importer") };
-		if (!(importer &&
-			importer->Initialize(file, -1, _fbx_manager->GetIOSettings()) &&
-			importer->Import(_fbx_scene)))
-		{
-			return;
-		}
+            bool alreadyTriangular = true;
+            for (int i = 0; i < mesh->GetPolygonCount(); ++i) {
+                if (mesh->GetPolygonSize(i) != 3) {
+                    alreadyTriangular = false;
+                    break;
+                }
+            }
 
-		importer->Destroy();
+            if (alreadyTriangular) return mesh;
+            if (HasZeroAreaPolygon(mesh)) {
+                std::cerr << "[Warning] Skipping triangulation: zero-area polygon detected in mesh "
+                    << mesh->GetNode()->GetName() << "\n";
+                return mesh;
+            }
 
-		// Get scene scale in meters.
-		_scene_scale = (f32)_fbx_scene->GetGlobalSettings().GetSystemUnit().GetConversionFactorTo(FbxSystemUnit::m);
-	}
+            return (FbxMesh*)converter.Triangulate(mesh, true);
+        }
 
-	void fbx_context::get_scene(FbxNode* root /*= nullptr*/)
-	{
-		assert(is_valid());
+
+    } // anonymous namespace
+
+    bool
+        fbx_context::initialize_fbx()
+    {
+        assert(!is_valid());
+
+        _fbx_manager = FbxManager::Create();
+        if (!_fbx_manager)
+        {
+            return false;
+        }
+
+        FbxIOSettings* ios{ FbxIOSettings::Create(_fbx_manager, IOSROOT) };
+        assert(ios);
+        _fbx_manager->SetIOSettings(ios);
+
+        return true;
+    }
+
+    void
+        fbx_context::load_fbx_file(const char* file)
+    {
+        assert(_fbx_manager && !_fbx_scene);
+        _fbx_scene = FbxScene::Create(_fbx_manager, "Importer Scene");
+        if (!_fbx_scene)
+        {
+            return;
+        }
+
+        FbxImporter* importer{ FbxImporter::Create(_fbx_manager, "Importer") };
+        if (!(importer &&
+            importer->Initialize(file, -1, _fbx_manager->GetIOSettings()) &&
+            importer->Import(_fbx_scene)))
+        {
+            return;
+        }
+
+        importer->Destroy();
+
+        // Get scene scale in meters.
+        _scene_scale = (f32)_fbx_scene->GetGlobalSettings().GetSystemUnit().GetConversionFactorTo(FbxSystemUnit::m);
+    }
+
+    void
+        fbx_context::get_scene(FbxNode* root /*= nullptr*/)
+    {
+        assert(is_valid());
 
         if (!root)
         {
             root = _fbx_scene->GetRootNode();
             if (!root) return;
         }
+        FbxGeometryConverter gc{ _fbx_manager };
+
+        //gc.Triangulate(root->GetScene(), true);
 
         const s32 num_nodes{ root->GetChildCount() };
         for (s32 i{ 0 }; i < num_nodes; ++i)
@@ -91,7 +147,8 @@ namespace vel::tools {
         }
     }
 
-    void fbx_context::get_meshes(FbxNode* node, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
+    void
+        fbx_context::get_meshes(FbxNode* node, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
     {
         assert(node && lod_id != u32_invalid_id);
         bool is_lod_group{ false };
@@ -101,15 +158,18 @@ namespace vel::tools {
             for (s32 i{ 0 }; i < num_attributes; ++i)
             {
                 FbxNodeAttribute* attribute{ node->GetNodeAttributeByIndex(i) };
-                const FbxNodeAttribute::EType attribute_type{ attribute->GetAttributeType() };
-                if (attribute_type == FbxNodeAttribute::eMesh)
+                if (attribute)
                 {
-                    get_mesh(attribute, meshes, lod_id, lod_threshold);
-                }
-                else if (attribute_type == FbxNodeAttribute::eLODGroup)
-                {
-                    get_lod_group(attribute);
-                    is_lod_group = true;
+                    const FbxNodeAttribute::EType attribute_type{ attribute->GetAttributeType() };
+                    if (attribute_type == FbxNodeAttribute::eMesh)
+                    {
+                        get_mesh(attribute, meshes, lod_id, lod_threshold);
+                    }
+                    else if (attribute_type == FbxNodeAttribute::eLODGroup)
+                    {
+                        get_lod_group(attribute);
+                        is_lod_group = true;
+                    }
                 }
             }
         }
@@ -126,16 +186,18 @@ namespace vel::tools {
         }
     }
 
-    void fbx_context::get_mesh(FbxNodeAttribute* attribute, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
+    void
+        fbx_context::get_mesh(FbxNodeAttribute* attribute, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
     {
         assert(attribute);
 
         FbxMesh* fbx_mesh{ (FbxMesh*)attribute };
+        if (!fbx_mesh) return;
         if (fbx_mesh->RemoveBadPolygons() < 0) return;
-
+        if (fbx_mesh->GetPolygonCount() == 0) return;
         // Triangulate the mesh if needed.
         FbxGeometryConverter gc{ _fbx_manager };
-        fbx_mesh = (FbxMesh*)gc.Triangulate(fbx_mesh, true);
+        fbx_mesh = TryTriangulateMesh(fbx_mesh, gc);;
         if (!fbx_mesh || fbx_mesh->RemoveBadPolygons() < 0) return;
 
         FbxNode *const node{ fbx_mesh->GetNode() };
@@ -151,7 +213,8 @@ namespace vel::tools {
         }
     }
 
-    void fbx_context::get_lod_group(FbxNodeAttribute* attribute)
+    void
+        fbx_context::get_lod_group(FbxNodeAttribute* attribute)
     {
         assert(attribute);
 
@@ -179,7 +242,8 @@ namespace vel::tools {
         if (lod.meshes_list.size()) _scene->lod_groups.emplace_back(lod);
     }
 
-    bool fbx_context::get_mesh_data(FbxMesh* fbx_mesh, mesh& m)
+    bool
+        fbx_context::get_mesh_data(FbxMesh* fbx_mesh, mesh& m)
     {
         assert(fbx_mesh);
 
@@ -326,7 +390,8 @@ namespace vel::tools {
         return true;
     }
 
-    VEL_EDITOR_API void ImportFbx(const char* file, scene_data* data)
+    VEL_EDITOR_API void
+        ImportFbx(const char* file, scene_data* data)
     {
         assert(file && data);
         scene scene{};
@@ -349,5 +414,4 @@ namespace vel::tools {
         process_scene(scene, data->settings);
         pack_data(scene, *data);
     }
-
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "CommonHeaders.h"
 
-#if !defined(SHIPPING)
+#if !defined(SHIPPING) && defined(_WIN64)
 namespace vel::content
 {
 	bool load_game();

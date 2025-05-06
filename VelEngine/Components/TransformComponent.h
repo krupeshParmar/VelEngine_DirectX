@@ -13,4 +13,5 @@ namespace vel::transform
 	component create(init_info info, game_entity::entity ent);
 	void remove(component c);
 	bool is_alive(component tra);
+	void get_transform_matrices(const game_entity::entity_id id, math::m4x4& world, math::m4x4& inverse_world);
 }

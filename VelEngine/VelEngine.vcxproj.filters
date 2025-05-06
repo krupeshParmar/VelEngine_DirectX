@@ -35,14 +35,17 @@
     <ClInclude Include="Content\ContentToEngine.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Content.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Upload.h" />
+    <ClInclude Include="VelAPI\Camera.h" />
+    <ClInclude Include="Graphics\Direct3D12\D3D12Camera.h" />
+    <ClInclude Include="Graphics\Direct3D12\Shaders\SharedTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\Entity.cpp" />
     <ClCompile Include="Components\TransformComponent.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
-    <ClCompile Include="Core\EntryPoint.cpp" />
-    <ClCompile Include="Core\VelEngine.cpp" />
-    <ClCompile Include="Content\ContentLoader.cpp" />
+    <ClCompile Include="Core\EntryPointWin32.cpp" />
+    <ClCompile Include="Core\VelEngineWin32.cpp" />
+    <ClCompile Include="Content\ContentLoaderWin32.cpp" />
     <ClCompile Include="Platform\PlatformWin32.cpp" />
     <ClCompile Include="Graphics\Renderer.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Interface.cpp" />
@@ -56,5 +59,9 @@
     <ClCompile Include="Graphics\Direct3D12\D3D12Content.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Upload.cpp" />
     <ClCompile Include="Content\ContentToEngine.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\D3D12Camera.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

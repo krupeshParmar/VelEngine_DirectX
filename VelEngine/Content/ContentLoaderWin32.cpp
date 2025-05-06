@@ -1,10 +1,10 @@
 #include "ContentLoader.h"
-#include "..\Components\Entity.h"
-#include "..\Components\TransformComponent.h"
-#include "..\Components\ScriptComponent.h"
-#include "Graphics\Renderer.h"
+#include "Components/Entity.h"
+#include "Components/TransformComponent.h"
+#include "Components/ScriptComponent.h"
+#include "Graphics/Renderer.h"
 
-#if !defined(SHIPPING)
+#if !defined(SHIPPING) && defined(_WIN64)
 #include <fstream>
 #include <filesystem>
 #include <Windows.h>
@@ -140,4 +140,4 @@ namespace vel::content
 		return read_file(path, shaders, size);
 	}
 }
-#endif // !defined(SHIPPING)
+#endif // !defined(SHIPPING) && defined(_WIN64)

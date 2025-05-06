@@ -11,7 +11,6 @@
 #include <dxgi1_6.h>
 #include <d3d12.h>
 #include <wrl.h>
-#include <mutex>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma	comment(lib, "d3d12.lib")
@@ -45,7 +44,7 @@ if(FAILED(x)) {													\
 #define NAME_D3D12_OBJECT_INDEXED(obj, indx, name)              \
 {                                                               \
 wchar_t name_buffer[128];                                       \
-if(swprintf_s(name_buffer, L"%s[%u]", name, indx) > 0){         \
+if(swprintf_s(name_buffer, L"%s[%llu]", name, (u64)indx) > 0){  \
     obj->SetName(name_buffer);                                  \
     OutputDebugString(L"::D3D12 Object Created: ");             \
     OutputDebugString(name_buffer);                             \

@@ -21,6 +21,6 @@ namespace vel::math
 	using s32v4 = DirectX::XMINT4;
 	using m3x3 = DirectX::XMFLOAT3X3;	// Note: DirectXMath doesn't have aligned 3x3 matrices
 	using m4x4 = DirectX::XMFLOAT4X4;
-	using m4x4A = DirectX::XMFLOAT4X4A;
+	using m4x4a = DirectX::XMFLOAT4X4A;
 #endif
 }

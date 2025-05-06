@@ -480,7 +480,7 @@ namespace VelEditor.Content
                     _lodGroups.Add(lodGroup);
                 }
                 // For Testing. Remove later!
-                // PackForEngine();
+                PackForEngine();
                 // For Testing. Remove later!
 
             }
