@@ -3,6 +3,7 @@
 #include "D3D12Core.h"
 #include "D3D12Content.h"
 #include "D3D12Camera.h"
+#include "D3D12Light.h"
 #include "Graphics/GraphicsPlatformInterface.h"
 
 namespace vel::graphics
@@ -20,6 +21,11 @@ namespace vel::graphics
 			pi.surface.width = core::surface_width;
 			pi.surface.height = core::surface_height;
 			pi.surface.render = core::render_surface;
+
+			pi.light.create = light::create;
+			pi.light.remove = light::remove;
+			pi.light.set_parameter = light::set_parameter;
+			pi.light.get_parameter = light::get_parameter;
 
 			pi.camera.create = camera::create;
 			pi.camera.remove = camera::remove;
