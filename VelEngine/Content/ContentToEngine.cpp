@@ -57,17 +57,25 @@ namespace vel::content {
             u32             _lod_count;
         };
 
-        // This constant indicates that an element in geometry_hierarchies is not a pointer, but a gpu_id
-        constexpr uintptr_t     single_mesh_marker{ (uintptr_t)0x01 };
-        utl::free_list<u8*>     geometry_hierarchies;
-        std::mutex              geometry_mutex;
+        struct noexcept_map {
+            std::unordered_map<u32, std::unique_ptr<u8[]>> map;
+            noexcept_map() = default;
+            noexcept_map(const noexcept_map&) = default;
+            noexcept_map(noexcept_map&&) noexcept = default;
+            noexcept_map& operator=(const noexcept_map&) = default;
+            noexcept_map& operator=(noexcept_map&&) noexcept = default;
+        };
 
-        utl::free_list < Scope<u8[]>>   shaders_list;
+        // This constant indicates that an element in geometry_hierarchies is not a pointer, but a gpu_id
+        constexpr uintptr_t             single_mesh_marker{ (uintptr_t)0x01 };
+        utl::free_list<u8*>             geometry_hierarchies;
+        std::mutex                      geometry_mutex;
+
+        utl::free_list <noexcept_map>   shader_groups;
         std::mutex                      shader_mutex;
 
         // NOTE: expects the same data as create_geometry_resource()
-        u32
-            get_geometry_hierarchy_buffer_size(const void *const data)
+        u32 get_geometry_hierarchy_buffer_size(const void *const data)
         {
             assert(data);
             utl::blob_stream_reader blob{ (const u8*)data };
@@ -91,8 +99,7 @@ namespace vel::content {
 
         // Creates a hierarchy stream for a geometry that has multiple LODs and/or multiple submeshes.
         // NOTE: expects the same data as create_geometry_resource()
-        id::id_type
-            create_mesh_hierarchy(const void *const data)
+        id::id_type create_mesh_hierarchy(const void *const data)
         {
             assert(data);
             const u32 size{ get_geometry_hierarchy_buffer_size(data) };
@@ -138,8 +145,7 @@ namespace vel::content {
 
         // Creates a single submesh gpu_id
         // NOTE: expects the same data as create_geometry_resource()
-        id::id_type
-            create_single_submesh(const void *const data)
+        id::id_type create_single_submesh(const void *const data)
         {
             assert(data);
             utl::blob_stream_reader blob{ (const u8*)data };
@@ -158,8 +164,7 @@ namespace vel::content {
 
         // Determine if this geometry has a single lod with a single submesh
         // NOTE: expects the same data as create_geometry_resource()
-        bool
-            is_single_mesh(const void *const data)
+        bool is_single_mesh(const void *const data)
         {
             assert(data);
             utl::blob_stream_reader blob{ (const u8*)data };
@@ -216,15 +221,13 @@ namespace vel::content {
         //
         // (gpu_id << 32) | 0x01
         //
-        id::id_type
-            create_geometry_resource(const void *const data)
+        id::id_type create_geometry_resource(const void *const data)
         {
             assert(data);
             return is_single_mesh(data) ? create_single_submesh(data) : create_mesh_hierarchy(data);
         }
 
-        void
-            destroy_geometry_resource(id::id_type id)
+        void destroy_geometry_resource(id::id_type id)
         {
             std::lock_guard lock{ geometry_mutex };
             u8 *const  pointer{ geometry_hierarchies[id] };
@@ -308,28 +311,47 @@ namespace vel::content {
         }
     }
 
-    id::id_type add_shader(const u8* data)
+    // NOTE: expect shaders to be an array of pointers to compiled_shaders
+    // NOTE: the editor is responsible for making sure that there are no duplicate shaders. If there are, we'll happily add them!
+    id::id_type add_shader_group(const u8 *const * shaders, u32 num_shaders, const u32 *const keys)
     {
-        const compiled_shader_ptr shader_ptr{ (const compiled_shader_ptr)data };
-        const u64 size{ sizeof(u64) + compiled_shader::hash_length + shader_ptr->byte_code_size() };
-        std::unique_ptr<u8[]> shader{ std::make_unique<u8[]>(size) };
-        memcpy(shader.get(), data, size);
+        assert(shaders && num_shaders && keys);
+        noexcept_map group;
+        for (u32 i{ 0 }; i < num_shaders; ++i)
+        {
+            assert(shaders[i]);
+            const compiled_shader_ptr shader_ptr{ (const compiled_shader_ptr)shaders[i] };
+            const u64 size{ compiled_shader::buffer_size(shader_ptr->byte_code_size()) };
+            std::unique_ptr<u8[]> shader{ std::make_unique<u8[]>(size) };
+            memcpy(shader.get(), shaders[i], size);
+            group.map[keys[i]] = std::move(shader);
+        }
         std::lock_guard lock{ shader_mutex };
-        return shaders_list.add(std::move(shader));
+        return shader_groups.add(std::move(group));
     }
 
-    void remove_shader(id::id_type id)
+    void remove_shader_group(id::id_type id)
     {
         std::lock_guard lock{ shader_mutex };
         assert(id::is_valid(id));
-        shaders_list.remove(id);
+        shader_groups[id].map.clear();
+        shader_groups.remove(id);
     }
 
-    compiled_shader_ptr get_shader(id::id_type id)
+    compiled_shader_ptr get_shader(id::id_type id, u32 shader_key)
     {
         std::lock_guard lock{ shader_mutex };
         assert(id::is_valid(id));
-        return (const compiled_shader_ptr)(shaders_list[id].get());
+        for (const auto& [key, value] : shader_groups[id].map)
+        {
+            if (key == shader_key)
+            {
+                return (const compiled_shader_ptr)value.get();
+            }
+        }
+
+        assert(false); // should never occure.
+        return nullptr;
     }
 
     void get_submesh_gpu_ids(id::id_type geometry_content_id, u32 id_count, id::id_type *const gpu_ids)

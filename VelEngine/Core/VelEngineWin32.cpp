@@ -54,7 +54,7 @@ bool engine_intitalize()
 }
 void engine_update()
 {
-	vel::script::update_scripts(10.f);
+	vel::script::update(10.f);
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 void engine_shutdown()
