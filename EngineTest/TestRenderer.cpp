@@ -8,34 +8,52 @@
 #include "Components/ScriptComponent.h"
 #include "ShaderCompilation.h"
 #include "TestRenderer.h"
+#include "Utilities/KeyCodes.h"
 #include <filesystem>
 #include <fstream>
 #if TEST_RENDERER
 
 using namespace vel;
 
-class rotator_script;
-REGISTER_SCRIPT(rotator_script);
-class rotator_script : public script::entity_script
+float _x, _y, _z;
+
+class move_camera;
+REGISTER_SCRIPT(move_camera);
+class move_camera : public script::entity_script
 {
 public:
-	constexpr explicit rotator_script(game_entity::entity entity)
-		: script::entity_script{ entity } {}
+	constexpr explicit move_camera(game_entity::entity entity)
+		: script::entity_script{ entity }
+	{
+	}
 
 	void begin_play() override {}
 	void update(float dt) override
 	{
-		_angle += 0.25f * dt * math::two_pi;
-		if (_angle > math::two_pi) _angle -= math::two_pi;
-		math::v3a rot{ 0.f, _angle, 0.f };
-		DirectX::XMVECTOR quat{ DirectX::XMQuaternionRotationRollPitchYawFromVector(DirectX::XMLoadFloat3A(&rot)) };
-		math::v4 rot_quat{};
-		DirectX::XMStoreFloat4(&rot_quat, quat);
-		set_rotation(rot_quat);
+		bool changes = false;
+		if (x != _x)
+		{
+			changes = true;
+			x = _x;
+		}
+		if (y != _y)
+		{
+			changes = true;
+			y = _y;
+		}
+		if (z != _z)
+		{
+			changes = true;
+			z = _z;
+		}
+		if (changes)
+		{
+			set_position({ x, y, z });
+		}
 	}
 
 private:
-	f32 _angle{ 0.f };
+	float x = 0, y = 0, z = 0;
 };
 
 // Multithreading test worker spawn code ////////////////////////////////////////////
@@ -44,7 +62,6 @@ private:
 constexpr u32 num_threads{ 8 };
 bool          _shutdown{ false };
 std::thread   workers[num_threads];
-
 utl::vector<u8> buffer(1024 * 1024, 0);
 // Test worker for upload context
 void buffer_test_worker()
@@ -93,8 +110,9 @@ bool is_restarting{ false };
 void destroy_camera_surface(camera_surface& surface);
 bool test_initialize();
 void test_shutdown();
-id::id_type create_render_item(id::id_type entity_id);
-void destroy_render_item(id::id_type item_id);
+void create_render_items();
+void destroy_render_items();
+void get_render_items(id::id_type* items, u32 count);
 void generate_lights();
 void remove_lights();
 
@@ -134,6 +152,32 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		toggle_fullscreen = (wparam == VK_RETURN && (HIWORD(lparam) & KF_ALTDOWN));
 		break;
 	case WM_KEYDOWN:
+		if (wparam == static_cast<WPARAM>(KeyAlpha::W))
+		{
+			_z += 0.01f;
+		}
+		if (wparam == static_cast<WPARAM>(KeyAlpha::S))
+		{
+			_z -= 0.01f;
+		}
+		if (wparam == static_cast<WPARAM>(KeyAlpha::Q))
+		{
+			_y += 0.01f;
+		}
+		if (wparam == static_cast<WPARAM>(KeyAlpha::E))
+		{
+			
+			_y -= 0.01f;
+		}
+		if (wparam == static_cast<WPARAM>(KeyAlpha::A))
+		{
+			_x -= 0.01f;
+		}	
+		if (wparam == static_cast<WPARAM>(KeyAlpha::D))
+		{
+			_x += 0.01f;
+		}
+		
 		if (wparam == VK_ESCAPE)
 		{
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
@@ -230,7 +274,10 @@ void create_camera_surface(camera_surface& surface, platform::window_init_info& 
 {
 	surface.surface.window = platform::create_window(&info);
 	surface.surface.surface = graphics::create_surface(surface.surface.window);
-	surface.entity = create_one_game_entity({ 0.f, 1.f, 3.f }, { 0.f, 3.14f, 0.f }, nullptr);
+	_x = 0.f;
+	_y = 2.2f;
+	_z = -2.f;
+	surface.entity = create_one_game_entity({ _x, _y, _z }, { 0.f, 3.14f, 0.f }, "move_camera");
 	surface.camera = graphics::create_camera(graphics::perspective_camera_init_info{ surface.entity.get_id() });
 	surface.camera.aspect_ratio((f32)surface.surface.window.width() / surface.surface.window.height());
 }
@@ -270,17 +317,9 @@ bool test_initialize()
 	for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
 		create_camera_surface(_surfaces_list[i], info[i]);
 
-	// load test model
-	Scope<u8[]> model;
-	u64 size{ 0 };
-	if (!read_file("..\\..\\enginetest\\model.model", model, size)) return false;
-
-	model_id = content::create_resource(model.get(), content::asset_type::mesh);
-	if (!id::is_valid(model_id)) return false;
-
 	init_test_workers(buffer_test_worker);
 
-	item_id = create_render_item(create_one_game_entity({}, {}, "rotator_script").get_id());
+	create_render_items();
 
 	generate_lights();
 
@@ -290,8 +329,10 @@ bool test_initialize()
 
 void test_shutdown()
 {
+	std::wstring text = L"Camera coords: " + std::to_wstring(_x) + L", " + std::to_wstring(_y) + L", " + std::to_wstring(_z);
+	MessageBox(nullptr, text.c_str(), L"", MB_OK);
 	remove_lights();
-	destroy_render_item(item_id);
+	destroy_render_items();
 
 	joint_test_workers();
 
@@ -320,12 +361,15 @@ void engine_test::run()
 		if (_surfaces_list[i].surface.surface.is_valid())
 		{
 			f32 threshold{ 10 };
+			id::id_type render_items[3]{};
+			get_render_items(&render_items[0], 3);
 			graphics::frame_info info{};
-			info.render_item_ids = &item_id;
-			info.render_item_count = 1;
+			info.render_item_ids = &render_items[0];
+			info.render_item_count = 3;
 			info.thresholds = &threshold;
+			info.light_set_key = 0;
+			info.average_frame_time = timer.dt_avg();
 			info.camer_id = _surfaces_list[i].camera.get_id();
-
 			_surfaces_list[i].surface.surface.render(info);
 		}
 	}

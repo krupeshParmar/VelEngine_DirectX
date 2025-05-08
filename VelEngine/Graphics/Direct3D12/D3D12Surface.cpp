@@ -12,8 +12,7 @@ namespace vel::graphics::d3d12
 		}
 	} // annonymous namespace
 
-	void d3d12_surface::create_swap_chain(IDXGIFactory7 * factory, ID3D12CommandQueue * cmd_queue, 
-		DXGI_FORMAT format /*= default_back_buffer_format*/)
+	void d3d12_surface::create_swap_chain(IDXGIFactory7 * factory, ID3D12CommandQueue * cmd_queue)
 	{
 		assert(factory && cmd_queue);
 		release();
@@ -23,14 +22,12 @@ namespace vel::graphics::d3d12
 			_present_flags = DXGI_PRESENT_ALLOW_TEARING;
 		}
 
-		_format = format;
-
 		DXGI_SWAP_CHAIN_DESC1 desc{};
 		desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 		desc.BufferCount = buffer_count;
 		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		desc.Flags = _allow_tearing ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-		desc.Format = to_non_srgb(format);
+		desc.Format = to_non_srgb(default_back_buffer_format);
 		desc.Height = _window.height();
 		desc.Width = _window.width();
 		desc.SampleDesc.Count = 1;
@@ -87,7 +84,7 @@ namespace vel::graphics::d3d12
 			assert(!data.resource);
 			DXCall(_swap_chain->GetBuffer(i, IID_PPV_ARGS(&data.resource)));
 			D3D12_RENDER_TARGET_VIEW_DESC desc{};
-			desc.Format = _format;
+			desc.Format = default_back_buffer_format;
 			desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;			
 			core::device()->CreateRenderTargetView(data.resource, &desc, data.rtv.cpu);
 		}

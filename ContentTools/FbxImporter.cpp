@@ -71,8 +71,6 @@ namespace vel::tools {
 
             return (FbxMesh*)converter.Triangulate(mesh, true);
         }
-
-
     } // anonymous namespace
 
     bool
@@ -128,9 +126,6 @@ namespace vel::tools {
             if (!root) return;
         }
         FbxGeometryConverter gc{ _fbx_manager };
-
-        //gc.Triangulate(root->GetScene(), true);
-
         const s32 num_nodes{ root->GetChildCount() };
         for (s32 i{ 0 }; i < num_nodes; ++i)
         {
@@ -197,7 +192,7 @@ namespace vel::tools {
         if (fbx_mesh->GetPolygonCount() == 0) return;
         // Triangulate the mesh if needed.
         FbxGeometryConverter gc{ _fbx_manager };
-        fbx_mesh = TryTriangulateMesh(fbx_mesh, gc);;
+        fbx_mesh = (FbxMesh*)gc.Triangulate(fbx_mesh, true);
         if (!fbx_mesh || fbx_mesh->RemoveBadPolygons() < 0) return;
 
         FbxNode *const node{ fbx_mesh->GetNode() };

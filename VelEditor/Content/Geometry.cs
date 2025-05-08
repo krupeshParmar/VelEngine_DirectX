@@ -181,7 +181,7 @@ namespace VelEditor.Content
             get => _smoothingAngle;
             set
             {
-                if (_smoothingAngle != value)
+                if (_smoothingAngle.IsTheSameAs(value))
                 {
                     _smoothingAngle = value;
                     OnPropertyChanged(nameof(SmoothingAngle));
@@ -610,7 +610,7 @@ namespace VelEditor.Content
             Debug.Assert(data?.Length > 0);
 
             // For Testing. Remove later!
-            using (var fs = new FileStream(@"..\..\EngineTest\model.model", FileMode.Create))
+            using (var fs = new FileStream(@"..\..\x64\model.model", FileMode.Create))
             {
                 fs.Write(data, 0, data.Length);
             }

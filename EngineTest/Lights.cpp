@@ -10,12 +10,11 @@ void remove_game_entity(game_entity::entity_id id);
 
 namespace {
     const u64 left_set{ 0 };
-    const u64 right_set{ 0 };
+    const u64 right_set{ 1 };
 
     utl::vector<graphics::light> lights;
 
-    constexpr math::v3
-        rgb_to_color(u8 r, u8 g, u8 b) { return { r / 255.f, g / 255.f , b / 255.f }; }
+    constexpr math::v3 rgb_to_color(u8 r, u8 g, u8 b) { return { r / 255.f, g / 255.f , b / 255.f }; }
 
 } // anonymous namespace
 

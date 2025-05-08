@@ -50,6 +50,7 @@
     <ClInclude Include="Platform\PlatformTypes.h" />
     <ClInclude Include="Platform\window.h" />
     <ClInclude Include="Utilities\IOStream.h" />
+    <ClInclude Include="Utilities\KeyCodes.h" />
     <ClInclude Include="Utilities\Math.h" />
     <ClInclude Include="Utilities\MathTypes.h" />
     <ClInclude Include="Utilities\Utilities.h" />
