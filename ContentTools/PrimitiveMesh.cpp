@@ -38,8 +38,8 @@ namespace vel::tools
 		};
 
 		mesh create_plane(const primitive_init_info& info,
-							u32 horizontal_index = axis::x, u32 vertical_index = axis::z, bool flip_winding = false,
-							v3 offset = { -0.5f, 0.f, -0.5f }, v2 u_range = { 0.f, 1.f }, v2 v_range = { 0.f, 1.f })
+			u32 horizontal_index = axis::x, u32 vertical_index = axis::z, bool flip_winding = false,
+			v3 offset = { -0.5f, 0.f, -0.5f }, v2 u_range = { 0.f, 1.f }, v2 v_range = { 0.f, 1.f })
 		{
 			assert(horizontal_index < 3 && vertical_index < 3);
 			assert(horizontal_index != vertical_index);
@@ -68,7 +68,7 @@ namespace vel::tools
 					uv.y -= j * v_step;
 					uvs.emplace_back(uv);
 				}
-			
+
 			assert(m.positions.size() == (((u64)horizontal_count + 1) * ((u64)vertical_count + 1)));
 
 			const u32 row_length{ horizontal_count + 1 };	// number of vertices in a row
@@ -94,7 +94,7 @@ namespace vel::tools
 				}
 			}
 
-			const u32 num_indices{3 * 2 * horizontal_count * vertical_count};
+			const u32 num_indices{ 3 * 2 * horizontal_count * vertical_count };
 			assert(m.raw_indices.size() == num_indices);
 
 			m.uv_sets.resize(1);
@@ -106,14 +106,103 @@ namespace vel::tools
 			return m;
 		}
 
+
+		constexpr math::v3 get_face_vertex(u32 face, f32 x, f32 y)
+		{
+			math::v3 face_vertex[6] = {
+				{-1.f, -y,    x},   // X- Right
+				{ 1.f, -y,   -x},   // X+ Left
+				{ x,    1.f,  y},   // Y+ Bottom
+				{ x,   -1.f, -y},   // Y- Top
+				{ x,   -y,    1.f}, // Z+ Front
+				{-x,   -y,   -1.f}, // Z- Back
+			};
+
+			return face_vertex[face];
+		}
+
+		mesh create_cube(const primitive_init_info& info)
+		{
+			const u32 *const segments{ &info.segments[0] };
+			constexpr math::u32v2 axes[3]{ {axis::z, axis::y}, {axis::x, axis::z}, {axis::x, axis::y} };
+			constexpr f32 u_range[6]{ 0.f, 0.5f, 0.25f, 0.25f, 0.25f, 0.75f };
+			constexpr f32 v_range[6]{ 0.375f, 0.375f, 0.125f, 0.625f, 0.375f, 0.375f };
+			mesh m{};
+			utl::vector<math::v2> uvs{};
+
+			for (u32 face{ 0 }; face < 6; ++face)
+			{
+				const u32 axes_index{ face >> 1 };
+				const math::u32v2& axis{ axes[axes_index] };
+				const u32 x_count{ math::clamp(segments[axis.x], (u32)1, (u32)10) };
+				const u32 y_count{ math::clamp(segments[axis.y], (u32)1, (u32)10) };
+				const f32 x_step{ 1.f / x_count };
+				const f32 y_step{ 1.f / y_count };
+				const f32 u_step{ 0.25f / x_count };
+				const f32 v_step{ 0.25f / y_count };
+
+				const u32 raw_index_offset{ (u32)m.positions.size() };
+
+				for (u32 y{ 0 }; y <= y_count; ++y)
+				{
+					for (u32 x{ 0 }; x <= x_count; ++x)
+					{
+						math::v2 pos{ 2.f * x * x_step - 1.f, 2.f * y * y_step - 1.f };
+						math::v3 position{ get_face_vertex(face, pos.x, pos.y) };
+						m.positions.emplace_back(position.x * info.size.x, position.y * info.size.y, position.z * info.size.z);
+#if 1
+						math::v2 uv{ u_range[face], 1.f - v_range[face] };
+						uv.x += x * u_step;
+						uv.y -= y * v_step;
+#else
+						math::v2 uv{ 0.f, 1.f };
+						uv.x += (f32)(x % 2);
+						uv.y -= (f32)(y % 2);
+#endif
+						uvs.emplace_back(uv);
+					}
+				}
+
+				const u32 row_length{ x_count + 1 }; // number of vertices in a row
+				for (u32 y{ 0 }; y < y_count; ++y)
+				{
+					for (u32 x{ 0 }; x < x_count; ++x)
+					{
+						const u32 index[4]{
+							raw_index_offset + x + y * row_length,
+							raw_index_offset + x + (y + 1) * row_length,
+							raw_index_offset + (x + 1) + y * row_length,
+							raw_index_offset + (x + 1) + (y + 1) * row_length
+						};
+
+						m.raw_indices.emplace_back(index[0]);
+						m.raw_indices.emplace_back(index[1]);
+						m.raw_indices.emplace_back(index[2]);
+
+						m.raw_indices.emplace_back(index[2]);
+						m.raw_indices.emplace_back(index[1]);
+						m.raw_indices.emplace_back(index[3]);
+					}
+				}
+			}
+
+			m.uv_sets.resize(1);
+			for (u32 i{ 0 }; i < m.raw_indices.size(); ++i)
+			{
+				m.uv_sets[0].emplace_back(uvs[m.raw_indices[i]]);
+			}
+
+			return m;
+		}
+
 		mesh create_uv_sphere(const primitive_init_info& info)
 		{
 			const u32 phi_count{ clamp(info.segments[axis::x], 3u, 64u) };
 			const u32 theta_count{ clamp(info.segments[axis::y], 2u, 64u) };
 			const f32 theta_step{ pi / theta_count };
 			const f32 phi_step{ two_pi / phi_count };
-			const u32 num_indices{ 2 * 3 * phi_count +  3 * 2 * phi_count * (theta_count - 2) };
-			const u32 num_vertices{ 2 + phi_count * (theta_count - 1) };	
+			const u32 num_indices{ 2 * 3 * phi_count + 3 * 2 * phi_count * (theta_count - 2) };
+			const u32 num_vertices{ 2 + phi_count * (theta_count - 1) };
 
 			mesh m{};
 			m.name = "uv_sphere";
@@ -133,13 +222,13 @@ namespace vel::tools
 					const f32 phi{ i * phi_step };
 					/*const f32 x{ r * sin(phi) };
 					const f32 z{ r * cos(phi) };*/
-					m.positions[c++] = { 
-						info.size.x* XMScalarSin(theta)* XMScalarCos(phi),
-						info.size.y* XMScalarCos(theta),
-						-info.size.z* XMScalarSin(theta)* XMScalarSin(phi)
-						/*x * info.size.x, 
-						y * info.size.y, 
-						z * info.size.z*/ 
+					m.positions[c++] = {
+						info.size.x * XMScalarSin(theta) * XMScalarCos(phi),
+						info.size.y * XMScalarCos(theta),
+						-info.size.z * XMScalarSin(theta) * XMScalarSin(phi)
+						/*x * info.size.x,
+						y * info.size.y,
+						z * info.size.z*/
 					};
 				}
 			}
@@ -228,9 +317,9 @@ namespace vel::tools
 			{
 				uvs[c] = { (2 + i + 1) * 0.5f * inv_phi_count, 0.f };
 				m.raw_indices[c++] = south_pole_index;
-				uvs[c] = { (i + 1) * inv_phi_count, inv_theta_count};
+				uvs[c] = { (i + 1) * inv_phi_count, inv_theta_count };
 				m.raw_indices[c++] = south_pole_index - phi_count + i + 1;
-				uvs[c] = { i * inv_phi_count, inv_theta_count};
+				uvs[c] = { i * inv_phi_count, inv_theta_count };
 				m.raw_indices[c++] = south_pole_index - phi_count + i;
 			}
 
@@ -255,8 +344,12 @@ namespace vel::tools
 			lod.meshes_list.emplace_back(create_plane(info));
 			scene.lod_groups.emplace_back(lod);
 		}
-		void create_cube(scene&, const primitive_init_info&)
+		void create_cube(scene& scene, const primitive_init_info& info)
 		{
+			lod_group lod{};
+			lod.name = "cube";
+			lod.meshes_list.emplace_back(create_cube(info));
+			scene.lod_groups.emplace_back(lod);
 		}
 		void create_uv_sphere(scene& scene, const primitive_init_info& info)
 		{
@@ -276,7 +369,7 @@ namespace vel::tools
 		}
 
 	} // annonymous namespace
-	
+
 	VEL_EDITOR_API void
 	CreatePrimitiveMesh(scene_data* data, primitive_init_info* info)
 	{

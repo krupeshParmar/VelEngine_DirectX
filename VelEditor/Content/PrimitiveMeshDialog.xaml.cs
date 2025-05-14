@@ -58,7 +58,15 @@ namespace VelEditor.Content
                     }
                     break;
                 case PrimitiveMeshType.Cube:
-                    return;
+                    {
+                        info.SegmentX = (int)xSegmentSliderCube.Value;
+                        info.SegmentY = (int)ySegmentSliderCube.Value;
+                        info.SegmentZ = (int)zSegmentSliderCube.Value;
+                        info.Size.X = Value(xSizeCube, 0.001f);
+                        info.Size.Y = Value(ySizeCube, 0.001f);
+                        info.Size.Z = Value(zSizeCube, 0.001f);
+                    }
+                    break;
                 case PrimitiveMeshType.UVSphere:
                     {
                         info.SegmentX = (int)xSliderUVSphere.Value;

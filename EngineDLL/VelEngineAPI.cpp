@@ -1,6 +1,7 @@
 
 #include <atlsafe.h>
 #include "Common.h"
+#include "Content/ContentToEngine.h"
 #include "Components/ScriptComponent.h"
 #include "Platform/PlatformTypes.h"
 #include "Platform/Platform.h"
@@ -89,6 +90,27 @@ ResizeRenderSurface(u32 id)
 	platform::window& win = surfaces_list[id].window;
 	assert(win.is_valid());
 	win.resize(0, 0);
+}
+
+VEL_EDITOR_API id::id_type
+CreateResource(u8* data, content::asset_type::type type)
+{
+	if (type == content::asset_type::mesh)
+	{
+
+	}
+
+	if (type == content::asset_type::material)
+	{
+		
+	}
+
+	return id::invalid_id;
+}
+
+VEL_EDITOR_API void
+DestroyResource(id::id_type id, content::asset_type::type type)
+{
 }
 
 VEL_EDITOR_API HWND

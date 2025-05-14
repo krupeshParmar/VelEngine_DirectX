@@ -38,6 +38,8 @@
     <ClInclude Include="Graphics\Direct3D12\D3D12Shaders.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Upload.h" />
     <ClInclude Include="Graphics\Direct3D12\Shaders\SharedTypes.h" />
+    <ClInclude Include="Input\Input.h" />
+    <ClInclude Include="Input\InputWin32.h" />
     <ClInclude Include="Utilities\FreeList.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12CommonHeaders.h" />
     <ClInclude Include="Graphics\Direct3D12\D3D12Core.h" />
@@ -57,6 +59,7 @@
     <ClInclude Include="Utilities\Vector.h" />
     <ClInclude Include="VelAPI\Camera.h" />
     <ClInclude Include="VelAPI\GameEntity.h" />
+    <ClInclude Include="VelAPI\Input.h" />
     <ClInclude Include="VelAPI\Light.h" />
     <ClInclude Include="VelAPI\ScriptComponentAPI.h" />
     <ClInclude Include="VelAPI\TransformComponentAPI.h" />
@@ -82,6 +85,8 @@
     <ClCompile Include="Graphics\Direct3D12\D3D12Surface.cpp" />
     <ClCompile Include="Graphics\Direct3D12\D3D12Upload.cpp" />
     <ClCompile Include="Graphics\Renderer.cpp" />
+    <ClCompile Include="Input\Input.cpp" />
+    <ClCompile Include="Input\InputWin32.cpp" />
     <ClCompile Include="Platform\PlatformWin32.cpp" />
   </ItemGroup>
   <ItemGroup>

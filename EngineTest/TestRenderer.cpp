@@ -6,6 +6,7 @@
 #include "Components/Entity.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
+#include "Input/Input.h"
 #include "ShaderCompilation.h"
 #include "TestRenderer.h"
 #include "Utilities/KeyCodes.h"
@@ -14,47 +15,6 @@
 #if TEST_RENDERER
 
 using namespace vel;
-
-float _x, _y, _z;
-
-class move_camera;
-REGISTER_SCRIPT(move_camera);
-class move_camera : public script::entity_script
-{
-public:
-	constexpr explicit move_camera(game_entity::entity entity)
-		: script::entity_script{ entity }
-	{
-	}
-
-	void begin_play() override {}
-	void update(float dt) override
-	{
-		bool changes = false;
-		if (x != _x)
-		{
-			changes = true;
-			x = _x;
-		}
-		if (y != _y)
-		{
-			changes = true;
-			y = _y;
-		}
-		if (z != _z)
-		{
-			changes = true;
-			z = _z;
-		}
-		if (changes)
-		{
-			set_position({ x, y, z });
-		}
-	}
-
-private:
-	float x = 0, y = 0, z = 0;
-};
 
 // Multithreading test worker spawn code ////////////////////////////////////////////
 #define ENABLE_TEST_WORKERS 0
@@ -152,32 +112,6 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		toggle_fullscreen = (wparam == VK_RETURN && (HIWORD(lparam) & KF_ALTDOWN));
 		break;
 	case WM_KEYDOWN:
-		if (wparam == static_cast<WPARAM>(KeyAlpha::W))
-		{
-			_z += 0.01f;
-		}
-		if (wparam == static_cast<WPARAM>(KeyAlpha::S))
-		{
-			_z -= 0.01f;
-		}
-		if (wparam == static_cast<WPARAM>(KeyAlpha::Q))
-		{
-			_y += 0.01f;
-		}
-		if (wparam == static_cast<WPARAM>(KeyAlpha::E))
-		{
-			
-			_y -= 0.01f;
-		}
-		if (wparam == static_cast<WPARAM>(KeyAlpha::A))
-		{
-			_x -= 0.01f;
-		}	
-		if (wparam == static_cast<WPARAM>(KeyAlpha::D))
-		{
-			_x += 0.01f;
-		}
-		
 		if (wparam == VK_ESCAPE)
 		{
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
@@ -274,10 +208,7 @@ void create_camera_surface(camera_surface& surface, platform::window_init_info& 
 {
 	surface.surface.window = platform::create_window(&info);
 	surface.surface.surface = graphics::create_surface(surface.surface.window);
-	_x = 0.f;
-	_y = 2.2f;
-	_z = -2.f;
-	surface.entity = create_one_game_entity({ _x, _y, _z }, { 0.f, 3.14f, 0.f }, "move_camera");
+	surface.entity = create_one_game_entity({ 0.f, 2.2f, -2.f }, { 0.f, 3.14f, 0.f }, "camera_script");
 	surface.camera = graphics::create_camera(graphics::perspective_camera_init_info{ surface.entity.get_id() });
 	surface.camera.aspect_ratio((f32)surface.surface.window.width() / surface.surface.window.height());
 }
@@ -323,14 +254,43 @@ bool test_initialize()
 
 	generate_lights();
 
+	input::input_source source{};
+	source.binding = std::hash<std::string>()("move");
+	source.source_type = input::input_source::keyboard;
+	source.code = input::input_code::key_a;
+	source.multiplier = 1.f;
+	source.axis = input::axis::x;
+	input::bind(source);
+
+	source.code = input::input_code::key_d;
+	source.multiplier = -1.f;
+	input::bind(source);
+
+	source.code = input::input_code::key_w;
+	source.multiplier = 1.f;
+	source.axis = input::axis::z;
+	input::bind(source);
+
+	source.code = input::input_code::key_s;
+	source.multiplier = -1.f;
+	input::bind(source);
+
+	source.code = input::input_code::key_q;
+	source.multiplier = -1.f;
+	source.axis = input::axis::y;
+	input::bind(source);
+
+	source.code = input::input_code::key_e;
+	source.multiplier = 1.f;
+	input::bind(source);
+
 	is_restarting = false;
 	return true;
 }
 
 void test_shutdown()
 {
-	std::wstring text = L"Camera coords: " + std::to_wstring(_x) + L", " + std::to_wstring(_y) + L", " + std::to_wstring(_z);
-	MessageBox(nullptr, text.c_str(), L"", MB_OK);
+	input::unbind(std::hash<std::string>()("move"));
 	remove_lights();
 	destroy_render_items();
 
@@ -353,6 +313,10 @@ bool engine_test::initialize()
 
 void engine_test::run()
 {
+	static u32 counter{ 0 };
+	static u32 light_set_key{ 0 };
+	++counter;
+	if ((counter % 90) == 0) light_set_key = (light_set_key + 1) % 2;
 	timer.begin();
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	script::update(timer.dt_avg());
@@ -360,16 +324,17 @@ void engine_test::run()
 	{
 		if (_surfaces_list[i].surface.surface.is_valid())
 		{
-			f32 threshold{ 10 };
+			f32 thresholds[3]{};
 			id::id_type render_items[3]{};
 			get_render_items(&render_items[0], 3);
 			graphics::frame_info info{};
 			info.render_item_ids = &render_items[0];
 			info.render_item_count = 3;
-			info.thresholds = &threshold;
-			info.light_set_key = 0;
+			info.thresholds = &thresholds[0];
+			info.light_set_key = light_set_key;
 			info.average_frame_time = timer.dt_avg();
 			info.camer_id = _surfaces_list[i].camera.get_id();
+			assert(_countof(thresholds) >= info.render_item_count);
 			_surfaces_list[i].surface.surface.render(info);
 		}
 	}

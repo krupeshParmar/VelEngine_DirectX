@@ -1,6 +1,7 @@
 #ifdef _WIN64
 #include "Platform.h"
 #include "PlatformTypes.h"
+#include "Input/InputWin32.h"
 
 namespace vel::platform
 {
@@ -57,7 +58,9 @@ namespace vel::platform
 			default: break;
 			}
 
-			if (resized && GetAsyncKeyState(VK_LBUTTON) >= 0)
+			input::process_input_message(hwnd, msg, wparam, lparam);
+
+			if (resized && GetKeyState(VK_LBUTTON) >= 0)
 			{
 				window_info& info{ get_window_info_from_handle(hwnd) };
 				assert(info.hwnd);
@@ -177,7 +180,7 @@ namespace vel::platform
 		wc.hInstance = 0;
 		wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wc.hbrBackground = CreateSolidBrush(RGB(26, 48, 76));
+		wc.hbrBackground = CreateSolidBrush(RGB(100, 48, 76));
 		wc.lpszMenuName = NULL;
 		wc.lpszClassName = L"VelWindow";
 		wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
