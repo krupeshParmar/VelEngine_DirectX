@@ -17,6 +17,7 @@ namespace vel::graphics::d3d12::delight {
                 frustums_out_or_index_counter,
                 frustums_in,
                 culling_info,
+                bounding_spheres,
                 light_grid_opaque,
                 light_index_list_opaque,
 
@@ -28,7 +29,7 @@ namespace vel::graphics::d3d12::delight {
         {
             d3d12_buffer                            frustums;
             d3d12_buffer                            light_grid_and_index_list;
-            structured_buffer                       light_index_counter;
+            uav_clearable_buffer                    light_index_counter;
             hlsl::LightCullingDispatchParameters    grid_frustums_dispatch_params{};
             hlsl::LightCullingDispatchParameters    light_culling_dispatch_params{};
             u32                                     frustum_count{ 0 };
@@ -63,6 +64,7 @@ namespace vel::graphics::d3d12::delight {
             parameters[param::culling_info].as_srv(D3D12_SHADER_VISIBILITY_ALL, 1);
             parameters[param::light_grid_opaque].as_uav(D3D12_SHADER_VISIBILITY_ALL, 1);
             parameters[param::light_index_list_opaque].as_uav(D3D12_SHADER_VISIBILITY_ALL, 3);
+            parameters[param::bounding_spheres].as_srv(D3D12_SHADER_VISIBILITY_ALL, 2);
 
             light_culling_root_signature = d3dx::d3d12_root_signature_desc{ &parameters[0], _countof(parameters) }.create();
             NAME_D3D12_OBJECT(light_culling_root_signature, L"Light Culling Root Signature");
@@ -99,19 +101,19 @@ namespace vel::graphics::d3d12::delight {
         {
             const u32 frustum_count{ culler.frustum_count };
 
-            const u32 frustum_buffer_size{ sizeof(hlsl::Frustum) * frustum_count };
+            const u32 frustums_buffer_size{ sizeof(hlsl::Frustum) * frustum_count };
 
             const u32 light_grid_buffer_size{ (u32)math::align_size_up<sizeof(math::v4)>(sizeof(math::u32v2) * frustum_count) };
-            const u32 light_index_buffer_size{ (u32)math::align_size_up<sizeof(math::v4)>(sizeof(u32) * max_lights_per_tile * frustum_count) };
-            const u32 light_grid_and_index_list_buffer_size{ light_grid_buffer_size + light_index_buffer_size };
+            const u32 light_index_list_buffer_size{ (u32)math::align_size_up<sizeof(math::v4)>(sizeof(u32) * max_lights_per_tile * frustum_count) };
+            const u32 light_grid_and_index_list_buffer_size{ light_grid_buffer_size + light_index_list_buffer_size };
 
             d3d12_buffer_init_info info{};
             info.alignment = sizeof(math::v4);
             info.flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-            if (frustum_buffer_size > culler.frustums.size())
+            if (frustums_buffer_size > culler.frustums.size())
             {
-                info.size = frustum_buffer_size;
+                info.size = frustums_buffer_size;
                 culler.frustums = d3d12_buffer{ info, false };
                 NAME_D3D12_OBJECT_INDEXED(culler.frustums.buffer(), frustum_count, L"Light Grid Frustums Buffer - count");
             }
@@ -128,9 +130,8 @@ namespace vel::graphics::d3d12::delight {
 
                 if (!culler.light_index_counter.buffer())
                 {
-                    info = structured_buffer::get_default_init_info(sizeof(math::u32v4), 1);
-                    info.create_uav = true;
-                    culler.light_index_counter = structured_buffer{ info };
+                    info = uav_clearable_buffer::get_default_init_info(1);
+                    culler.light_index_counter = uav_clearable_buffer{ info };
                     NAME_D3D12_OBJECT_INDEXED(culler.light_index_counter.buffer(), core::current_frame_index(), L"Light Index Counter Buffer");
                 }
             }
@@ -167,7 +168,7 @@ namespace vel::graphics::d3d12::delight {
             resize_buffers(culler);
         }
 
-        void calculate_grid_frustums(culling_parameters& culler,
+        void calculate_grid_frustums(const culling_parameters& culler,
                 id3d12_graphics_command_list *const cmd_list,
                 const d3d12_frame_info& d3d12_info,
                 d3dx::d3d12_resource_barrier& barriers)
@@ -285,6 +286,7 @@ namespace vel::graphics::d3d12::delight {
         cmd_list->SetComputeRootUnorderedAccessView(param::frustums_out_or_index_counter, culler.light_index_counter.gpu_address());
         cmd_list->SetComputeRootShaderResourceView(param::frustums_in, culler.frustums.gpu_address());
         cmd_list->SetComputeRootShaderResourceView(param::culling_info, light::culling_info_buffer(d3d12_info.frame_index));
+        cmd_list->SetComputeRootShaderResourceView(param::bounding_spheres, light::bounding_spheres_buffer(d3d12_info.frame_index));
         cmd_list->SetComputeRootUnorderedAccessView(param::light_grid_opaque, culler.light_grid_and_index_list.gpu_address());
         cmd_list->SetComputeRootUnorderedAccessView(param::light_index_list_opaque, culler.light_index_list_opaque_buffer);
 

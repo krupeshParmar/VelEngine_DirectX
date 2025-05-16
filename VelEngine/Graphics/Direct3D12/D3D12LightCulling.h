@@ -7,7 +7,7 @@ namespace vel::graphics::d3d12 {
 
 namespace vel::graphics::d3d12::delight {
 
-    constexpr u32 light_culling_tile_size{ 16 };
+    constexpr u32 light_culling_tile_size{ 32 };
 
     bool initialize();
     void shutdown();
