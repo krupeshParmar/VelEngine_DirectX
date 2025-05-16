@@ -19,7 +19,7 @@ namespace vel::graphics::d3d12
 		constexpr d3d12_surface(d3d12_surface&& o)
 			: _swap_chain{ o._swap_chain }, _window{ o._window }, _current_bb_index{ o._current_bb_index }
 			, _viewport{ o._viewport }, _scissor_rect{ o._scissor_rect }, _allow_tearing{o._allow_tearing},
-			_present_flags{o._present_flags}
+			_present_flags{o._present_flags}, _light_culling_id{ o._light_culling_id }
 		{
 			for (u32 i{ 0 }; i < buffer_count; ++i)
 			{
@@ -47,12 +47,13 @@ namespace vel::graphics::d3d12
 		void present() const;
 		void resize(u32 width, u32 height);
 
-		constexpr u32 width() const { return (u32)_viewport.Width; }
-		constexpr u32 height() const { return (u32)_viewport.Height; }
-		constexpr ID3D12Resource* const back_buffer() const { return _render_target_data_list[_current_bb_index].resource; }
-		constexpr D3D12_CPU_DESCRIPTOR_HANDLE rtv() const { return _render_target_data_list[_current_bb_index].rtv.cpu; }
-		constexpr const D3D12_VIEWPORT& viewport() const { return _viewport; }
-		constexpr const D3D12_RECT& scissor_rect() const { return _scissor_rect; }
+		[[nodiscard]] constexpr u32 width() const { return (u32)_viewport.Width; }
+		[[nodiscard]] constexpr u32 height() const { return (u32)_viewport.Height; }
+		[[nodiscard]] constexpr ID3D12Resource *const back_buffer() const { return _render_target_data_list[_current_bb_index].resource; }
+		[[nodiscard]] constexpr D3D12_CPU_DESCRIPTOR_HANDLE rtv() const { return _render_target_data_list[_current_bb_index].rtv.cpu; }
+		[[nodiscard]] constexpr const D3D12_VIEWPORT& viewport() const { return _viewport; }
+		[[nodiscard]] constexpr const D3D12_RECT& scissor_rect() const { return _scissor_rect; }
+		[[nodiscard]] constexpr id::id_type light_culling_id() const { return _light_culling_id; }
 
 
 	private:
@@ -72,6 +73,7 @@ namespace vel::graphics::d3d12
 			_allow_tearing = o._allow_tearing;
 			_present_flags = o._present_flags;
 			_window = o._window;
+			_light_culling_id = o._light_culling_id;
 
 			o.reset();
 		}
@@ -88,7 +90,7 @@ namespace vel::graphics::d3d12
 			_scissor_rect = {};
 			_allow_tearing = 0;
 			_present_flags = 0;
-
+			_light_culling_id = id::invalid_id;
 			_window = {};
 		}
 #endif
@@ -109,7 +111,7 @@ namespace vel::graphics::d3d12
 		render_target_data	_render_target_data_list[buffer_count]{};
 		D3D12_VIEWPORT		_viewport{};
 		D3D12_RECT			_scissor_rect{};
-
+		id::id_type         _light_culling_id{ id::invalid_id };
 		platform::window	_window;
 	};
 }

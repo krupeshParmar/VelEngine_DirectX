@@ -125,7 +125,7 @@ LRESULT win_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 	}
 
-	if ((resized && GetAsyncKeyState(VK_LBUTTON) >= 0) || toggle_fullscreen)
+	if ((resized && GetKeyState(VK_LBUTTON) >= 0) || toggle_fullscreen)
 	{
 		platform::window win{ platform::window_id{(id::id_type)GetWindowLongPtr(hwnd, GWLP_USERDATA)} };
 		for (u32 i{ 0 }; i < _countof(_surfaces_list); ++i)
@@ -316,7 +316,7 @@ void engine_test::run()
 	static u32 counter{ 0 };
 	static u32 light_set_key{ 0 };
 	++counter;
-	if ((counter % 90) == 0) light_set_key = (light_set_key + 1) % 2;
+	//if ((counter % 90) == 0) light_set_key = (light_set_key + 1) % 2;
 	timer.begin();
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	script::update(timer.dt_avg());

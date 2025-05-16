@@ -181,7 +181,7 @@ namespace vel::graphics
 		return range;
 	}
 
-	f32 light::ubmra() const
+	f32 light::umbra() const
 	{
 		assert(is_valid());
 		f32 umbra;
@@ -189,7 +189,7 @@ namespace vel::graphics
 		return umbra;
 	}
 
-	f32 light::penubmra() const
+	f32 light::penumbra() const
 	{
 		assert(is_valid());
 		f32 penumbra;

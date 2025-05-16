@@ -124,8 +124,7 @@ namespace vel::graphics::d3d12
 		NAME_D3D12_OBJECT_INDEXED(_buffer, _size, L"D3D12 Buffer - size");
 	}
 
-	void
-		d3d12_buffer::release()
+	void d3d12_buffer::release()
 	{
 		core::deferred_release(_buffer);
 		_gpu_address = 0;
@@ -142,8 +141,7 @@ namespace vel::graphics::d3d12
 		assert(_cpu_address);
 	}
 
-	u8 *const
-		constant_buffer::allocate(u32 size)
+	u8 *const constant_buffer::allocate(u32 size)
 	{
 		std::lock_guard lock{ _mutex };
 		const u32 aligned_size{ (u32)d3dx::align_size_for_constant_buffer(size) };
@@ -158,6 +156,38 @@ namespace vel::graphics::d3d12
 		return nullptr;
 	}
 
+	//// STRUCTURED BUFFER ////////////////////////////////////////////////////////////////////////////
+	structured_buffer::structured_buffer(const d3d12_buffer_init_info& info) : _buffer{ info, false }, _stride{ info.stride }
+	{
+		assert(info.size && info.size == (info.stride * info.element_count));
+		assert(info.alignment > 0);
+		NAME_D3D12_OBJECT_INDEXED(buffer(), info.size, L"Structured Buffer - size");
+
+		if (info.create_uav)
+		{
+			assert(info.flags && D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+			_uav = core::uav_heap().allocate();
+			_uav_shader_visible = core::srv_heap().allocate();
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc{};
+			desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			desc.Format = DXGI_FORMAT_UNKNOWN;
+			desc.Buffer.CounterOffsetInBytes = 0;
+			desc.Buffer.FirstElement = 0;
+			desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+			desc.Buffer.NumElements = info.element_count;
+			desc.Buffer.StructureByteStride = info.stride;
+
+			core::device()->CreateUnorderedAccessView(buffer(), nullptr, &desc, _uav.cpu);
+			core::device()->CopyDescriptorsSimple(1, _uav_shader_visible.cpu, _uav.cpu, core::srv_heap().type());
+		}
+	}
+
+	void structured_buffer::release()
+	{
+		core::srv_heap().free(_uav_shader_visible);
+		core::uav_heap().free(_uav);
+		_buffer.release();
+	}
 
 	//// D3D12 TEXTURE ////////////////////////////////////////////////////////////////////////////////
 	d3d12_texture::d3d12_texture(d3d12_texture_init_info info)
@@ -198,15 +228,14 @@ namespace vel::graphics::d3d12
 		device->CreateShaderResourceView(_resource, info.srv_desc, _srv.cpu);
 	}
 
-	void
-		d3d12_texture::release()
+	void d3d12_texture::release()
 	{
 		core::srv_heap().free(_srv);
 		core::deferred_release(_resource);
 	}
+	
 	//// RENDER TEXTURE ///////////////////////////////////////////////////////////////////////////////
-	d3d12_render_texture::d3d12_render_texture(d3d12_texture_init_info info)
-		: _texture{ info }
+	d3d12_render_texture::d3d12_render_texture(d3d12_texture_init_info info) : _texture{ info }
 	{
 		assert(info.desc);
 		_mip_count = resource()->GetDesc().MipLevels;
@@ -229,13 +258,13 @@ namespace vel::graphics::d3d12
 		}
 	}
 
-	void
-		d3d12_render_texture::release()
+	void d3d12_render_texture::release()
 	{
 		for (u32 i{ 0 }; i < _mip_count; ++i) core::rtv_heap().free(_rtv[i]);
 		_texture.release();
 		_mip_count = 0;
 	}
+
 	//// DEPTH BUFFER /////////////////////////////////////////////////////////////////////////////////
 	d3d12_depth_buffer::d3d12_depth_buffer(d3d12_texture_init_info info)
 	{
