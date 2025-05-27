@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using VelEditor.Content;
 using VelEditor.GameProject;
+using VelEditor.DLLWrapper;
 
 namespace VelEditor
 {
@@ -21,13 +22,6 @@ namespace VelEditor
     public partial class MainWindow : Window
     {
         public static string VelPath { get; private set; }
-
-        public MainWindow()
-        {
-            InitializeComponent();
-            Loaded += OnMainWindowLoaded;
-            Closing += OnMainWindowClosing;
-        }
 
         private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
         {
@@ -75,6 +69,7 @@ namespace VelEditor
                 Closing -= OnMainWindowClosing;
                 Project.Current?.Unload();
                 DataContext = null;
+                ContentToolsAPI.ShutDownContentTools();
             }
         }
 
@@ -93,6 +88,13 @@ namespace VelEditor
                 ContentWatcher.Reset(project.ContentPath, project.Path);
                 DataContext = project;
             }
+        }
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            Loaded += OnMainWindowLoaded;
+            Closing += OnMainWindowClosing;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace VelEditor.Editors
         public AssetEditorState State
         {
             get => _state;
-            set
+            private set
             {
                 if (_state != value)
                 {
@@ -38,20 +38,6 @@ namespace VelEditor.Editors
         }
 
         public Guid AssetGuid { get; private set; }
-
-        private Point _panOffset;
-        public Point PanOffset
-        {
-            get => _panOffset;
-            set
-            {
-                if (_panOffset != value)
-                {
-                    _panOffset = value;
-                    OnPropertyChanged(nameof(PanOffset));
-                }
-            }
-        }
 
         private bool _isRedChannelSelected = true;
         public bool IsRedChannelSelected
@@ -123,20 +109,6 @@ namespace VelEditor.Editors
 
         public float Stride => (float?)SelectedSliceBitmap?.Format.BitsPerPixel / 8 ?? 1.0f;
 
-        private double _scaleFactor = 1.0;
-        public double ScaleFactor
-        {
-            get => _scaleFactor;
-            set
-            {
-                if (_scaleFactor != value)
-                {
-                    _scaleFactor = value;
-                    OnPropertyChanged(nameof(ScaleFactor));
-                }
-            }
-        }
-
         Asset IAssetEditor.Asset => Texture;
 
         private Texture _texture;
@@ -187,6 +159,7 @@ namespace VelEditor.Editors
                 if (_mipIndex != value)
                 {
                     _mipIndex = value;
+                    DepthIndex = _depthIndex;
                     OnPropertyChanged(nameof(MipIndex));
                     OnPropertyChanged(nameof(MaxDepthIndex));
                     SetSelectedBitmap();
@@ -230,7 +203,7 @@ namespace VelEditor.Editors
             OnPropertyChanged(nameof(Stride));
         }
 
-        private void OnSetAllChannelsCommand(string parameter)
+        private void OnSetAllChannelsCommand(object parameter)
         {
             _isRedChannelSelected = true;
             _isGreenChannelSelected = true;

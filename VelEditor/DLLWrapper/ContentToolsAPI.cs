@@ -39,6 +39,8 @@ namespace VelEditor.ContentToolsAPIStruct
         FormatMismatch,
         [Description("Source image file not found")]
         FileNotFound,
+        [Description("Number of images for cube-maps should be a multiple of 6")]
+        NeedSixImages,
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -165,6 +167,10 @@ namespace VelEditor.DLLWrapper
     static class ContentToolsAPI
     {
         private const string _toolsDLL = "ContentTools.dll";
+
+        [DllImport(_toolsDLL)]
+        public static extern void ShutDownContentTools();
+
         #region Texture
         private static List<List<List<Slice>>> GetSlices(TextureData data)
         {

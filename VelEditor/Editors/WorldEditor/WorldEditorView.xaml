@@ -125,7 +125,7 @@
                     <utl:LoggerView Grid.Column="1" Margin="5,0,0,0" MinWidth="200"/>
                     <GridSplitter Grid.Column="2" Width="5" VerticalAlignment="Stretch"
                                   HorizontalAlignment="Left" Background="Transparent"/>
-                    <c:ContentBrowserView Grid.Column="2" Margin="5,0,0,0" MinWidth="200"/>
+                    <c:ContentBrowserView Grid.Column="2" Margin="5,0,0,0" AllowImport="True" MinWidth="200"/>
                 </Grid>
             </Grid>
             <GridSplitter Grid.Column="1" Width="5" 

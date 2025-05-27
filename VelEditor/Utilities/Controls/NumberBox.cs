@@ -88,7 +88,6 @@ namespace VelEditor.Utilities.Controls
                 {
                     textBox.Visibility = Visibility.Visible;
                     textBox.Focus();
-                    textBox.SelectAll();
                 }
             }
         }

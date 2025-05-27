@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -13,9 +15,11 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using VelEditor.Editors;
 using VelEditor.GameProject;
+using VelEditor.Utilities;
 
 namespace VelEditor.Content
 {
@@ -124,6 +128,15 @@ namespace VelEditor.Content
             DependencyProperty.Register(nameof(FileAccess), typeof(FileAccess), typeof(ContentBrowserView), new PropertyMetadata(FileAccess.ReadWrite));
 
 
+        public bool AllowImport
+        {
+            get => (bool)GetValue(AllowImportProperty);
+            set => SetValue(AllowImportProperty, value);
+        }
+
+        public static readonly DependencyProperty AllowImportProperty =
+            DependencyProperty.Register(nameof(AllowImport), typeof(bool), typeof(ContentBrowserView), new PropertyMetadata(false));
+
         internal ContentInfo SelectedItem
         {
             get => (ContentInfo)GetValue(SelectedItemProperty);
@@ -138,7 +151,6 @@ namespace VelEditor.Content
             DataContext = null;
             InitializeComponent();
             Loaded += OnContentBrowserLoaded;
-            AllowDrop = true;
         }
 
         private void OnContentBrowserLoaded(object sender, RoutedEventArgs e)
@@ -257,10 +269,14 @@ namespace VelEditor.Content
 
         private void OnContent_Item_KeyDown(object sender, KeyEventArgs e)
         {
+            var info = (sender as FrameworkElement).DataContext as ContentInfo;
             if (e.Key == Key.Enter)
             {
-                var info = (sender as FrameworkElement).DataContext as ContentInfo;
                 ExecuteSelection(info);
+            }
+            else if (e.Key == Key.F2)
+            {
+                TryEdit(folderListView, info.FullPath);
             }
         }
 
@@ -350,24 +366,94 @@ namespace VelEditor.Content
             return newEditor;
         }
 
-        private void OnFolderContent_ListView_Drop(object sender, DragEventArgs e)
+        private void OnDropBorder_Drop(object sender, DragEventArgs e)
         {
             var vm = DataContext as ContentBrowser;
-            if (vm.SelectedFolder != null && e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (Directory.Exists(vm.SelectedFolder) && e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files?.Length > 0 && Directory.Exists(vm.SelectedFolder))
+                if (files?.Length > 0)
                 {
-                    _ = ContentHelper.ImportFilesAsync(files, vm.SelectedFolder);
-                    e.Handled = true;
+                    if (e.OriginalSource == filesDrop)
+                    {
+                        _ = ContentHelper.ImportFilesAsync(files, vm.SelectedFolder);
+                        e.Handled = true;
+                    }
+                    else if (e.OriginalSource == cfgDrop)
+                    {
+                        // TODO: open import settings configurator window
+                        e.Handled = true;
+                    }
                 }
             }
+            e.Effects = DragDropEffects.None;
+            OnDropBorder_DragLeave(sender, e);
         }
 
         private void OnFolderContent_ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var item = folderListView.SelectedItem as ContentInfo;
             SelectedItem = item?.IsDirectory == true ? null : item;
+        }
+
+        private void TryEdit(ListBoxItem item, string path)
+        {
+            var textBox = item.FindVisualChild<TextBox>();
+            if (textBox != null)
+            {
+                textBox.Visibility = Visibility.Visible;
+                textBox.Focus();
+            }
+        }
+
+        private bool TryEdit(ListView list, string path)
+        {
+            foreach (ContentInfo item in list.Items)
+            {
+                if (item.FullPath == path)
+                {
+                    var listBoxItem = list.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                    listBoxItem.IsSelected = true;
+                    list.SelectedItem = item;
+                    list.SelectedIndex = list.Items.IndexOf(item);
+                    TryEdit(listBoxItem, path);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private async void OnCreateNewFolder(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as ContentBrowser;
+            var path = vm.SelectedFolder;
+            if (!Path.EndsInDirectorySeparator(path)) path += Path.DirectorySeparatorChar;
+            var folder = "NewFolder";
+            var index = 1;
+            while (Directory.Exists(path + folder))
+            {
+                folder = $"NewFolder{index++:0#}";
+            }
+
+            folder = path + folder;
+
+            try
+            {
+                Directory.CreateDirectory(folder);
+                var waitCounter = 0;
+                // Wait up to 3 seconds for the OS to create the folder and
+                // our file system watcher to make a new entry in Content Browser.
+                while (waitCounter < 30 && !TryEdit(folderListView, folder))
+                {
+                    await Task.Run(() => Thread.Sleep(100));
+                    ++waitCounter;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(MessageType.Error, $"Error: failed to create new folder: {folder}, {ex.Message}");
+            }
         }
 
         public void Dispose()
@@ -379,6 +465,31 @@ namespace VelEditor.Content
 
             (DataContext as ContentBrowser)?.Dispose();
             DataContext = null;
+        }
+
+        private void OnFolderContent_ListView_DragEnter(object sender, DragEventArgs e)
+        {
+            dropBorder.Opacity = 0;
+            dropBorder.Visibility = Visibility.Visible;
+            var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(100)));
+            dropBorder.BeginAnimation(OpacityProperty, fadeIn);
+        }
+
+        private void OnDropBorder_DragLeave(object sender, DragEventArgs e)
+        {
+            if (sender == dropBorder && e?.Effects != DragDropEffects.None)
+            {
+                var point = e.GetPosition(dropBorder);
+                var result = VisualTreeHelper.HitTest(dropBorder, point);
+                if (result != null)
+                {
+                    return;
+                }
+            }
+
+            var fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromMilliseconds(100)));
+            fadeOut.Completed += (_, _) => dropBorder.Visibility = Visibility.Collapsed;
+            dropBorder.BeginAnimation(OpacityProperty, fadeOut);
         }
     }
 }

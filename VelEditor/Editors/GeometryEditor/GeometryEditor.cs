@@ -310,7 +310,7 @@ namespace VelEditor.Editors
         public AssetEditorState State
         {
             get => _state;
-            set
+            private set
             {
                 if (_state != value)
                 {
@@ -327,7 +327,7 @@ namespace VelEditor.Editors
         public Content.Geometry Geometry
         {
             get => _geometry;
-            set
+            private set
             {
                 if (_geometry != value)
                 {
