@@ -30,7 +30,7 @@ namespace VelEditor
     {
         public static T FindVisualParent<T>(this DependencyObject dependencyObject) where T : DependencyObject
         {
-            if (!(dependencyObject is Visual)) return null;
+            if (dependencyObject is not Visual) return null;
 
             var parent = VisualTreeHelper.GetParent(dependencyObject);
             while (parent != null)
@@ -77,10 +77,17 @@ namespace VelEditor
             return null;
         }
 
+        public static Uri GetPackUri(string relativePath, Type type)
+        {
+            var assemblyShortName = type.Assembly.ToString().Split(',')[0];
+            var packUriString = $"pack://application:,,,/{assemblyShortName};component/{relativePath}";
+            return new(packUriString);
+        }
+
         internal static string SanitizeFileName(string filename)
         {
             Debug.Assert(!string.IsNullOrEmpty(filename));
-            var path = new StringBuilder(filename.Substring(0, filename.LastIndexOf(Path.DirectorySeparatorChar) + 1));
+            var path = new StringBuilder(filename[.. (filename.LastIndexOf(Path.DirectorySeparatorChar) + 1)]);
             var file = new StringBuilder(filename[(filename.LastIndexOf(Path.DirectorySeparatorChar) + 1)..]);
             var invalidChars = Path.GetInvalidPathChars();
             foreach (var c in invalidChars)
@@ -266,9 +273,7 @@ namespace VelEditor
                 // swap R and B channels: RGB -> BGR
                 for (int i = 0; i < data.Length; i += bytesPerPixel)
                 {
-                    var r = bgrData[i + 2];
-                    bgrData[i + 2] = bgrData[i];
-                    bgrData[i] = r;
+                    (bgrData[i], bgrData[i + 2]) = (bgrData[i + 2], bgrData[i]);
                 }
             }
             else if (bytesPerPixel == 2)

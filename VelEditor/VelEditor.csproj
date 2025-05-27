@@ -27,6 +27,8 @@
     <None Remove="Resources\ContentBrowser\ListView.png" />
     <None Remove="Resources\ContentBrowser\TileView.png" />
     <None Remove="Resources\PrimitiveMeshView\plane_deformation.png" />
+    <None Remove="Resources\TextureEditor\ChannelSelectShader.cso" />
+    <None Remove="Resources\TextureEditor\ChannelSelectShader.hlsl" />
     <None Remove="Resources\TextureEditor\Checker64.png" />
   </ItemGroup>
   <ItemGroup>
@@ -58,6 +60,7 @@
     <Resource Include="Resources\ContentBrowser\ListView.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane_deformation.png" />
+    <Resource Include="Resources\TextureEditor\ChannelSelectShader.cso" />
     <Resource Include="Resources\TextureEditor\Checker64.png" />
   </ItemGroup>
 

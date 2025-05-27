@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VelEditor.Content;
 using VelEditor.DLLWrapper;
@@ -16,6 +18,10 @@ namespace VelEditor.Editors
     {
         private readonly List<List<List<BitmapSource>>> _sliceBitmaps = new();
         private List<List<List<Slice>>> _slicesList;
+
+        public ICommand SetAllChannelsCommand { get; init; }
+        public ICommand SetChannelCommand { get; init; }
+        public ICommand RegenerateBitmapsCommand { get; init; }
 
         private AssetEditorState _state;
         public AssetEditorState State
@@ -47,6 +53,76 @@ namespace VelEditor.Editors
             }
         }
 
+        private bool _isRedChannelSelected = true;
+        public bool IsRedChannelSelected
+        {
+            get => _isRedChannelSelected;
+            set
+            {
+                if (_isRedChannelSelected != value)
+                {
+                    _isRedChannelSelected = value;
+                    OnPropertyChanged(nameof(IsRedChannelSelected));
+                    SetImageChannels();
+                }
+            }
+        }
+
+        private bool _isGreenChannelSelected = true;
+        public bool IsGreenChannelSelected
+        {
+            get => _isGreenChannelSelected;
+            set
+            {
+                if (_isGreenChannelSelected != value)
+                {
+                    _isGreenChannelSelected = value;
+                    OnPropertyChanged(nameof(IsGreenChannelSelected));
+                    SetImageChannels();
+                }
+            }
+        }
+
+        private bool _isBlueChannelSelected = true;
+        public bool IsBlueChannelSelected
+        {
+            get => _isBlueChannelSelected;
+            set
+            {
+                if (_isBlueChannelSelected != value)
+                {
+                    _isBlueChannelSelected = value;
+                    OnPropertyChanged(nameof(IsBlueChannelSelected));
+                    SetImageChannels();
+                }
+            }
+        }
+
+        private bool _isAlphaChannelSelected = true;
+        public bool IsAlphaChannelSelected
+        {
+            get => _isAlphaChannelSelected;
+            set
+            {
+                if (_isAlphaChannelSelected != value)
+                {
+                    _isAlphaChannelSelected = value;
+                    OnPropertyChanged(nameof(IsAlphaChannelSelected));
+                    SetImageChannels();
+                }
+            }
+        }
+
+        public Color Channels => new()
+        {
+            ScR = IsRedChannelSelected ? 1.0f : 0.0f,
+            ScG = IsGreenChannelSelected ? 1.0f : 0.0f,
+            ScB = IsBlueChannelSelected ? 1.0f : 0.0f,
+            ScA = IsAlphaChannelSelected ? 1.0f : 0.0f
+        };
+
+        public float Stride => (float?)SelectedSliceBitmap?.Format.BitsPerPixel / 8 ?? 1.0f;
+
         private double _scaleFactor = 1.0;
         public double ScaleFactor
         {
@@ -74,6 +150,7 @@ namespace VelEditor.Editors
                     _texture = value;
                     OnPropertyChanged(nameof(Texture));
                     SetSelectedBitmap();
+                    SetImageChannels();
                 }
             }
         }
@@ -95,6 +172,7 @@ namespace VelEditor.Editors
                     _arrayIndex = value;
                     OnPropertyChanged(nameof(ArrayIndex));
                     SetSelectedBitmap();
+                    SetImageChannels();
                 }
             }
         }
@@ -112,6 +190,7 @@ namespace VelEditor.Editors
                     OnPropertyChanged(nameof(MipIndex));
                     OnPropertyChanged(nameof(MaxDepthIndex));
                     SetSelectedBitmap();
+                    SetImageChannels();
                 }
             }
         }
@@ -128,6 +207,7 @@ namespace VelEditor.Editors
                     _depthIndex = value;
                     OnPropertyChanged(nameof(DepthIndex));
                     SetSelectedBitmap();
+                    SetImageChannels();
                 }
             }
         }
@@ -135,11 +215,62 @@ namespace VelEditor.Editors
 
         public BitmapSource SelectedSliceBitmap => _sliceBitmaps.ElementAtOrDefault(ArrayIndex)?.ElementAtOrDefault(MipIndex)?.ElementAtOrDefault(DepthIndex);
         public Slice SelectedSlice => Texture?.Slices?.ElementAtOrDefault(ArrayIndex)?.ElementAtOrDefault(MipIndex)?.ElementAtOrDefault(DepthIndex);
+        public long DataSize => Texture?.Slices?.Sum(x => x.Sum(y => y.Sum(z => z.RawContent.LongLength))) ?? 0;
 
         private void SetSelectedBitmap()
         {
             OnPropertyChanged(nameof(SelectedSliceBitmap));
             OnPropertyChanged(nameof(SelectedSlice));
+            OnPropertyChanged(nameof(DataSize));
+        }
+
+        private void SetImageChannels()
+        {
+            OnPropertyChanged(nameof(Channels));
+            OnPropertyChanged(nameof(Stride));
+        }
+
+        private void OnSetAllChannelsCommand(string parameter)
+        {
+            _isRedChannelSelected = true;
+            _isGreenChannelSelected = true;
+            _isBlueChannelSelected = true;
+            _isAlphaChannelSelected = true;
+            OnPropertyChanged(nameof(IsRedChannelSelected));
+            OnPropertyChanged(nameof(IsGreenChannelSelected));
+            OnPropertyChanged(nameof(IsBlueChannelSelected));
+            OnPropertyChanged(nameof(IsAlphaChannelSelected));
+            SetImageChannels();
+        }
+
+        private void OnSetChannelCommand(string parameter)
+        {
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                _isRedChannelSelected = false;
+                _isGreenChannelSelected = false;
+                _isBlueChannelSelected = false;
+                _isAlphaChannelSelected = false;
+                OnPropertyChanged(nameof(IsRedChannelSelected));
+                OnPropertyChanged(nameof(IsGreenChannelSelected));
+                OnPropertyChanged(nameof(IsBlueChannelSelected));
+                OnPropertyChanged(nameof(IsAlphaChannelSelected));
+            }
+
+            switch (parameter)
+            {
+                case "0": IsRedChannelSelected = !IsRedChannelSelected; break;
+                case "1": IsGreenChannelSelected = !IsGreenChannelSelected; break;
+                case "2": IsBlueChannelSelected = !IsBlueChannelSelected; break;
+                case "3": IsAlphaChannelSelected = !IsAlphaChannelSelected; break;
+            }
+        }
+
+        private void OnRegenerateBitmapsCommand(bool isNormalMap)
+        {
+            GenerateSliceBitMaps(isNormalMap);
+            OnPropertyChanged(nameof(SelectedSliceBitmap));
+            SetImageChannels();
         }
 
         public async void SetAsset(AssetInfo info)
@@ -177,6 +308,7 @@ namespace VelEditor.Editors
                 Debug.Assert(_slicesList?.Any() == true && _slicesList.First()?.Any() == true);
                 GenerateSliceBitMaps(texture.IsNormalMap);
                 OnPropertyChanged(nameof(Texture));
+                OnPropertyChanged(nameof(DataSize));
             }
             catch (Exception ex)
             {
@@ -208,6 +340,12 @@ namespace VelEditor.Editors
             OnPropertyChanged(nameof(MaxMipIndex));
             OnPropertyChanged(nameof(MaxArrayIndex));
             OnPropertyChanged(nameof(MaxDepthIndex));
+        }
+        public TextureEditor()
+        {
+            SetAllChannelsCommand = new RelayCommand<string>(OnSetAllChannelsCommand);
+            SetChannelCommand = new RelayCommand<string>(OnSetChannelCommand);
+            RegenerateBitmapsCommand = new RelayCommand<bool>(OnRegenerateBitmapsCommand);
         }
     }
 }
