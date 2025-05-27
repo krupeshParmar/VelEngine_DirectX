@@ -12,19 +12,8 @@ namespace VelEditor.Content
 {
     static class AssetRegistry
     {
-        private static readonly Dictionary<string, AssetInfo> _assetDictionary = new Dictionary<string, AssetInfo>();
-        private static readonly ObservableCollection<AssetInfo> _assets = new ObservableCollection<AssetInfo>();
-        private static readonly FileSystemWatcher _contentWatcher = new FileSystemWatcher()
-        {
-            IncludeSubdirectories = true,
-            Filter = "",
-            NotifyFilter = NotifyFilters.CreationTime |
-                           NotifyFilters.DirectoryName |
-                           NotifyFilters.FileName |
-                           NotifyFilters.LastWrite
-        };
-
-
+        private static readonly Dictionary<string, AssetInfo> _assetDictionary = new();
+        private static readonly ObservableCollection<AssetInfo> _assets = new ();
         public static ReadOnlyObservableCollection<AssetInfo> Assets { get; } = new ReadOnlyObservableCollection<AssetInfo>(_assets);
 
         private static void RegisterAllAssets(string path)
@@ -102,36 +91,8 @@ namespace VelEditor.Content
             ContentWatcher.ContentModified += OnContentModified;
         }
 
-        private static void Refresh(object sender, DelayEventTimerArgs e)
-        {
-            foreach (var item in e.Data)
-            {
-                if (!(item is FileSystemEventArgs eventArgs)) continue;
-
-                if (eventArgs.ChangeType == WatcherChangeTypes.Deleted)
-                {
-                    UnregisterAsset(eventArgs.FullPath);
-                }
-                else
-                {
-                    RegisterAsset(eventArgs.FullPath);
-                    if (eventArgs.ChangeType == WatcherChangeTypes.Renamed)
-                    {
-                        _assetDictionary.Keys.Where(key => !File.Exists(key)).ToList().ForEach(file => UnregisterAsset(file));
-                    }
-                }
-            }
-        }
-
-        public static void Clear()
-        {
-            _contentWatcher.EnableRaisingEvents = false;
-            _assetDictionary.Clear();
-            _assets.Clear();
-        }
-
         public static AssetInfo GetAssetInfo(string file) => _assetDictionary.ContainsKey(file) ? _assetDictionary[file] : null;
 
-        public static AssetInfo GetAssetInfo(Guid guid) => _assets.FirstOrDefault(x => x.Guid == guid);
+        public static AssetInfo GetAssetInfo(Guid guid) => _assets.FirstOrDefault(x => x.GUID == guid);
     }
 }

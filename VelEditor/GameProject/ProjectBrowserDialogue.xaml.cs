@@ -20,7 +20,7 @@ namespace VelEditor.GameProject
     /// </summary>
     public partial class ProjectBrowserDialogue : Window
     {
-        private readonly CubicEase _easing = new CubicEase() { EasingMode = EasingMode.EaseInOut };
+        private readonly CubicEase _easing = new() { EasingMode = EasingMode.EaseInOut };
         public static bool GotoNewProjectTab { get; set; }
         public ProjectBrowserDialogue()
         {

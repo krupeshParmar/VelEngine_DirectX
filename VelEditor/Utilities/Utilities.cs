@@ -27,6 +27,12 @@ namespace VelEditor.Utilities
             if (!value.HasValue || !other.HasValue) return false;
             return Math.Abs(value.Value - other.Value) < Epsilon;
         }
+
+        public static bool IsTheSameAs(this double value, double other)
+        {
+            return Math.Abs(value - other) < Epsilon;
+        }
+
         // Align by rounding up. Will result in a multiple of 'alignment' that is greater than or equal to 'size'.
         public static long AlignSizeUp(long size, long alignment)
         {
@@ -34,6 +40,11 @@ namespace VelEditor.Utilities
             long mask = alignment - 1;
             Debug.Assert((alignment & mask) == 0, "Alignment should be a power of 2.");
             return ((size + mask) & ~mask);
+        }
+
+        public static bool IsPow2(int x)
+        {
+            return (x != 0) && (x & (x - 1)) == 0;
         }
 
         // Align by rounding down. Will result in a multiple of 'alignment' that is less than or equal to 'size'.
@@ -60,7 +71,7 @@ namespace VelEditor.Utilities
     {
         private readonly DispatcherTimer _timer;
         private readonly TimeSpan _delay; 
-        private readonly List<object> _data = new List<object>();
+        private readonly List<object> _data = new();
         private DateTime _lastEventTime = DateTime.Now;
 
         public event EventHandler<DelayEventTimerArgs> Triggered;

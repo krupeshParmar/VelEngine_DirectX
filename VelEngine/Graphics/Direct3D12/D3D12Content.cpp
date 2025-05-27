@@ -158,19 +158,19 @@ namespace vel::graphics::d3d12::content
             material_type::type     _type;
             shader_flags::flags     _shader_flags;
         };
-
-        constexpr D3D_PRIMITIVE_TOPOLOGY get_d3d_primitive_topology(primitve_topology::type type)
+                                                                                
+        constexpr D3D_PRIMITIVE_TOPOLOGY get_d3d_primitive_topology(primitive_topology::type type)
         {
             using namespace vel::content;
-            assert(type < primitve_topology::count);
+            assert(type < primitive_topology::count);
 
             switch (type)
             {
-            case primitve_topology::point_list:     return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-            case primitve_topology::line_list:      return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-            case primitve_topology::line_strip:     return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-            case primitve_topology::triangle_list:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-            case primitve_topology::triangle_strip: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+            case primitive_topology::point_list:     return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+            case primitive_topology::line_list:      return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+            case primitive_topology::line_strip:     return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+            case primitive_topology::triangle_list:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            case primitive_topology::triangle_strip: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
             }
 
             return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
@@ -460,7 +460,7 @@ namespace vel::graphics::d3d12::content
             view.index_buffer_view.SizeInBytes = index_buffer_size;
             view.index_buffer_view.Format = (index_size == sizeof(u16)) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 
-            view.primitive_topology = get_d3d_primitive_topology((primitve_topology::type)primitive_topology);
+            view.primitive_topology = get_d3d_primitive_topology((primitive_topology::type)primitive_topology);
             view.elements_type = elements_type;
 
             std::lock_guard lock{ submesh_mutex };

@@ -52,7 +52,7 @@ namespace VelEditor.GameProject
         }
 
         [DataMember(Name = nameof(GameEntityList))]
-        private readonly ObservableCollection<GameEntity> _gameEntityList = new ObservableCollection<GameEntity>();
+        private readonly ObservableCollection<GameEntity> _gameEntityList = new();
         public ReadOnlyObservableCollection<GameEntity> GameEntityList { get; private set; }
 
         public ICommand AddGameEntityCommand { get; private set; }

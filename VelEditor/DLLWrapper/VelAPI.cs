@@ -18,7 +18,7 @@ namespace VelEditor.EngineAPIStructs
     {
         public Vector3 Position;
         public Vector3 Rotation;
-        public Vector3 Scale = new Vector3(1,1,1);
+        public Vector3 Scale = new(1,1,1);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -31,8 +31,8 @@ namespace VelEditor.EngineAPIStructs
     [StructLayout(LayoutKind.Sequential)]
     class GameEntityDescriptor
     {
-        public TransformComponent Transform = new TransformComponent();
-        public ScriptComponent Script = new ScriptComponent();
+        public TransformComponent Transform = new();
+        public ScriptComponent Script = new();
     }
 }
 
@@ -73,7 +73,7 @@ namespace VelEditor.DLLWrapper
             private static extern int CreateGameEntity(GameEntityDescriptor desc);
             public static int CreateGameEntity(GameEntity entity)
             {
-                GameEntityDescriptor gameEntityDescriptor = new GameEntityDescriptor();
+                GameEntityDescriptor gameEntityDescriptor = new();
                 // transform
                 {
                     var c = entity.GetComponent<Transform>();

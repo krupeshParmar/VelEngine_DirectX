@@ -953,14 +953,7 @@ namespace vel::graphics::d3d12::light {
     void shutdown()
     {
         // make sure to remove all lights before shutting down graphics.
-        assert([] {
-            bool has_lights{ false };
-            for (const auto& it : light_sets)
-            {
-                has_lights |= it.second.has_lights();
-            }
-            return !has_lights;
-            }());
+        assert(light_sets.empty());
 
         for (u32 i{ 0 }; i < frame_buffer_count; ++i)
         {
@@ -968,8 +961,21 @@ namespace vel::graphics::d3d12::light {
         }
     }
 
+    void create_light_set(u64 light_set_key)
+    {
+        assert(!light_sets.count(light_set_key));
+        light_sets[light_set_key] = {};
+    }
+    void remove_light_set(u64 light_set_key)
+    {
+        assert(light_sets.count(light_set_key));
+        assert(!light_sets[light_set_key].has_lights());
+        light_sets.erase(light_set_key);
+    }
+
     graphics::light create(light_init_info info)
     {
+        assert(light_sets.count(info.light_set_key));
         assert(id::is_valid(info.entity_id));
         return light_sets[info.light_set_key].add(info);
     }
@@ -1035,13 +1041,13 @@ namespace vel::graphics::d3d12::light {
 
     u32 non_cullable_light_count(u64 light_set_key)
     {
-        //assert(light_sets.count(light_set_key));
+        assert(light_sets.count(light_set_key));
         return light_sets[light_set_key].non_cullable_light_count();
     }
 
     u32 cullable_light_count(u64 light_set_key)
     {
-        //assert(light_sets.count(light_set_key));
+        assert(light_sets.count(light_set_key));
         return light_sets[light_set_key].cullable_light_count();
     }
 }

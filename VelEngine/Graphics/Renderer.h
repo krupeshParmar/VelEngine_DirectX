@@ -218,7 +218,7 @@ namespace vel::graphics
     };
 
 
-    struct primitve_topology {
+    struct primitive_topology {
         enum type : u32 {
             point_list = 1,
             line_list,
@@ -244,6 +244,9 @@ namespace vel::graphics
 
 	surface create_surface(platform::window window);
 	void remove_surface(surface_id id);
+
+    void create_light_set(u64 light_set_key);
+    void remove_light_set(u64 light_set_key);
 
     light create_light(light_init_info info);
     void remove_light(light_id id, u64 light_set_key);

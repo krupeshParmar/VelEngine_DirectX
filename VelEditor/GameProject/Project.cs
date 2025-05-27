@@ -70,7 +70,7 @@ namespace VelEditor.GameProject
         }
 
         [DataMember (Name = nameof(ScenesList))]
-        private ObservableCollection<Scene> _scenesList = new ObservableCollection<Scene>();
+        private ObservableCollection<Scene> _scenesList = new();
         public ReadOnlyObservableCollection<Scene> ScenesList { get; private set; }
 
         private Scene _activeScene;

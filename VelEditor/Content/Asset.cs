@@ -14,23 +14,28 @@ namespace VelEditor.Content
         Texture,
     }
 
+    interface IAssetImportSettings
+    {
+        void ToBinary(BinaryWriter writer);
+        void FromBinary(BinaryReader reader);
+    }
+
     sealed class AssetInfo
     {
         public AssetType Type { get; set; }
         public byte[] Icon { get; set; }
         public string FullPath { get; set; }
         public string FileName => Path.GetFileNameWithoutExtension(FullPath);
-        public string SourcePath { get; set; }
         public DateTime RegisterTime { get; set; }
         public DateTime ImportDate { get; set; }
-        public Guid Guid { get; set; }
+        public Guid GUID { get; set; }
         public byte[] Hash { get; set; }
     }
 
     abstract class Asset : ViewModelBase
     {
         public static string AssetFileExtension = ".velasset";
-        public AssetType Type { get; private set; }
+        public AssetType Type { get; }
 
         public byte[] Icon { get; protected set; }
         public string SourcePath { get; protected set; }
@@ -54,8 +59,8 @@ namespace VelEditor.Content
         public DateTime ImportDate { get; protected set; }
         public byte[] Hash { get; protected set; }
 
-        public abstract void Import(string file);
-        public abstract void Load(string file);
+        public abstract bool Import(string file);
+        public abstract bool Load(string file);
 
         public abstract IEnumerable<string> Save(string file);
         public abstract byte[] PackForEngine();
@@ -66,14 +71,14 @@ namespace VelEditor.Content
 
             info.Type = (AssetType)reader.ReadInt32();
             var idSize = reader.ReadInt32();
-            info.Guid = new Guid(reader.ReadBytes(idSize));
+            info.GUID = new Guid(reader.ReadBytes(idSize));
             info.ImportDate = DateTime.FromBinary(reader.ReadInt64());
             var hashSize = reader.ReadInt32();
             if (hashSize > 0)
             {
                 info.Hash = reader.ReadBytes(hashSize);
             }
-            info.SourcePath = reader.ReadString();
+
             var iconSize = reader.ReadInt32();
             info.Icon = reader.ReadBytes(iconSize);
 
@@ -119,7 +124,7 @@ namespace VelEditor.Content
             {
                 writer.Write(0);
             }
-            writer.Write(SourcePath ?? "");
+
             writer.Write(Icon.Length);
             writer.Write(Icon);
         }
@@ -129,10 +134,9 @@ namespace VelEditor.Content
             var info = GetAssetInfo(reader);
 
             Debug.Assert(Type == info.Type);
-            GUID = info.Guid;
+            GUID = info.GUID;
             ImportDate = info.ImportDate;
             Hash = info.Hash;
-            SourcePath = info.SourcePath;
             Icon = info.Icon;
         }
 

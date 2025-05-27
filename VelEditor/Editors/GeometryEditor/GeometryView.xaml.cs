@@ -21,7 +21,7 @@ namespace VelEditor.Editors
     /// </summary>
     public partial class GeometryView : UserControl
     {
-        private static readonly GeometryView _geometryView = new GeometryView() { Background = (Brush)Application.Current.FindResource("Editor.Window.GrayBrush4") };
+        private static readonly GeometryView _geometryView = new() { Background = (Brush)Application.Current.FindResource("Editor.Window.GrayBrush4") };
         private Point _clickedPositon;
         private bool _capturedRight;
         private bool _capturedLeft;

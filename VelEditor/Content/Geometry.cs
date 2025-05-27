@@ -6,8 +6,6 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using VelEditor.DLLWrapper;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
@@ -33,7 +31,7 @@ namespace VelEditor.Content
         Colors = 0x08
     }
 
-    enum PrimitveTopology
+    enum PrimitiveTopology
     {
         PointList = 1,
         LineList,
@@ -44,7 +42,7 @@ namespace VelEditor.Content
 
     class Mesh : ViewModelBase
     {
-        public static int PositionSize = sizeof(float) * 3;
+        public static int PositionSize => sizeof(float) * 3;
 
         private int _elementSize;
         public int ElementSize
@@ -114,7 +112,7 @@ namespace VelEditor.Content
 
         public ElementsType ElementsType { get; set; }
 
-        public PrimitveTopology PrimitveTopology { get; set; }
+        public PrimitiveTopology PrimitveTopology { get; set; }
 
         public byte[] Positions { get; set; }
         public byte[] Elements { get; set; }
@@ -173,7 +171,7 @@ namespace VelEditor.Content
         public ObservableCollection<MeshLOD> LODsList { get; } = new ObservableCollection<MeshLOD>();
     }
 
-    class GeometryImportSettings : ViewModelBase
+    class GeometryImportSettings : ViewModelBase, IAssetImportSettings
     {
         private float _smoothingAngle;
         public float SmoothingAngle
@@ -296,10 +294,10 @@ namespace VelEditor.Content
 
     class Geometry : Asset
     {
-        public GeometryImportSettings ImportSettings { get; } = new GeometryImportSettings();
+        public GeometryImportSettings ImportSettings { get; } = new();
 
-        private readonly List<LODGroup> _lodGroups = new List<LODGroup>();
-        private readonly object _lock = new object();
+        private readonly List<LODGroup> _lodGroups = new();
+        private readonly object _lock = new();
 
         public LODGroup? GetLODGroup(int lodGroup = 0)
         {
@@ -378,17 +376,17 @@ namespace VelEditor.Content
             var lodId = reader.ReadInt32();
             mesh.ElementSize = reader.ReadInt32();
             mesh.ElementsType = (ElementsType)reader.ReadInt32();
-            mesh.PrimitveTopology = PrimitveTopology.TriangleList; // ContentTools currently only support triangle list meshes.
+            mesh.PrimitveTopology = PrimitiveTopology.TriangleList; // ContentTools currently only support triangle list meshes.
             mesh.VertexCount = reader.ReadInt32();
             mesh.IndexSize = reader.ReadInt32();
             mesh.IndexCount = reader.ReadInt32();
             var lodThreshold = reader.ReadSingle();
 
-            var elementBufferSize = mesh.ElementSize * mesh.VertexCount;
+            var elementsBufferSize = mesh.ElementSize * mesh.VertexCount;
             var indexBufferSize = mesh.IndexSize * mesh.IndexCount;
 
             mesh.Positions = reader.ReadBytes(Mesh.PositionSize * mesh.VertexCount);
-            mesh.Elements = reader.ReadBytes(elementBufferSize);
+            mesh.Elements = reader.ReadBytes(elementsBufferSize);
             mesh.Indices = reader.ReadBytes(indexBufferSize);
 
             MeshLOD lod;
@@ -406,35 +404,24 @@ namespace VelEditor.Content
             lod.MeshesList.Add(mesh);
         }
 
-        public override void Import(string file)
+        public override bool Import(string file)
         {
             Debug.Assert(File.Exists(file));
             Debug.Assert(!string.IsNullOrEmpty(FullPath));
             var ext = Path.GetExtension(file).ToLower();
 
-            SourcePath = file;
-
-            try
+            if (ext == ".fbx")
             {
-                if (ext == ".fbx")
-                {
-                    ImportFbx(file);
-                }
+                return ImportFbx(file);
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                var msg = $"Failed to read {file} for import.";
-                Debug.WriteLine(msg);
-                Logger.Log(MessageType.Error, msg);
-            }
+            return false;
         }
 
-        private void ImportFbx(string file)
+        private bool ImportFbx(string file)
         {
             Logger.Log(MessageType.Info, $"Importing FBX file {file}");
             var tempPath = Application.Current.Dispatcher.Invoke(() => Project.Current.TempFolder);
-            if (string.IsNullOrEmpty(tempPath)) return;
+            if (string.IsNullOrEmpty(tempPath)) return false;
 
             lock (_lock)
             {
@@ -443,10 +430,30 @@ namespace VelEditor.Content
 
             var tempFile = $"{tempPath}{ContentHelper.GetRandomString()}.fbx";
             File.Copy(file, tempFile, true);
-            ContentToolsAPI.ImportFbx(tempFile, this);
+            bool result = false;
+
+            try
+            {
+                ContentToolsAPI.ImportFbx(tempFile, this);
+                result = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                var msg = $"Failed to read {file} for import";
+                Debug.WriteLine(msg);
+                Logger.Log(MessageType.Error, msg);
+            }
+
+            if (ImportSettings.ImportEmbeddedTextures)
+            {
+                // TODO
+            }
+
+            return result;
         }
 
-        public override void Load(string file)
+        public override bool Load(string file)
         {
             Debug.Assert(File.Exists(file));
             Debug.Assert(Path.GetExtension(file).ToLower() == AssetFileExtension);
@@ -467,7 +474,7 @@ namespace VelEditor.Content
 
                 using (var reader = new BinaryReader(new MemoryStream(data)))
                 {
-                    LODGroup lodGroup = new LODGroup();
+                    LODGroup lodGroup = new();
                     lodGroup.Name = reader.ReadString();
                     var lodGroupCount = reader.ReadInt32();
 
@@ -480,15 +487,16 @@ namespace VelEditor.Content
                     _lodGroups.Add(lodGroup);
                 }
                 // For Testing. Remove later!
-                PackForEngine();
+                // PackForEngine();
                 // For Testing. Remove later!
-
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
                 Logger.Log(MessageType.Error, $"Failed to load geometry asset from file: {file}");
             }
+            return false;
         }
 
         public override IEnumerable<string> Save(string file)
@@ -539,6 +547,7 @@ namespace VelEditor.Content
                     Logger.Log(MessageType.Info, $"Saved geometry to {meshFileName}");
                     savedFiles.Add(meshFileName);
                 }
+                FullPath = file;
             }
             catch (Exception ex)
             {
@@ -660,7 +669,7 @@ namespace VelEditor.Content
                     Name = reader.ReadString(),
                     ElementSize = reader.ReadInt32(),
                     ElementsType = (ElementsType)reader.ReadInt32(),
-                    PrimitveTopology = (PrimitveTopology)reader.ReadInt32(),
+                    PrimitveTopology = (PrimitiveTopology)reader.ReadInt32(),
                     VertexCount = reader.ReadInt32(),
                     IndexSize = reader.ReadInt32(),
                     IndexCount = reader.ReadInt32()
@@ -676,31 +685,23 @@ namespace VelEditor.Content
             return lod;
         }
 
-        private byte[] GenerateIcon(MeshLOD lod)
+        private static byte[] GenerateIcon(MeshLOD lod)
         {
             var width = ContentInfo.IconWidth * 4;
 
-
-            using var memStream = new MemoryStream();
-
-            BitmapSource bmp = null;
+            byte[] icon = null;
 
             // NOTE: it's not good practive to use a WPF control (view) in the ViewModel.
             // But in this case, we need to render the mesh to a bitmap.
             // We can use a Dispatcher to run the code on the UI thread.
             Application.Current.Dispatcher.Invoke(() =>
             {
-                bmp = Editors.GeometryView.RenderToBitmap(new Editors.MeshRenderer(lod, null), width, width);
-                bmp = new TransformedBitmap(bmp, new ScaleTransform(0.25, 0.25, 0.5, 0.5));
-
-                memStream.SetLength(0);
-
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bmp));
-                encoder.Save(memStream);
+                // Create an image that's 4x larger, so it's softened when it's scaled down.
+                var bmp = Editors.GeometryView.RenderToBitmap(new Editors.MeshRenderer(lod, null), width, width);
+                icon = BitmapHelper.CreateThumbnail(bmp, ContentInfo.IconWidth, ContentInfo.IconWidth);
             });
 
-            return memStream.ToArray();
+            return icon;
         }
 
         public Geometry() : base(AssetType.Mesh) { }
