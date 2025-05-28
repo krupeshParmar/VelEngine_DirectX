@@ -72,7 +72,7 @@
 
             <TextBlock Margin="10,5" FontFamily="Bahnschrift condensed" FontSize="32" d:Text="LOADING...">
                 <TextBlock.Style>
-                    <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBoxStyle}">
+                    <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBlockStyle}">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding State}" Value="{x:Static ed:AssetEditorState.Done}">
                                 <Setter Property="Text" Value="DONE."/>

@@ -164,6 +164,7 @@ namespace VelEditor.Content
             OnProjectChanged(null, new DependencyPropertyChangedEventArgs(DataContextProperty, null, Project.Current));
             folderListView.AddHandler(Thumb.DragDeltaEvent, new DragDeltaEventHandler(Thumb_DragDelta), true);
             folderListView.Items.SortDescriptions.Add(new SortDescription(_sortedProperty, _sortDirection));
+            GeneratePathStackButtons();
         }
 
         private void Thumb_DragDelta(object sender, DragDeltaEventArgs e)
@@ -211,7 +212,7 @@ namespace VelEditor.Content
             var contentPath = Path.TrimEndingDirectorySeparator(vm.ContentFolder);
 
             pathStack.Children.RemoveRange(1, pathStack.Children.Count - 1);
-            if (vm.SelectedFolder == vm.ContentFolder) return;
+            if (vm.SelectedFolder == vm.ContentFolder) goto _addCurrentDirectory;
             string[] paths = new string[3];
             string[] labels = new string[3];
 
@@ -235,6 +236,16 @@ namespace VelEditor.Content
                 pathStack.Children.Add(btn);
                 if (i > 0) pathStack.Children.Add(new System.Windows.Shapes.Path());
             }
+            pathStack.Children.Add(new System.Windows.Shapes.Path());
+
+        _addCurrentDirectory:
+            pathStack.Children.Add(new TextBlock()
+            {
+                Text = $"[ {Path.GetFileName(Path.TrimEndingDirectorySeparator(vm.SelectedFolder))} ]",
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = Brushes.White,
+                Margin = new(5, 0, 5, 0),
+            });
         }
 
         private void OnPathStack_Button_Click(object sender, RoutedEventArgs e)
@@ -299,7 +310,7 @@ namespace VelEditor.Content
             }
         }
 
-        private IAssetEditor OpenAssetEditor(AssetInfo info)
+        private static IAssetEditor OpenAssetEditor(AssetInfo info)
         {
             IAssetEditor editor = null;
             try
@@ -326,7 +337,7 @@ namespace VelEditor.Content
             return editor;
         }
 
-        private IAssetEditor OpenEditorPanel<T>(AssetInfo info, Guid guid, string title)
+        private static IAssetEditor OpenEditorPanel<T>(AssetInfo info, Guid guid, string title)
             where T : FrameworkElement, new()
         {
             // First look for a window that's already open and is displaying the same asset.
@@ -376,12 +387,12 @@ namespace VelEditor.Content
                 {
                     if (e.OriginalSource == filesDrop)
                     {
-                        _ = ContentHelper.ImportFilesAsync(files, vm.SelectedFolder);
+                        new ConfigureImportSettings(files, vm.SelectedFolder).Import();
                         e.Handled = true;
                     }
                     else if (e.OriginalSource == cfgDrop)
                     {
-                        // TODO: open import settings configurator window
+                        OpenImportSettingsConfigurator(files, vm.SelectedFolder);
                         e.Handled = true;
                     }
                 }
@@ -390,13 +401,44 @@ namespace VelEditor.Content
             OnDropBorder_DragLeave(sender, e);
         }
 
+        private static void OpenImportSettingsConfigurator(string[] files, string selectedFolder)
+        {
+            ConfigureImportSettings settingsConfigurator = null;
+            // First, look for a window with this DataContext and add files to be configured for import.
+            foreach (Window win in Application.Current.Windows)
+            {
+                if (win.DataContext is ConfigureImportSettings cfg)
+                {
+                    if (files?.Length > 0)
+                    {
+                        cfg.AddFiles(files, selectedFolder);
+                    }
+
+                    settingsConfigurator = cfg;
+                    win.Activate();
+                    break;
+                }
+            }
+
+            // If the window wasn't already open, create and show a new one.
+            if (settingsConfigurator == null)
+            {
+                settingsConfigurator = (files?.Length > 0) ? new(files, selectedFolder) : new(selectedFolder);
+                new ConfigureImportSettingsWindow()
+                {
+                    DataContext = settingsConfigurator,
+                    Owner = Application.Current.MainWindow,
+                }.Show();
+            }
+        }
+
         private void OnFolderContent_ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var item = folderListView.SelectedItem as ContentInfo;
             SelectedItem = item?.IsDirectory == true ? null : item;
         }
 
-        private void TryEdit(ListBoxItem item, string path)
+        private void TryEdit(ListBoxItem item)
         {
             var textBox = item.FindVisualChild<TextBox>();
             if (textBox != null)
@@ -416,7 +458,7 @@ namespace VelEditor.Content
                     listBoxItem.IsSelected = true;
                     list.SelectedItem = item;
                     list.SelectedIndex = list.Items.IndexOf(item);
-                    TryEdit(listBoxItem, path);
+                    TryEdit(listBoxItem);
                     return true;
                 }
             }

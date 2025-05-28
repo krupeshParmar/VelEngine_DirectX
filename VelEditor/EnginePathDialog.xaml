@@ -16,7 +16,7 @@
                        Foreground="{StaticResource Editor.RedBrush}"
                        Margin="0, 10, 0, 0" TextWrapping="Wrap" x:Name="messageTextBlock"/>
             <DockPanel>
-                <TextBlock Text="Engine Path" Width="72" Style="{StaticResource LightTextBoxStyle}"/>
+                <TextBlock Text="Engine Path" Width="72" Style="{StaticResource LightTextBlockStyle}"/>
                 <TextBox x:Name="pathTextBox"/>
             </DockPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom"

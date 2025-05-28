@@ -232,7 +232,8 @@
                 <Grid>
                     <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap"
                            Foreground="{StaticResource Editor.FontBrush}" HorizontalAlignment="Center"
-                           Margin="2,0" MaxHeight="60"/>
+                            TextAlignment="Center"
+                               Margin="2,0" MaxHeight="60"/>
                     <TextBox Margin="0,-2" HorizontalContentAlignment="Center" Padding="0" Style="{StaticResource TextBoxStyle_WithRename}"
                              Tag="{Binding RenameCommand}" Text="{Binding FileName, UpdateSourceTrigger=Explicit, Mode=OneWay}"
                              Visibility="Collapsed" VerticalAlignment="Stretch" TextWrapping="Wrap"/>

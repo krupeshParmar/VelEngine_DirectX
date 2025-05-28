@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.TextFormatting;
 using System.Xml.Linq;
 using VelEditor.Content;
+using VelEditor.Utilities;
 
 namespace VelEditor
 {
@@ -129,27 +130,31 @@ namespace VelEditor
 
         public static bool IsOlder(this DateTime date, DateTime other) => date < other;
 
-        public static async Task ImportFilesAsync(string[] files, string destination)
+        internal static async Task<List<Asset>> ImportFilesAsync(IEnumerable<AssetProxy> proxies)
         {
+            List<Asset> assets = new();
             try
             {
-                Debug.Assert(!string.IsNullOrEmpty(destination));
                 ContentWatcher.EnableFileWatcher(false);
-                var tasks = files.Select(async file => await Task.Run(() => { Import(file, destination); }));
+                var tasks = proxies.Select(async proxy =>
+                                await Task.Run(() =>
+                                {
+                                    assets.Add(Import(proxy.FileInfo.FullName, proxy.ImportSettings, proxy.DestinationFolder));
+                                }));
                 await Task.WhenAll(tasks);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to import files to {destination}");
-                Debug.WriteLine(ex.Message);
+                Logger.Log(MessageType.Error, $"Failed to import files, {ex.Message}");
             }
             finally
             {
                 ContentWatcher.EnableFileWatcher(true);
             }
+            return assets;
         }
 
-        private static Asset Import(string file, string destination)
+        private static Asset Import(string file, IAssetImportSettings importSettings, string destination)
         {
             Debug.Assert(!string.IsNullOrEmpty(file));
             if (IsDirectory(file)) return null;
@@ -158,8 +163,8 @@ namespace VelEditor
 
             Asset asset = ext switch
             {
-                { } when MeshFileExtensions.Contains(ext) => new Content.Geometry(),
-                { } when ImageFileExtensions.Contains(ext) => new Texture(),
+                { } when MeshFileExtensions.Contains(ext) => new Content.Geometry(importSettings),
+                { } when ImageFileExtensions.Contains(ext) => new Texture(importSettings),
                 { } when AudioFileExtensions.Contains(ext) => null,
                 _ => null
             };

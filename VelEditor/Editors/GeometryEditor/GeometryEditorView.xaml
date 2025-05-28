@@ -8,7 +8,7 @@
              d:DataContext="{d:DesignInstance Type=ed:GeometryEditor}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBoxStyle}"/>
+        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBlockStyle}"/>
     </UserControl.Resources>
     <UserControl.DataContext>
         <ed:GeometryEditor/>

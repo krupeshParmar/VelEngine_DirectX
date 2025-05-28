@@ -10,7 +10,7 @@
              d:DataContext="{d:DesignInstance Type=vm:MSTransform, IsDesignTimeCreatable=True}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
-        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBoxStyle}"/>
+        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBlockStyle}"/>
     </UserControl.Resources>
     
     <local:ComponentInspecter Header="Transform">

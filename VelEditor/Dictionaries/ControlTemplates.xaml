@@ -6,7 +6,7 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:utl="clr-namespace:VelEditor.Utilities.Controls">
     <sys:Double x:Key="AssetIconWidth">90</sys:Double>
-    <Style TargetType="{x:Type TextBlock}" x:Key="LightTextBoxStyle">
+    <Style TargetType="{x:Type TextBlock}" x:Key="LightTextBlockStyle">
         <Setter Property="Foreground" Value="{StaticResource Editor.FontBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -422,13 +422,13 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Selector.IsSelectionActive" Value="True">
-                            <Setter Property="BorderBrush" TargetName="Bd" 
+                            <Setter Property="BorderBrush"
                                 Value="{StaticResource Editor.Selected.BackgroundBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="false">
-                            <Setter Property="Background" TargetName="Bd" 
+                            <Setter Property="Background"
                                 Value="{StaticResource Editor.Window.GrayBrush2}"/>
-                            <Setter Property="BorderBrush" TargetName="Bd" 
+                            <Setter Property="BorderBrush"
                                 Value="{StaticResource Editor.Window.GrayBrush4}"/>
                         </Trigger>
                         <MultiTrigger>
@@ -436,7 +436,7 @@
                                 <Condition Property="Selector.IsSelectionActive" Value="False"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter Property="BorderBrush" TargetName="Bd" 
+                            <Setter Property="BorderBrush"
                                 Value="{StaticResource Editor.Selected.BackgroundBrush}"/>
                         </MultiTrigger>
                         <MultiTrigger>

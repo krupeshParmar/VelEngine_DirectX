@@ -18,7 +18,7 @@
     <Grid>
         <StackPanel Orientation="Horizontal" Margin="5">
             <StackPanel.Resources>
-                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBoxStyle}">
+                <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LightTextBlockStyle}">
                     <Setter Property="Margin" Value="0,5"/>
                 </Style>
             </StackPanel.Resources>

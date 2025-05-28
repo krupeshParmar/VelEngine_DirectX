@@ -31,7 +31,7 @@
                             <Expander.Header>
                                 <Grid>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource LightTextBoxStyle}"/>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource LightTextBlockStyle}"/>
                                         <Button Content="Remove"
                                                 Command="{Binding DataContext.RemoveSceneCommand,
                                             RelativeSource={RelativeSource AncestorType=UserControl}}"

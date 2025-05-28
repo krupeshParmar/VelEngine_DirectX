@@ -16,7 +16,7 @@
         <CommandBinding Command="{x:Static ed:TextureViewCommands.ActualSizeCommand}" Executed="OnActualSizeTexture"/>
     </UserControl.CommandBindings>
     <UserControl.Resources>
-        <Style BasedOn="{StaticResource LightTextBoxStyle}" TargetType="{x:Type TextBlock}"/>
+        <Style BasedOn="{StaticResource LightTextBlockStyle}" TargetType="{x:Type TextBlock}"/>
         <BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter"/>
     </UserControl.Resources>
     <UserControl.DataContext>

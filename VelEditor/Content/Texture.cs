@@ -464,14 +464,14 @@ namespace VelEditor.Content
                 result = false;
             }
 
-            if (is3D && (width > Max3DSize || height > Max3DSize))
+            if (is3D && (width > Max3DSize || height > Max3DSize || arrayOrDepth > Max3DSize))
             {
                 Logger.Log(MessageType.Error, $"3D texture dimensions greater than {Max3DSize}! (file: {file})");
                 result = false;
             }
             else if (arrayOrDepth > MaxArraySize)
             {
-                Logger.Log(MessageType.Error, $"3D texture dimensions greater than {MaxArraySize}! (file: {file})");
+                Logger.Log(MessageType.Error, $"2D texture dimensions greater than {MaxArraySize}! (file: {file})");
                 result = false;
             }
 
@@ -640,5 +640,11 @@ namespace VelEditor.Content
         }
 
         public Texture() : base(AssetType.Texture) { }
+
+        public Texture(IAssetImportSettings importSettings) : this()
+        {
+            Debug.Assert(importSettings is TextureImportSettings);
+            ImportSettings = (TextureImportSettings)importSettings;
+        }
     }
 }

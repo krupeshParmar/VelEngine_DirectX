@@ -32,7 +32,7 @@ namespace VelEditor.Content
             var extension = IsDirectory ? string.Empty : Asset.AssetFileExtension;
             var path = $@"{Path.GetDirectoryName(FullPath)}{Path.DirectorySeparatorChar}{newFileName}{extension}";
 
-            if (!Validate(path)) return;
+            if (!Validate(path, newFileName)) return;
 
             try
             {
@@ -55,11 +55,16 @@ namespace VelEditor.Content
             catch (Exception ex) { Debug.WriteLine(ex.Message); }
         }
 
-        private bool Validate(string path)
+        private bool Validate(string path, string newFileName)
         {
             var fileName = Path.GetFileName(path);
             var dirName = IsDirectory ? path : Path.GetDirectoryName(path);
             var errorMsg = string.Empty;
+
+            if (!string.IsNullOrEmpty(Path.GetDirectoryName(newFileName)))
+            {
+                errorMsg = "File and folder names may not include sub-directories.";
+            }
 
             if (!IsDirectory)
             {

@@ -20,7 +20,7 @@
         <Border Grid.Row="1" Background="{StaticResource Editor.Window.GrayBrush3}">
             <StackPanel>
                 <DockPanel Margin="10">
-                    <TextBlock Text="File name:" Style="{StaticResource LightTextBoxStyle}"/>
+                    <TextBlock Text="File name:" Style="{StaticResource LightTextBlockStyle}"/>
                     <TextBox x:Name="fileNameTextBox"
                              Text="{Binding Path=SelectedItem.FileName, ElementName=contentBrowserView, Mode=OneWay}"
                              Margin="5,0,0,0"/>
