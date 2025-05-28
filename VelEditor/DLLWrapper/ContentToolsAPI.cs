@@ -114,9 +114,10 @@ namespace VelEditor.ContentToolsAPIStruct
         public byte ReverseHandedness = 0;
         public byte ImportEmbededTextures = 1;
         public byte ImportAnimations = 1;
+        public byte CoalesceMeshes = 0;
         private byte ToByte(bool value) => value ? (byte)1 : (byte)0;
 
-        public void FromContenteSettings(Content.Geometry geometry)
+        public void FromContenteSettings(Geometry geometry)
         {
             var settings = geometry.ImportSettings;
 
@@ -126,6 +127,7 @@ namespace VelEditor.ContentToolsAPIStruct
             ReverseHandedness = ToByte(settings.ReverseHandedness);
             ImportEmbededTextures = ToByte(settings.ImportEmbeddedTextures);
             ImportAnimations = ToByte(settings.ImportAnimations);
+            CoalesceMeshes = ToByte(settings.CoalesceMeshes);
         }
     }
 
@@ -167,6 +169,7 @@ namespace VelEditor.DLLWrapper
     static class ContentToolsAPI
     {
         private const string _toolsDLL = "ContentTools.dll";
+        private delegate void ProgressCallback(int value, int maxValue);
 
         [DllImport(_toolsDLL)]
         public static extern void ShutDownContentTools();
@@ -391,11 +394,13 @@ namespace VelEditor.DLLWrapper
         }
 
         [DllImport(_toolsDLL)]
-        private static extern void ImportFbx(string file, [In, Out] SceneData data);
+        private static extern void ImportFbx(string file, [In, Out] SceneData data, ProgressCallback callback);
 
-        public static void ImportFbx(string file, Content.Geometry geometry)
+        public static void ImportFbx(string file, Geometry geometry)
         {
-            GeometryFromSceneData(geometry, (sceneData) => ImportFbx(file, sceneData), $"Failed to import from FBX file: {file}");
+            var item = ImportingItemCollection.GetItem(geometry);
+            ProgressCallback callback = item != null ? item.SetProgress : null;
+            GeometryFromSceneData(geometry, (sceneData) => ImportFbx(file, sceneData, callback), $"Failed to import from FBX file: {file}");
         }
         #endregion Geometry
     }

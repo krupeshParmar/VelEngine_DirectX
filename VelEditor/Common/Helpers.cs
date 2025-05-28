@@ -135,6 +135,7 @@ namespace VelEditor
             List<Asset> assets = new();
             try
             {
+                ImportingItemCollection.Init();
                 ContentWatcher.EnableFileWatcher(false);
                 var tasks = proxies.Select(async proxy =>
                                 await Task.Run(() =>
@@ -189,10 +190,13 @@ namespace VelEditor
 
             if (!destination.EndsWith(Path.DirectorySeparatorChar)) destination += Path.DirectorySeparatorChar;
             asset.FullPath = destination + name + Asset.AssetFileExtension;
+            var importingItem = new ImportingItem(name, asset);
+            ImportingItemCollection.Add(importingItem);
             bool importSucceeded = false;
             try
             {
                 // NOTE: FullPath must be set before we call asset.Import().
+                Debug.Assert(asset.FullPath?.Contains(destination) == true);
                 importSucceeded = !string.IsNullOrEmpty(file) && asset.Import(file);
 
                 if (importSucceeded)
@@ -204,7 +208,7 @@ namespace VelEditor
             }
             finally
             {
-                // TODO: UI stuff for import status
+                importingItem.Status = importSucceeded ? ImportStatus.Succeeded : ImportStatus.Failed;
             }
         }
     }

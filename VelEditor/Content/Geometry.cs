@@ -261,6 +261,20 @@ namespace VelEditor.Content
             }
         }
 
+        private bool _coalesceMeshes;
+        public bool CoalesceMeshes
+        {
+            get => _coalesceMeshes;
+            set
+            {
+                if (_coalesceMeshes != value)
+                {
+                    _coalesceMeshes = value;
+                    OnPropertyChanged(nameof(CoalesceMeshes));
+                }
+            }
+        }
+
         public GeometryImportSettings()
         {
             SmoothingAngle = 178f;
@@ -269,6 +283,7 @@ namespace VelEditor.Content
             ReverseHandedness = false;
             ImportEmbeddedTextures = true;
             ImportAnimations = true;
+            CoalesceMeshes = false;
         }
 
         public void ToBinary(BinaryWriter writer)
@@ -279,6 +294,7 @@ namespace VelEditor.Content
             writer.Write(ReverseHandedness);
             writer.Write(ImportEmbeddedTextures);
             writer.Write(ImportAnimations);
+            writer.Write(CoalesceMeshes);
         }
         public void FromBinary(BinaryReader reader)
         {
@@ -288,6 +304,7 @@ namespace VelEditor.Content
             ReverseHandedness = reader.ReadBoolean();
             ImportEmbeddedTextures = reader.ReadBoolean();
             ImportAnimations = reader.ReadBoolean();
+            CoalesceMeshes = reader.ReadBoolean();
         }
     }
 

@@ -73,8 +73,7 @@ namespace vel::tools {
         }
     } // anonymous namespace
 
-    bool
-        fbx_context::initialize_fbx()
+    bool fbx_context::initialize_fbx()
     {
         assert(!is_valid());
 
@@ -91,8 +90,7 @@ namespace vel::tools {
         return true;
     }
 
-    void
-        fbx_context::load_fbx_file(const char* file)
+    void fbx_context::load_fbx_file(const char* file)
     {
         assert(_fbx_manager && !_fbx_scene);
         _fbx_scene = FbxScene::Create(_fbx_manager, "Importer Scene");
@@ -115,8 +113,7 @@ namespace vel::tools {
         _scene_scale = (f32)_fbx_scene->GetGlobalSettings().GetSystemUnit().GetConversionFactorTo(FbxSystemUnit::m);
     }
 
-    void
-        fbx_context::get_scene(FbxNode* root /*= nullptr*/)
+    void fbx_context::get_scene(FbxNode* root /*= nullptr*/)
     {
         assert(is_valid());
 
@@ -127,23 +124,50 @@ namespace vel::tools {
         }
         FbxGeometryConverter gc{ _fbx_manager };
         const s32 num_nodes{ root->GetChildCount() };
-        for (s32 i{ 0 }; i < num_nodes; ++i)
+        if (_scene_data->settings.coalesce_meshes)
         {
-            FbxNode* node{ root->GetChild(i) };
-            if (!node) continue;
 
             lod_group lod{};
-            get_meshes(node, lod.meshes_list, 0, -1.f);
+            for (s32 i{ 0 }; i < num_nodes; ++i)
+            {
+                FbxNode* node{ root->GetChild(i) };
+                if (!node) continue;
+
+                get_meshes(node, lod.meshes_list, 0, -1.f);
+            }
+
             if (lod.meshes_list.size())
             {
                 lod.name = lod.meshes_list[0].name;
+                mesh combined_mesh{};
+
+                if (coalesce_meshes(lod, combined_mesh, _progression))
+                {
+                    lod.meshes_list.clear();
+                    lod.meshes_list.emplace_back(combined_mesh);
+                }
                 _scene->lod_groups.emplace_back(lod);
+            }
+        }
+        else
+        {
+            for (s32 i{ 0 }; i < num_nodes; ++i)
+            {
+                FbxNode* node{ root->GetChild(i) };
+                if (!node) continue;
+
+                lod_group lod{};
+                get_meshes(node, lod.meshes_list, 0, -1.f);
+                if (lod.meshes_list.size())
+                {
+                    lod.name = lod.meshes_list[0].name;
+                    _scene->lod_groups.emplace_back(lod);
+                }
             }
         }
     }
 
-    void
-        fbx_context::get_meshes(FbxNode* node, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
+    void fbx_context::get_meshes(FbxNode* node, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
     {
         assert(node && lod_id != u32_invalid_id);
         bool is_lod_group{ false };
@@ -181,8 +205,7 @@ namespace vel::tools {
         }
     }
 
-    void
-        fbx_context::get_mesh(FbxNodeAttribute* attribute, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
+    void fbx_context::get_mesh(FbxNodeAttribute* attribute, utl::vector<mesh>& meshes, u32 lod_id, f32 lod_threshold)
     {
         assert(attribute);
 
@@ -205,11 +228,11 @@ namespace vel::tools {
         if (get_mesh_data(fbx_mesh, m))
         {
             meshes.emplace_back(m);
+            _progression->callback(_progression->value(), _progression->max_value() + 1);
         }
     }
 
-    void
-        fbx_context::get_lod_group(FbxNodeAttribute* attribute)
+    void fbx_context::get_lod_group(FbxNodeAttribute* attribute)
     {
         assert(attribute);
 
@@ -237,8 +260,7 @@ namespace vel::tools {
         if (lod.meshes_list.size()) _scene->lod_groups.emplace_back(lod);
     }
 
-    bool
-        fbx_context::get_mesh_data(FbxMesh* fbx_mesh, mesh& m)
+    bool fbx_context::get_mesh_data(FbxMesh* fbx_mesh, mesh& m)
     {
         assert(fbx_mesh);
 
@@ -385,16 +407,16 @@ namespace vel::tools {
         return true;
     }
 
-    VEL_EDITOR_API void
-        ImportFbx(const char* file, scene_data* data)
+    VEL_EDITOR_API void ImportFbx(const char* file, scene_data* data, progression::progress_callback callback)
     {
         assert(file && data);
         scene scene{};
+        progression progression{ callback };
 
         // NOTE: anything that involves using the FBX SDK should be single-threaded
         {
             std::lock_guard lock{ fbx_mutex };
-            fbx_context fbx_context{ file, &scene, data };
+            fbx_context fbx_context{ file, &scene, data, &progression };
             if (fbx_context.is_valid())
             {
                 fbx_context.get_scene();
@@ -406,7 +428,7 @@ namespace vel::tools {
             }
         }
 
-        process_scene(scene, data->settings);
+        process_scene(scene, data->settings, &progression);
         pack_data(scene, *data);
     }
 }

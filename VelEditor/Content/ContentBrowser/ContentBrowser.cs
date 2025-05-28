@@ -204,7 +204,6 @@ namespace VelEditor.Content
             Debug.Assert(!string.IsNullOrEmpty(contentFolder.Trim()));
             contentFolder = Path.TrimEndingDirectorySeparator(contentFolder);
             ContentFolder = contentFolder;
-            SelectedFolder = contentFolder;
             FolderContent = new ReadOnlyObservableCollection<ContentInfo>(_folderContent);
 
             ContentWatcher.ContentModified += OnContentModified;

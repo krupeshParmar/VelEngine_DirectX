@@ -8,7 +8,9 @@ namespace VelEditor
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected internal void OnPropertyChanged(string propertyName)
+        // NOTE (to myself): if you're here to make this method internal, "don't"!
+        // Find another way! Use the Force! I've faith in you!
+        protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

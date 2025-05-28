@@ -11,6 +11,7 @@
         Style="{StaticResource VelWindowStyle}">
     <Grid>
         <TabControl Background="Transparent" BorderThickness="0"
+                     SelectionChanged="OnTabControl_SelectionChanged"
                     x:Name="tabControl">
             <TabItem Header="Geometry" Tag="{x:Static local:AssetType.Mesh}" MinWidth="96">
                 <local:ConfigureGeometryImportSettingsView />

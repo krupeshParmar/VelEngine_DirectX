@@ -164,7 +164,6 @@ namespace VelEditor.Content
             OnProjectChanged(null, new DependencyPropertyChangedEventArgs(DataContextProperty, null, Project.Current));
             folderListView.AddHandler(Thumb.DragDeltaEvent, new DragDeltaEventHandler(Thumb_DragDelta), true);
             folderListView.Items.SortDescriptions.Add(new SortDescription(_sortedProperty, _sortDirection));
-            GeneratePathStackButtons();
         }
 
         private void Thumb_DragDelta(object sender, DragDeltaEventArgs e)
@@ -401,7 +400,7 @@ namespace VelEditor.Content
             OnDropBorder_DragLeave(sender, e);
         }
 
-        private static void OpenImportSettingsConfigurator(string[] files, string selectedFolder)
+        private static void OpenImportSettingsConfigurator(string[] files, string selectedFolder, bool forceOpen = false)
         {
             ConfigureImportSettings settingsConfigurator = null;
             // First, look for a window with this DataContext and add files to be configured for import.
@@ -424,11 +423,14 @@ namespace VelEditor.Content
             if (settingsConfigurator == null)
             {
                 settingsConfigurator = (files?.Length > 0) ? new(files, selectedFolder) : new(selectedFolder);
-                new ConfigureImportSettingsWindow()
+                if (settingsConfigurator.FileCount > 0 || forceOpen)
                 {
-                    DataContext = settingsConfigurator,
-                    Owner = Application.Current.MainWindow,
-                }.Show();
+                    new ConfigureImportSettingsWindow()
+                    {
+                        DataContext = settingsConfigurator,
+                        Owner = Application.Current.MainWindow,
+                    }.Show();
+                }
             }
         }
 

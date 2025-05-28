@@ -326,26 +326,28 @@ namespace vel::tools
 		}
 	}
 
-	void determine_elements_type(mesh& m)
+	elements::elements_type::type determine_elements_type(const mesh& m)
 	{
 		using namespace elements;
+		elements_type::type type{};
 		if (m.normals.size())
 		{
 			if (m.uv_sets.size() && m.uv_sets[0].size())
 			{
-				m.elements_type = elements_type::static_normal_texture;
+				type = elements_type::static_normal_texture;
 			}
 			else
 			{
-				m.elements_type = elements_type::static_normal;
+				type = elements_type::static_normal;
 			}
 		}
 		else if (m.colors.size())
 		{
-			m.elements_type = elements_type::static_color;
+			type = elements_type::static_color;
 		}
 
 		// TODO: we lack data for skeletal meshes. Expand for skeletal meshes later.
+		return type;
 	}
 
 	void process_vertices(mesh& m, const geometry_import_settings& settings)
@@ -363,7 +365,7 @@ namespace vel::tools
 			process_uvs(m);
 		}
 
-		determine_elements_type(m);
+		m.elements_type = determine_elements_type(m);
 		pack_vertices(m);
 	}
 
@@ -404,7 +406,7 @@ namespace vel::tools
 			su32										// no. of lods
 		};
 
-		for (auto& lod : scene.lod_groups)
+		for (const auto& lod : scene.lod_groups)
 		{
 			u64 lod_size
 			{
@@ -412,7 +414,7 @@ namespace vel::tools
 				su32									// number of meshes
 			};
 
-			for (auto& m : lod.meshes_list)
+			for (const auto& m : lod.meshes_list)
 			{
 				lod_size += get_mesh_size(m);
 			}
@@ -522,13 +524,13 @@ namespace vel::tools
 		return !submesh.raw_indices.empty();
 	}
 
-	void split_meshes_by_material(scene& scene)
+	void split_meshes_by_material(scene& scene, progression *const progression)
 	{
 		for (auto& lod : scene.lod_groups)
 		{
 			utl::vector<mesh> new_meshes;
 
-			for (auto& m : lod.meshes_list)
+			for (const auto& m : lod.meshes_list)
 			{
 				// If more than one material is used in this mesh
 				// then split it into submeshes.
@@ -541,6 +543,7 @@ namespace vel::tools
 						if (split_meshes_by_material(m.material_used[i], m, submesh))
 						{
 							new_meshes.emplace_back(submesh);
+							progression->callback(progression->value(), progression->max_value() + 1);
 						}
 					}
 				}
@@ -554,9 +557,18 @@ namespace vel::tools
 		}
 	}
 
-	void process_scene(scene& scene, const geometry_import_settings& settings)
+	template <typename T> void append_to_vector_pod(utl::vector<T>& dst, const utl::vector<T>& src)
 	{
-		split_meshes_by_material(scene);
+		if (src.empty()) return;
+		const u32 num_elements{ (u32)dst.size() };
+		dst.resize(dst.size() + src.size());
+		memcpy(&dst[num_elements], src.data(), src.size() * sizeof(T));
+	}
+
+	void process_scene(scene& scene, const geometry_import_settings& settings, progression *const progression)
+	{
+		assert(progression);
+		split_meshes_by_material(scene, progression);
 		for (auto& lod : scene.lod_groups)
 			for (auto& m : lod.meshes_list)
 			{
@@ -579,7 +591,7 @@ namespace vel::tools
 		// number of lods
 		blob.write((u32)scene.lod_groups.size());
 
-		for (auto& lod : scene.lod_groups)
+		for (const auto& lod : scene.lod_groups)
 		{
 			// lod name
 			blob.write((u32)lod.name.size());
@@ -587,12 +599,68 @@ namespace vel::tools
 			// no. of meshes
 			blob.write((u32)lod.meshes_list.size());
 
-			for (auto& m : lod.meshes_list)
+			for (const auto& m : lod.meshes_list)
 			{
 				pack_mesh_data(m, blob);
 			}
 		}
 		assert(scene_size == blob.offset());
 	}
+	bool coalesce_meshes(const lod_group& lod, mesh& combined_mesh, progression *const progression)
+	{
+		assert(lod.meshes_list.size());
+		const mesh& first_mesh{ lod.meshes_list[0] };
+		combined_mesh.name = first_mesh.name;
+		combined_mesh.elements_type = determine_elements_type(first_mesh);
+		combined_mesh.lod_threshold = first_mesh.lod_threshold;
+		combined_mesh.lod_id = first_mesh.lod_id;
+		combined_mesh.uv_sets.resize(first_mesh.uv_sets.size());
 
+		for (u32 mesh_idx{ 0 }; mesh_idx < lod.meshes_list.size(); ++mesh_idx)
+		{
+			const mesh& m{ lod.meshes_list[mesh_idx] };
+
+			if (combined_mesh.elements_type != determine_elements_type(m) ||
+				combined_mesh.uv_sets.size() != m.uv_sets.size() ||
+				combined_mesh.lod_id != m.lod_id ||
+				!math::is_equal(combined_mesh.lod_threshold, m.lod_threshold))
+			{
+				combined_mesh = {};
+				return false;
+			}
+
+			const u32 position_count{ (u32)combined_mesh.positions.size() };
+			const u32 raw_index_base{ (u32)combined_mesh.raw_indices.size() };
+
+			append_to_vector_pod(combined_mesh.positions, m.positions);
+			append_to_vector_pod(combined_mesh.normals, m.normals);
+			append_to_vector_pod(combined_mesh.tangents, m.tangents);
+			append_to_vector_pod(combined_mesh.colors, m.colors);
+
+			for (u32 i{ 0 }; i < combined_mesh.uv_sets.size(); ++i)
+			{
+				append_to_vector_pod(combined_mesh.uv_sets[i], m.uv_sets[i]);
+			}
+
+			append_to_vector_pod(combined_mesh.material_indices, m.material_indices);
+			append_to_vector_pod(combined_mesh.raw_indices, m.raw_indices);
+
+			for (u32 i{ raw_index_base }; i < combined_mesh.raw_indices.size(); ++i)
+			{
+				combined_mesh.raw_indices[i] += position_count;
+			}
+
+			progression->callback(progression->value(), progression->max_value() > 1 ? progression->max_value() - 1 : 1);
+		}
+
+		for (const u32 mtl_idx : combined_mesh.material_indices)
+		{
+			if (std::find(combined_mesh.material_used.begin(), combined_mesh.material_used.end(), mtl_idx) == combined_mesh.material_used.end())
+			{
+				combined_mesh.material_used.emplace_back(mtl_idx);
+			}
+		}
+
+		return true;
+	}
 }
