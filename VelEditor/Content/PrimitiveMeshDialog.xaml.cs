@@ -51,17 +51,17 @@ namespace VelEditor.Content
             {
                 case PrimitiveMeshType.Plane:
                     {
-                        info.SegmentX = (int)xSliderPlane.Value;
-                        info.SegmentZ = (int)zSliderPlane.Value;
+                        info.SegmentsX = (int)xSliderPlane.Value;
+                        info.SegmentsZ = (int)zSliderPlane.Value;
                         info.Size.X = Value(widthScalarBoxPlane,0.001f);
                         info.Size.Z = Value(lengthScalarBoxPlane,0.001f);
                     }
                     break;
                 case PrimitiveMeshType.Cube:
                     {
-                        info.SegmentX = (int)xSegmentSliderCube.Value;
-                        info.SegmentY = (int)ySegmentSliderCube.Value;
-                        info.SegmentZ = (int)zSegmentSliderCube.Value;
+                        info.SegmentsX = (int)xSegmentSliderCube.Value;
+                        info.SegmentsY = (int)ySegmentSliderCube.Value;
+                        info.SegmentsZ = (int)zSegmentSliderCube.Value;
                         info.Size.X = Value(xSizeCube, 0.001f);
                         info.Size.Y = Value(ySizeCube, 0.001f);
                         info.Size.Z = Value(zSizeCube, 0.001f);
@@ -69,8 +69,8 @@ namespace VelEditor.Content
                     break;
                 case PrimitiveMeshType.UVSphere:
                     {
-                        info.SegmentX = (int)xSliderUVSphere.Value;
-                        info.SegmentY = (int)ySliderUVSphere.Value;
+                        info.SegmentsX = (int)xSliderUVSphere.Value;
+                        info.SegmentsY = (int)ySliderUVSphere.Value;
                         info.Size.X = Value(xScalarBoxUVSphere, 0.001f);
                         info.Size.Y = Value(yScalarBoxUVSphere, 0.001f);
                         info.Size.Z = Value(zScalarBoxUVSphere, 0.001f);

@@ -25,6 +25,7 @@
     <None Remove="Resources\ContentBrowser\FolderLarge.png" />
     <None Remove="Resources\ContentBrowser\FolderSmall.png" />
     <None Remove="Resources\ContentBrowser\ListView.png" />
+    <None Remove="Resources\ContentBrowser\OpenImportCfg.png" />
     <None Remove="Resources\ContentBrowser\TileView.png" />
     <None Remove="Resources\PrimitiveMeshView\plane_deformation.png" />
     <None Remove="Resources\TextureEditor\ChannelSelectShader.cso" />
@@ -52,6 +53,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\ContentBrowser\OpenImportCfg.png" />
     <Resource Include="Resources\ContentBrowser\TileView.png" />
   </ItemGroup>
   <ItemGroup>

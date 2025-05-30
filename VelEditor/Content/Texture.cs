@@ -501,7 +501,6 @@ namespace VelEditor.Content
             try
             {
                 Logger.Log(MessageType.Info, $"Importing image file {file}");
-                ImportSettings.Sources.Add(file);
                 (var slices, var icon) = ContentToolsAPI.Import(this);
                 Debug.Assert(slices.Any() && slices.First().Any() && slices.First().First().Any());
 

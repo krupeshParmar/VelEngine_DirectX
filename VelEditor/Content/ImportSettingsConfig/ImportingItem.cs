@@ -74,7 +74,7 @@ namespace VelEditor.Content
             get => _progressValue;
             private set
             {
-                if (_progressValue != value)
+                if (!_progressValue.IsTheSameAs(value))
                 {
                     _progressValue = value;
                     OnPropertyChanged(nameof(ProgressValue));
@@ -100,7 +100,7 @@ namespace VelEditor.Content
         {
             ProgressMaximum = maxValue;
             ProgressValue = progress;
-            NormalizedValue = Math.Clamp(progress / maxValue, 0, 1);
+            NormalizedValue = maxValue > 0 ? Math.Clamp(progress / maxValue, 0, 1) : 0.0;
         }
 
         private void UpdateTimer(object sender, EventArgs e)

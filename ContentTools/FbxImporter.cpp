@@ -421,11 +421,12 @@ namespace vel::tools {
             {
                 fbx_context.get_scene();
             }
-            else
-            {
-                // TODO: send failure log message to editor
-                return;
-            }
+        }
+
+        if (scene.lod_groups.empty())
+        {
+            // TODO: send failure log message to editor
+            return;
         }
 
         process_scene(scene, data->settings, &progression);

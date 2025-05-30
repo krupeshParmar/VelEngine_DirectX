@@ -535,5 +535,11 @@ namespace VelEditor.Content
             fadeOut.Completed += (_, _) => dropBorder.Visibility = Visibility.Collapsed;
             dropBorder.BeginAnimation(OpacityProperty, fadeOut);
         }
+
+        private void OnOpenImportSettingsConfigurator_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as ContentBrowser;
+            OpenImportSettingsConfigurator(null, vm.SelectedFolder, true);
+        }
     }
 }

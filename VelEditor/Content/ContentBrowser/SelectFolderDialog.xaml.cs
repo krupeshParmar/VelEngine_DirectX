@@ -28,12 +28,10 @@ namespace VelEditor.Content
 
             contentBrowserView.Loaded += (_, _) =>
             {
-                if (!Path.EndsInDirectorySeparator(startFolder))
-                {
-                    startFolder += Path.DirectorySeparatorChar;
-                }
+                // TODO: make sure that all paths always end with a directory separator character, application-wide!
+                var startPath = startFolder + Path.DirectorySeparatorChar;
 
-                if (startFolder?.Contains(Project.Current.ContentPath) == true)
+                if (startPath.Contains(Project.Current.ContentPath))
                 {
                     (contentBrowserView.DataContext as ContentBrowser).SelectedFolder = startFolder;
                 }
