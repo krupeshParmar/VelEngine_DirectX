@@ -3,7 +3,7 @@
 namespace vel::utl
 {
 #if USE_STL_VECTOR
-#pragma message("WARNING: using utl::free_list with std::vector result in duplicate calls to class constructor!")
+#pragma message("WARNING: using utl::free_list with std::vector results in duplicate calls to class destructor!")
 #endif
 
     template<typename T>
@@ -37,7 +37,7 @@ namespace vel::utl
             else
             {
                 id = _next_free_index;
-                assert(id < _array.size() && already_removed(id));
+                assert(id < _array.size() && already_removed(id, true));
                 _next_free_index = *(const u32 *const)std::addressof(_array[id]);
                 new (std::addressof(_array[id])) T(std::forward<params>(p)...);
             }
@@ -47,7 +47,7 @@ namespace vel::utl
 
         constexpr void remove(u32 id)
         {
-            assert(id < _array.size() && !already_removed(id));
+            assert(id < _array.size() && !already_removed(id, false));
             T& item{ _array[id] };
             item.~T();
             DEBUG_OP(memset(std::addressof(_array[id]), 0xcc, sizeof(T)));
@@ -63,7 +63,7 @@ namespace vel::utl
 
         constexpr u32 capacity() const
         {
-            return _array.size();
+            return (u32)_array.size();
         }
 
         constexpr bool empty() const
@@ -73,18 +73,18 @@ namespace vel::utl
 
         [[nodiscard]] constexpr T& operator[](u32 id)
         {
-            assert(id < _array.size() && !already_removed(id));
+            assert(id < _array.size() && !already_removed(id, false));
             return _array[id];
         }
 
         [[nodiscard]] constexpr const T& operator[](u32 id) const
         {
-            assert(id < _array.size() && !already_removed(id));
+            assert(id < _array.size() && !already_removed(id, false));
             return _array[id];
         }
 
     private:
-        constexpr bool already_removed(u32 id) const
+        constexpr bool already_removed(u32 id, bool return_value_when_sizeof_t_equals_4) const
         {
             // NOTE: when sizeof(T) == sizeof(u32) we can't test if the item was already removed!
             if constexpr (sizeof(T) > sizeof(u32))
@@ -96,7 +96,7 @@ namespace vel::utl
             }
             else
             {
-                return true;
+                return return_value_when_sizeof_t_equals_4;
             }
         }
 #if USE_STL_VECTOR

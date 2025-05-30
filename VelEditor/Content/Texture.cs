@@ -165,6 +165,7 @@ namespace VelEditor.Content
         DXGI_FORMAT_BC7_UNORM = 98,
     }
 
+    [Flags]
     enum TextureDimension : int
     {
         [Description("1D Texture")]
@@ -471,7 +472,7 @@ namespace VelEditor.Content
             }
             else if (arrayOrDepth > MaxArraySize)
             {
-                Logger.Log(MessageType.Error, $"2D texture dimensions greater than {MaxArraySize}! (file: {file})");
+                Logger.Log(MessageType.Error, $"2D texture array size greater than {MaxArraySize}! (file: {file})");
                 result = false;
             }
 
@@ -565,6 +566,10 @@ namespace VelEditor.Content
                 HasValidDimensions(Width, Height, ArraySize, IsVolumeMap, file);
                 FullPath = file;
 
+                // For Testing. Remove later!
+                PackForEngine();
+                // For Testing. Remove later!
+
                 return true;
             }
             catch (Exception ex)
@@ -576,9 +581,56 @@ namespace VelEditor.Content
             return false;
         }
 
+        /// <summary>
+        /// Packs the texture into a byte array which can be used by the engine.
+        /// </summary>
+        /// <returns>
+        /// Returns a byte array that contains
+        /// struct {
+        ///     u32 width, height, array_size (or depth), flags, mip_levels, format,
+        ///     struct {
+        ///         u32 row_pitch, slice_pitch,
+        ///         u8 image[mip_level][slice_pitch * depth_per_mip],
+        ///     } images[]
+        /// } texture
+        /// </returns>
+        /// 
         public override byte[] PackForEngine()
         {
-            throw new NotImplementedException();
+            using var writer = new BinaryWriter(new MemoryStream());
+            writer.Write(Width);
+            writer.Write(Height);
+            writer.Write(ArraySize);
+            writer.Write((int)Flags);
+            writer.Write(MipLevels);
+            writer.Write((int)Format);
+
+            Debug.Assert(Slices?.Any() == true);
+            foreach (var arraySlice in Slices)
+            {
+                foreach (var mipLevel in arraySlice)
+                {
+                    writer.Write(mipLevel[0].RowPitch);
+                    writer.Write(mipLevel[0].SlicePitch);
+                    foreach (var slice in mipLevel)
+                    {
+                        writer.Write(slice.RawContent);
+                    }
+                }
+            }
+
+            writer.Flush();
+            var data = (writer.BaseStream as MemoryStream)?.ToArray();
+            Debug.Assert(data?.Length > 0);
+
+            // For Testing. Remove later!
+            using (var fs = new FileStream(@"..\..\x64\texture.img", FileMode.Create))
+            {
+                fs.Write(data, 0, data.Length);
+            }
+            // For Testing. Remove later!
+
+            return data;
         }
 
         public override IEnumerable<string> Save(string file)
@@ -628,7 +680,7 @@ namespace VelEditor.Content
         {
             Debug.Assert(Slices.First().Any() && Slices.First().Count == MipLevels);
             var data = ContentToolsAPI.SlicesToBinary(Slices);
-
+            Debug.Assert(data?.Length > 0);
             return CompressionHelper.Compress(data);
         }
 

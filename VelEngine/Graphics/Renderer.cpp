@@ -386,6 +386,16 @@ namespace vel::graphics
 		return gfx.resources.add_submesh(data);
 	}
 
+	id::id_type add_texture(const u8 *const data)
+	{
+		return gfx.resources.add_texture(data);
+	}
+
+	void remove_texture(id::id_type id)
+	{
+		gfx.resources.remove_texture(id);
+	}
+
 	void remove_submesh(id::id_type id)
 	{
 		gfx.resources.remove_submesh(id);

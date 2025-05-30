@@ -70,6 +70,9 @@ namespace {
 void
 generate_lights()
 {
+    graphics::create_light_set(left_set);
+    graphics::create_light_set(right_set);
+
     // LEFT_SET
     graphics::light_init_info info{};
     info.entity_id = create_one_game_entity({}, { 0, 0, 0 }, nullptr).get_id();
@@ -110,9 +113,9 @@ generate_lights()
 #else
     srand(37);
 
-    constexpr f32 scale1{ 1 };
+    constexpr f32 scale1{ 2 };
     constexpr math::v3 scale{ 1.f * scale1, 0.5f * scale1, 1.f * scale1 };
-    constexpr s32 dim{ 20 };
+    constexpr s32 dim{ 10 };
     for (s32 x{ -dim }; x < dim; ++x)
         for (s32 y{ 0 }; y < 2 * dim; ++y)
             for (s32 z{ -dim }; z < dim; ++z)
@@ -133,11 +136,22 @@ remove_lights()
     for (auto& light : lights)
     {
         const game_entity::entity_id id{ light.entity_id() };
-        graphics::remove_light(light.get_id(), light.ligh_set_key());
+        graphics::remove_light(light.get_id(), light.light_set_key());
+        remove_game_entity(id);
+    }
+
+    for (auto& light : disabled_lights)
+    {
+        const game_entity::entity_id id{ light.entity_id() };
+        graphics::remove_light(light.get_id(), light.light_set_key());
         remove_game_entity(id);
     }
 
     lights.clear();
+    disabled_lights.clear();
+
+    graphics::remove_light_set(left_set);
+    graphics::remove_light_set(right_set);
 }
 
 void
@@ -171,7 +185,7 @@ test_lights(f32 dt)
         const u32 index{ (u32)(random() * (lights.size() - 1)) };
         graphics::light light{ lights[index] };
         const game_entity::entity_id id{ light.entity_id() };
-        graphics::remove_light(light.get_id(), light.ligh_set_key());
+        graphics::remove_light(light.get_id(), light.light_set_key());
         remove_game_entity(id);
         utl::erase_unordered(lights, index);
     }
@@ -183,7 +197,7 @@ test_lights(f32 dt)
         const u32 index{ (u32)(random() * (disabled_lights.size() - 1)) };
         graphics::light light{ disabled_lights[index] };
         const game_entity::entity_id id{ light.entity_id() };
-        graphics::remove_light(light.get_id(), light.ligh_set_key());
+        graphics::remove_light(light.get_id(), light.light_set_key());
         remove_game_entity(id);
         utl::erase_unordered(disabled_lights, index);
     }

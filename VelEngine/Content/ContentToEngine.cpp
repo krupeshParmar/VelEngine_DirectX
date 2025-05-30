@@ -9,8 +9,7 @@ namespace vel::content {
         {
         public:
             DISABLE_COPY_AND_MOVE(geometry_hierarchy_stream);
-            geometry_hierarchy_stream(u8 *const buffer, u32 lods = u32_invalid_id)
-                : _buffer{ buffer }
+            explicit geometry_hierarchy_stream(u8 *const buffer, u32 lods = u32_invalid_id)
             {
                 assert(buffer && lods);
                 if (lods != u32_invalid_id)
@@ -33,14 +32,13 @@ namespace vel::content {
 
             u32 lod_from_threshold(f32 threshold)
             {
-                assert(threshold > 0);
+                assert(threshold >= 0);
                 if (_lod_count == 1) return 0;
                 for (u32 i{ _lod_count - 1 }; i > 0; --i)
                 {
                     if (_thresholds[i] <= threshold) return i;
                 }
 
-                assert(false); // shouldn't ever get here.
                 return 0;
             }
 
@@ -50,7 +48,6 @@ namespace vel::content {
             [[nodiscard]] constexpr id::id_type* gpu_ids() const { return _gpu_ids; }
 
         private:
-            u8 *const       _buffer;
             f32*            _thresholds;
             lod_offset*     _lod_offsets;
             id::id_type*    _gpu_ids;
@@ -222,7 +219,7 @@ namespace vel::content {
         //
         // (gpu_id << 32) | 0x01
         //
-        id::id_type create_geometry_resource(const void *const data)
+        [[nodiscard]] id::id_type create_geometry_resource(const void *const data)
         {
             assert(data);
             return is_single_mesh(data) ? create_single_submesh(data) : create_mesh_hierarchy(data);
@@ -263,7 +260,7 @@ namespace vel::content {
         //  id::id_type*        texture_ids;
         // } material_init_info
 
-        id::id_type create_material_resource(const void *const data)
+        [[nodiscard]] id::id_type create_material_resource(const void *const data)
         {
             assert(data);
             return graphics::add_material(*(const graphics::material_init_info *const)data);
@@ -273,6 +270,28 @@ namespace vel::content {
         {
             graphics::remove_material(id);
         }
+
+        // NOTE: expects data to contain
+        // struct {
+        //     u32 width, height, array_size (or depth), flags, mip_levels, format,
+        //     struct {
+        //         u32 row_pitch, slice_pitch,
+        //         u8 image[mip_level][slice_pitch * depth_per_mip],
+        //     } images[]
+        // } texture
+        [[nodiscard]] id::id_type
+            create_texture_resource(const void *const data)
+        {
+            assert(data);
+            return graphics::add_texture((const u8 *const)data);
+        }
+
+        void
+            destroy_texture_resource(id::id_type id)
+        {
+            graphics::remove_texture(id);
+        }
+
 
     } // anonymous namespace
 
@@ -288,7 +307,7 @@ namespace vel::content {
         case asset_type::material: id = create_material_resource(data);  break;
         case asset_type::mesh:	id = create_geometry_resource(data); break;
         case asset_type::skeleton: break;
-        case asset_type::texture: break;
+        case asset_type::texture: id = create_texture_resource(data); break;
         }
 
         assert(id::is_valid(id));
@@ -305,7 +324,7 @@ namespace vel::content {
         case asset_type::material:destroy_material_resource(id);  break;
         case asset_type::mesh:	destroy_geometry_resource(id); break;
         case asset_type::skeleton: break;
-        case asset_type::texture: break;
+        case asset_type::texture: destroy_texture_resource(id); break;
         default:
             assert(false);
             break;
@@ -368,12 +387,12 @@ namespace vel::content {
         {
             geometry_hierarchy_stream stream{ pointer };
 
-            /*assert([&]() {
+            assert([&]() {
                 const u32 lod_count{ stream.lod_count() };
                 const lod_offset lod_offset{ stream.lod_offsets()[lod_count - 1] };
                 const u32 gpu_id_count{ (u32)lod_offset.offset + (u32)lod_offset.count };
                 return gpu_id_count == id_count;
-                }());*/
+                }());
 
             memcpy(gpu_ids, stream.gpu_ids(), sizeof(id::id_type) * id_count);
         }
