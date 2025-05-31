@@ -187,7 +187,7 @@ create_render_items()
 
     strip_club_entity_id = create_one_game_entity({ -5.f, -1.f, 0.f }, {}, nullptr).get_id();
     sword_entity_id = create_one_game_entity({ 2.f, 1.3f, -6.6f }, {}, "wibbly_wobbly_script").get_id();
-    maria_entity_id = create_one_game_entity({ 0.f, 0.f, -11.6f }, {}, "rotator_script").get_id();
+    maria_entity_id = create_one_game_entity({ 0.f, 0.f, -11.6f }, {}, nullptr).get_id();
 
     // NOTE: we need shaders to be ready before creating materials
     create_material();
