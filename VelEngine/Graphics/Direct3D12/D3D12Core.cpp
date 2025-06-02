@@ -98,11 +98,10 @@ namespace vel::graphics::d3d12::core
 				// Presenting swap chain buffers happens in lockstep with frame buffers.
 				surface.present();
 
-				u64& fence_value{ _fence_value };
-				++fence_value;
+				const u64 fence_value{ ++_fence_value };
 				command_frame& frame{ _cmd_frames_list[_frame_index] };
 				frame.fence_value = fence_value;
-				_cmd_queue->Signal(_fence, _fence_value);
+				DXCall(_cmd_queue->Signal(_fence, _fence_value));
 
 				_frame_index = (_frame_index + 1) % frame_buffer_count;
 			}
@@ -272,7 +271,7 @@ namespace vel::graphics::d3d12::core
 		d3d12_frame_info get_d3d12_frame_info(const frame_info& info, constant_buffer& cbuffer,
 				const d3d12_surface& surface, u32 frame_idx, f32 delta_time)
 		{
-			camera::d3d12_camera& camera{ camera::get(info.camer_id) };
+			camera::d3d12_camera& camera{ camera::get(info.camera_id) };
 			camera.update();
 			hlsl::GlobalShaderData data{};
 
@@ -335,7 +334,7 @@ namespace vel::graphics::d3d12::core
 			{
 				debug_interface->EnableDebugLayer();
 #if 0
-#pragma message("WARNING: GPU_based validation is enabled. This will considerably slow down the renderer!")
+#pragma message("WARNING: GPU-based validation is enabled. This will considerably slow down the renderer!")
 				debug_interface->SetEnableGPUBasedValidation(1);
 #endif
 			}
@@ -395,6 +394,7 @@ namespace vel::graphics::d3d12::core
 			new (&constant_buffers[i])
 				constant_buffer{ constant_buffer::get_default_init_info(1024 * 1024) };
 			NAME_D3D12_OBJECT_INDEXED(constant_buffers[i].buffer(), i, L"Global Constant Buffer");
+			if (!constant_buffers[i].buffer()) return failed_init();
 		}
 
 		new (&gfx_command) d3d12_command(main_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -462,6 +462,7 @@ namespace vel::graphics::d3d12::core
 		process_deferred_releases(0);
 
 #ifdef _DEBUG
+		if (main_device)
 		{
 			{
 				ComPtr<ID3D12InfoQueue> info_queue;
@@ -548,7 +549,7 @@ namespace vel::graphics::d3d12::core
 		// reset the allocator once the GPU is done with it.
 		// This frees the memory that was used to store commands.
 		gfx_command.begin_frame();
-		id3d12_graphics_command_list* cmd_list{ gfx_command.command_list() };
+		id3d12_graphics_command_list *cmd_list{ gfx_command.command_list() };
 
 		const u32 frame_idx{ current_frame_index() };
 
@@ -596,11 +597,11 @@ namespace vel::graphics::d3d12::core
 		gpass::render(cmd_list, d3d12_info);
 
 		// Post-process
+		gpass::add_transitions_for_post_process(barriers);
 		barriers.add(current_back_buffer,
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_BARRIER_FLAG_END_ONLY);
-		gpass::add_transitions_for_post_process(barriers);
 		barriers.apply(cmd_list);
 		// Will write to the current back buffer, so back buffer is a render target
 		fx::post_process(cmd_list, d3d12_info, surface.rtv());

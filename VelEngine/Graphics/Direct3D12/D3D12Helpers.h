@@ -295,7 +295,7 @@ namespace vel::graphics::d3d12::d3dx {
 	class d3d12_resource_barrier
 	{
 	public:
-		constexpr static u32 max_resource_barriers{ 32 };
+		constexpr static u32 max_resource_barriers{ 64 };
 		// Add a transition barrier to the list of barriers.
 		constexpr void add(ID3D12Resource* resource,
 			D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after,
@@ -308,9 +308,9 @@ namespace vel::graphics::d3d12::d3dx {
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			barrier.Flags = flags;
 			barrier.Transition.pResource = resource;
+			barrier.Transition.Subresource = subresource;
 			barrier.Transition.StateBefore = before;
 			barrier.Transition.StateAfter = after;
-			barrier.Transition.Subresource = subresource;
 
 			++_offset;
 		}

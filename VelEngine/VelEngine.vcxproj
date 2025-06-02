@@ -25,6 +25,7 @@
     <ClInclude Include="Common\id.h" />
     <ClInclude Include="Components\ComponentsCommon.h" />
     <ClInclude Include="Components\Entity.h" />
+    <ClInclude Include="Components\GeometryComponent.h" />
     <ClInclude Include="Components\TransformComponent.h" />
     <ClInclude Include="Components\ScriptComponent.h" />
     <ClInclude Include="Content\ContentLoader.h" />
@@ -60,6 +61,7 @@
     <ClInclude Include="Utilities\Vector.h" />
     <ClInclude Include="VelAPI\Camera.h" />
     <ClInclude Include="VelAPI\GameEntity.h" />
+    <ClInclude Include="VelAPI\GeometryComponentAPI.h" />
     <ClInclude Include="VelAPI\Input.h" />
     <ClInclude Include="VelAPI\Light.h" />
     <ClInclude Include="VelAPI\ScriptComponentAPI.h" />
@@ -67,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\Entity.cpp" />
+    <ClCompile Include="Components\GeometryComponent.cpp" />
     <ClCompile Include="Components\TransformComponent.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
     <ClCompile Include="Content\ContentLoaderWin32.cpp" />

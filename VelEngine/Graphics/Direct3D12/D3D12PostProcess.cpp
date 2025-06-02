@@ -25,7 +25,7 @@ namespace vel::graphics::d3d12::fx {
         ID3D12RootSignature*        fx_root_sig{ nullptr };
         ID3D12PipelineState*        fx_pso{ nullptr };
 
-        bool creat_fx_pos_and_root_signature()
+        bool create_fx_pos_and_root_signature()
         {
             assert(!fx_root_sig && !fx_pso);
             // Create FX root signature
@@ -69,7 +69,7 @@ namespace vel::graphics::d3d12::fx {
     bool
         initialize()
     {
-        return creat_fx_pos_and_root_signature();
+        return create_fx_pos_and_root_signature();
     }
 
     void

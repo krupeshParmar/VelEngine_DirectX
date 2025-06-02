@@ -179,6 +179,7 @@ namespace VelEditor.Content
     }
 
     // NOTE: should be the same as vel::content::texture_flags::flags enumeration in ContentToEngine.h
+    [Flags]
     enum TextureFlags : int
     {
         IsHdr = 0x01,

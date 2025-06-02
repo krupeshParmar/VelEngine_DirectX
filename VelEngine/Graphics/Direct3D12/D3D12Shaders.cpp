@@ -20,8 +20,7 @@ namespace vel::graphics::d3d12::shaders
 		// an array of bytes.
 		Scope<u8[]> engine_shaders_blob{};
 
-		bool
-			load_engine_shaders()
+		bool load_engine_shaders()
 		{
 			assert(!engine_shaders_blob);
 			u64 size{ 0 };
@@ -48,14 +47,12 @@ namespace vel::graphics::d3d12::shaders
 
 	} // anonymous namespace
 
-	bool
-		initialize()
+	bool initialize()
 	{
 		return load_engine_shaders();
 	}
 
-	void
-		shutdown()
+	void shutdown()
 	{
 		for (u32 i{ 0 }; i < engine_shader::count; ++i)
 		{
@@ -64,11 +61,10 @@ namespace vel::graphics::d3d12::shaders
 		engine_shaders_blob.reset();
 	}
 
-	D3D12_SHADER_BYTECODE
-		get_engine_shader(engine_shader::id id)
+	D3D12_SHADER_BYTECODE get_engine_shader(engine_shader::id id)
 	{
 		assert(id < engine_shader::count);
-		const content::compiled_shader_ptr& shader{ engine_shaders[id] };
+		const content::compiled_shader_ptr shader{ engine_shaders[id] };
 		assert(shader && shader->byte_code_size());
 		return { shader->byte_code(), shader->byte_code_size()};
 	}

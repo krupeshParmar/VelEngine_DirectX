@@ -43,7 +43,7 @@ namespace vel::graphics::d3d12
 		[[nodiscard]] constexpr D3D12_DESCRIPTOR_HEAP_TYPE type() const { return _type; }
 
 	private:
-		ID3D12DescriptorHeap*					_heap;
+        ID3D12DescriptorHeap*					_heap{ nullptr };
 		D3D12_CPU_DESCRIPTOR_HANDLE				_cpu_start{};
 		D3D12_GPU_DESCRIPTOR_HANDLE				_gpu_start{};
 		Scope<u32[]>							_free_handles_list{};
@@ -60,7 +60,7 @@ namespace vel::graphics::d3d12
         ID3D12Heap1*                        heap{ nullptr };
         const void*                         data{ nullptr };
         D3D12_RESOURCE_ALLOCATION_INFO1     allocation_info{};
-        D3D12_RESOURCE_STATES               initial_state{};
+        D3D12_RESOURCE_STATES               initial_state{ D3D12_RESOURCE_STATE_COMMON };
         D3D12_RESOURCE_FLAGS                flags{ D3D12_RESOURCE_FLAG_NONE };
         u32                                 size{ 0 };
         u32                                 alignment{ 0 };
@@ -70,7 +70,7 @@ namespace vel::graphics::d3d12
     {
     public:
         d3d12_buffer() = default;
-        explicit d3d12_buffer(d3d12_buffer_init_info info, bool is_cpu_accessible);
+        explicit d3d12_buffer(const d3d12_buffer_init_info& info, bool is_cpu_accessible);
         DISABLE_COPY(d3d12_buffer);
         constexpr d3d12_buffer(d3d12_buffer&& o)
             : _buffer{ o._buffer }, _gpu_address{ o._gpu_address }, _size{ o._size }
@@ -122,7 +122,7 @@ namespace vel::graphics::d3d12
     {
     public:
         constant_buffer() = default;
-        explicit constant_buffer(d3d12_buffer_init_info info);
+        explicit constant_buffer(const d3d12_buffer_init_info& info);
         DISABLE_COPY_AND_MOVE(constant_buffer);
         ~constant_buffer() { release(); }
 
@@ -137,7 +137,7 @@ namespace vel::graphics::d3d12
         [[nodiscard]] u8 *const allocate(u32 size);
 
         template<typename T>
-        [[nodiscard]] T *const allocate()
+        [[nodiscard]] constexpr T *const allocate()
         {
             return (T *const)allocate(sizeof(T));
         }

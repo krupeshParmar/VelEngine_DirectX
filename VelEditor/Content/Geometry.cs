@@ -141,7 +141,7 @@ namespace VelEditor.Content
             get => _lodThreshold;
             set
             {
-                if (_lodThreshold != value)
+                if (!_lodThreshold.IsTheSameAs(value))
                 {
                     _lodThreshold = value;
                     OnPropertyChanged(nameof(LodThreshold));
@@ -279,7 +279,7 @@ namespace VelEditor.Content
         {
             SmoothingAngle = 178f;
             CalculateNormals = false;
-            CalculateTangents = false;
+            CalculateTangents = true;
             ReverseHandedness = false;
             ImportEmbeddedTextures = true;
             ImportAnimations = true;

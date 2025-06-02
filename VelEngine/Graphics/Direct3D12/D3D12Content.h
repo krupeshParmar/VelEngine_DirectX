@@ -22,18 +22,19 @@ namespace vel::graphics::d3d12::content
 	} // namespace submesh
 
 	namespace texture {
-		id::id_type add(const u8* const);
-		void remove(id::id_type);
+		id::id_type add(const u8* const data);
+		void remove(id::id_type id);
 		void get_descriptor_indices(const id::id_type *const texture_ids, u32 id_count, u32 *const indices);
 	} // namespace texture
 
 	namespace material {
 		struct materials_cache
 		{
-			ID3D12RootSignature* *const root_signatures;
-			material_type::type *const  material_types;
-			u32* *const                 descriptor_indices;
-			u32 *const                  texture_count;
+			ID3D12RootSignature* *const		root_signatures;
+			material_type::type *const		material_types;
+			u32* *const						descriptor_indices;
+			u32 *const						texture_count;
+			material_surface* *const		material_surfaces;
 		};
 
 		id::id_type add(material_init_info info);

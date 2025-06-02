@@ -7,7 +7,7 @@ namespace vel::id
 
 	namespace detail
 	{
-		constexpr u32 generation_bits{ 10 };
+		constexpr u32 generation_bits{ 8 };
 		constexpr u32 index_bits{ sizeof(id_type) * 8 - generation_bits };
 		constexpr id_type index_mask{ (id_type{1} << index_bits) - 1 };
 		constexpr id_type generation_mask{ (id_type{1} << generation_bits) - 1 };
@@ -20,6 +20,8 @@ namespace vel::id
 
 	static_assert(sizeof(generation_type) * 8 >= detail::generation_bits);
 	static_assert((sizeof(id_type) - sizeof(generation_type)) > 0);
+
+	constexpr generation_type max_generation{ (generation_type)(detail::generation_mask - 1) }; // e.g. 254 for 8-bit generations.
 
 	constexpr bool
 		is_valid(id_type id)

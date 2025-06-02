@@ -89,6 +89,7 @@ namespace vel::graphics::d3d12::content
                     sizeof(shader_flags::flags) +               // shader flags
                     sizeof(id::id_type) +                       // root signature id
                     sizeof(u32) +                               // texture count
+                    sizeof(material_surface) +                  // PBR material properties
                     sizeof(id::id_type) * shader_count +        // shader ids
                     (sizeof(id::id_type) + sizeof(u32)) * info.texture_count // texture ids and descriptor indices (maybe 0 if no textures used).
                 };
@@ -98,9 +99,10 @@ namespace vel::graphics::d3d12::content
                 u8 *const buffer{ _buffer };
 
                 *(material_type::type*)buffer = info.type;
-                *(shader_flags::flags*)(&buffer[shader_flags_index]) = (shader_flags::flags)flags;
-                *(id::id_type*)(&buffer[root_signature_index]) = create_root_signature(info.type, (shader_flags::flags)flags);
-                *(u32*)(&buffer[texture_count_index]) = info.texture_count;
+                *(shader_flags::flags*)&buffer[shader_flags_index] = (shader_flags::flags)flags;
+                    *(id::id_type*)&buffer[root_signature_index] = create_root_signature(info.type, (shader_flags::flags)flags);
+                    *(u32*)&buffer[texture_count_index] = info.texture_count;
+                *(material_surface*)&buffer[material_surface_index] = info.surface;
 
                 initialize();
 
@@ -130,6 +132,7 @@ namespace vel::graphics::d3d12::content
             [[nodiscard]] constexpr id::id_type* texture_ids() const { return _texture_ids; }
             [[nodiscard]] constexpr u32* descriptor_indices() const { return _descriptor_indices; }
             [[nodiscard]] constexpr id::id_type* shader_ids() const { return _shader_ids; }
+            [[nodiscard]] constexpr material_surface* surface() const { return _material_surface; }
 
         private:
             void initialize()
@@ -138,20 +141,23 @@ namespace vel::graphics::d3d12::content
                 u8 *const buffer{ _buffer };
 
                 _type = *(material_type::type*)buffer;
-                _shader_flags = *(shader_flags::flags*)(&buffer[shader_flags_index]);
-                _root_signature_id = *(id::id_type*)(&buffer[root_signature_index]);
-                _texture_count = *(u32*)(&buffer[texture_count_index]);
+                _shader_flags = *(shader_flags::flags*)&buffer[shader_flags_index];
+                    _root_signature_id = *(id::id_type*)&buffer[root_signature_index];
+                _texture_count = *(u32*)&buffer[texture_count_index];
+                _material_surface = (material_surface*)&buffer[material_surface_index];
 
-                _shader_ids = (id::id_type*)(&buffer[texture_count_index + sizeof(u32)]);
+                _shader_ids = (id::id_type*)&buffer[material_surface_index + sizeof(material_surface)];
                 _texture_ids = _texture_count ? &_shader_ids[_mm_popcnt_u32(_shader_flags)] : nullptr;
-                _descriptor_indices = _texture_count ? (u32*)(&_texture_ids[_texture_count]) : nullptr;
+                _descriptor_indices = _texture_count ? (u32*)&_texture_ids[_texture_count] : nullptr;
             }
 
             constexpr static u32    shader_flags_index{ sizeof(material_type::type) };
             constexpr static u32    root_signature_index{ shader_flags_index + sizeof(shader_flags::flags) };
             constexpr static u32    texture_count_index{ root_signature_index + sizeof(id::id_type) };
+            constexpr static u32    material_surface_index{ texture_count_index + sizeof(u32) };
 
             u8*                     _buffer;
+            material_surface*       _material_surface;
             id::id_type*            _texture_ids;
             u32*                    _descriptor_indices;
             id::id_type*            _shader_ids;
@@ -716,6 +722,7 @@ namespace vel::graphics::d3d12::content
             std::lock_guard lock{ texture_mutex };
             for (u32 i{ 0 }; i < id_count; ++i)
             {
+                assert(id::is_valid(texture_ids[i]));
                 indices[i] = descriptor_indices[texture_ids[i]];
             }
         }
@@ -765,6 +772,7 @@ namespace vel::graphics::d3d12::content
                 cache.material_types[i] = stream.material_type();
                 cache.descriptor_indices[i] = stream.descriptor_indices();
                 cache.texture_count[i] = stream.texture_count();
+                cache.material_surfaces[i] = stream.surface();
                 total_index_count += stream.texture_count();
             }
             descriptor_index_count = total_index_count;

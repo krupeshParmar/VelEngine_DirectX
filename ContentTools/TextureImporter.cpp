@@ -214,7 +214,9 @@ namespace vel::tools {
 			const TexMetadata& metadata{ scratch.GetMetadata() };
 			const Image *const images{ scratch.GetImages() };
 			const u32 image_count{ (u32)scratch.GetImageCount() };
-			assert(images && metadata.mipLevels && metadata.mipLevels <= texture_data::max_mips);
+			assert(images && 
+				scratch.GetMetadata().mipLevels && 
+				scratch.GetMetadata().mipLevels <= texture_data::max_mips);
 
 			u64 subresource_size{ 0 };
 

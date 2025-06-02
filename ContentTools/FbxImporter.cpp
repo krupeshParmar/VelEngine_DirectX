@@ -360,9 +360,12 @@ namespace vel::tools {
         {
             FbxLayerElementArrayTemplate<FbxVector4>* tangents{ nullptr };
             // Calculate tangents using FBX's built-in method, but only if no tangent data is already there.
-            if (fbx_mesh->GenerateTangentsData() &&
-                fbx_mesh->GetTangents(&tangents) &&
-                tangents && tangents->GetCount() > 0)
+             // NOTE: the documentation states that the function returns true if tangent data is already thereAdd commentMore actions
+            //       and pOverwrite == false. This seeps to be wrong (i.e. it return false in that case)!
+            fbx_mesh->GenerateTangentsData();
+
+            if (fbx_mesh->GetTangents(&tangents) && tangents &&
+                tangents->GetCount() == m.raw_indices.size())
             {
                 const s32 num_tangent{ tangents->GetCount() };
                 for (s32 i{ 0 }; i < num_tangent; ++i)
@@ -373,7 +376,7 @@ namespace vel::tools {
                     t[3] = 0.0;
                     t = transform.MultT(t);
                     t.Normalize();
-                    m.tangents.emplace_back((f32)t[0], (f32)t[1], (f32)t[2], handedness);
+                    m.tangents.emplace_back((f32)t[0], (f32)t[1], (f32)t[2], -handedness);
                 }
             }
             else
@@ -399,7 +402,9 @@ namespace vel::tools {
                 const s32 num_uvs{ uvs.Size() };
                 for (s32 j{ 0 }; j < num_uvs; ++j)
                 {
-                    m.uv_sets[i].emplace_back((f32)uvs[j][0], (f32)uvs[j][1]);
+                    // Assuming FBX UVs always have their origin at the bottom-left, the V-axis Add commentMore actions
+                    // should be flipped, since DirectX uses the upper-left corner as the origin.
+                    m.uv_sets[i].emplace_back((f32)uvs[j][0], 1.f - (f32)uvs[j][1]);
                 }
             }
         }

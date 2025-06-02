@@ -45,6 +45,7 @@ namespace vel::graphics::d3d12::gpass {
             material_type::type*        material_types{ nullptr };
             u32**                       descriptor_indices{ nullptr };
             u32*                        texture_counts{ nullptr };
+            material_surface**          material_surfaces{ nullptr };
             D3D12_GPU_VIRTUAL_ADDRESS*  position_buffers{ nullptr };
             D3D12_GPU_VIRTUAL_ADDRESS*  element_buffers{ nullptr };
             D3D12_INDEX_BUFFER_VIEW*    index_buffer_views{ nullptr };
@@ -81,7 +82,8 @@ namespace vel::graphics::d3d12::gpass {
                     root_signatures,
                     material_types,
                     descriptor_indices,
-                    texture_counts
+                    texture_counts,
+                    material_surfaces
                 };
             }
 
@@ -117,7 +119,8 @@ namespace vel::graphics::d3d12::gpass {
                     material_types = (material_type::type*)&root_signatures[items_count];
                     descriptor_indices = (u32**)&material_types[items_count];
                     texture_counts = (u32*)&descriptor_indices[items_count];
-                    position_buffers = (D3D12_GPU_VIRTUAL_ADDRESS*)&texture_counts[items_count];
+                    material_surfaces = (material_surface**)&texture_counts[items_count];
+                    position_buffers = (D3D12_GPU_VIRTUAL_ADDRESS*)&material_surfaces[items_count];
                     element_buffers = (D3D12_GPU_VIRTUAL_ADDRESS*)&position_buffers[items_count];
                     index_buffer_views = (D3D12_INDEX_BUFFER_VIEW*)&element_buffers[items_count];
                     primitive_topologies = (D3D_PRIMITIVE_TOPOLOGY*)&index_buffer_views[items_count];
@@ -138,6 +141,7 @@ namespace vel::graphics::d3d12::gpass {
                 sizeof(material_type::type) +           // material_types
                 sizeof(u32*) +                          // descriptor_indices
                 sizeof(u32) +                           // texture_counts
+                sizeof(material_surface*) +             // material_surface
                 sizeof(D3D12_GPU_VIRTUAL_ADDRESS) +     // position_buffers
                 sizeof(D3D12_GPU_VIRTUAL_ADDRESS) +     // element_buffers
                 sizeof(D3D12_INDEX_BUFFER_VIEW) +       // index_buffer_views
@@ -203,7 +207,7 @@ namespace vel::graphics::d3d12::gpass {
             return gpass_main_buffer.resource() && gpass_depth_buffer.resource();
         }
 
-        void fill_per_object_data(const d3d12_frame_info& d3d12_info)
+        void fill_per_object_data(const d3d12_frame_info& d3d12_info, const content::material::materials_cache& materials_cache)
         {
             const gpass_cache& cache{ frame_cache };
             const u32 render_items_count{ (u32)cache.size() };
@@ -223,6 +227,8 @@ namespace vel::graphics::d3d12::gpass {
                     XMMATRIX world{ XMLoadFloat4x4(&data.World) };
                     XMMATRIX wvp{ XMMatrixMultiply(world, d3d12_info.camera->view_projection()) };
                     XMStoreFloat4x4(&data.WorldViewProjection, wvp);
+                    const material_surface *const surface{ materials_cache.material_surfaces[i] };
+                    memcpy(&data.BaseColor, surface, sizeof(material_surface));
 
                     current_data_pointer = cbuffer.allocate<hlsl::PerObjectData>();
                     memcpy(current_data_pointer, &data, sizeof(hlsl::PerObjectData));
@@ -276,7 +282,7 @@ namespace vel::graphics::d3d12::gpass {
             const material::materials_cache materials_cache{ cache.materials_cache() };
             material::get_materials(items_cache.material_ids, items_count, materials_cache, cache.descriptor_index_count);
 
-            fill_per_object_data(d3d12_info);
+            fill_per_object_data(d3d12_info, materials_cache);
 
             if (cache.descriptor_index_count)
             {

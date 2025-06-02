@@ -7,6 +7,7 @@ namespace vel
 #define INIT_INFO(component) namespace component {struct init_info;}
 	INIT_INFO(transform);
 	INIT_INFO(script)
+	INIT_INFO(geometry);
 #undef INIT_INFO
 
 	namespace game_entity
@@ -15,6 +16,7 @@ namespace vel
 		{
 			transform::init_info* transform{ nullptr };
 			script::init_info* script{ nullptr };
+			geometry::init_info* geometry{ nullptr };
 		};
 
 		entity create(entity_info info);

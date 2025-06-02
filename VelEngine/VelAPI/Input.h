@@ -167,7 +167,7 @@ namespace vel::input {
         u64                 binding{ 0 };
         type                source_type{};
         u32                 code{ 0 };
-        float               multiplier{ 0 };
+        f32               multiplier{ 0 };
         bool                is_discrete{ true };
         axis::type          source_axis{};
         axis::type          axis{};

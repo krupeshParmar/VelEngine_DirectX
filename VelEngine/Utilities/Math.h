@@ -1,11 +1,16 @@
 #pragma once
 
 #include "../Common/CommonHeaders.h"
-#include "MathTypes.h"
+// platform specific headers
+#if defined(_WIN64)
+#include <DirectXMath.h>
+#endif
+
+#include "../Utilities/MathTypes.h"
 
 namespace vel::math
 {
-	constexpr bool is_equal(f32 a, f32 b, f32 eps = epsilon)
+	[[nodiscard]] constexpr bool is_equal(f32 a, f32 b, f32 eps = epsilon)
 	{
 		f32 diff{ a - b };
 		if (diff < 0.f) diff = -diff;
@@ -16,6 +21,7 @@ namespace vel::math
 	[[nodiscard]] constexpr T
 	clamp(T value, T min, T max)
 	{
+		assert(min <= max);
 		return (value < min) ? min : (value > max) ? max : value;
 	}
 
@@ -23,7 +29,7 @@ namespace vel::math
 	[[nodiscard]] constexpr u32
 	pack_unit_float(f32 f)
 	{
-		static_assert(bits <= sizeof(u32) * 8);
+		static_assert(bits && bits <= sizeof(u32) * 8);
 		assert(f >= 0.f && f <= 1.f);
 		constexpr f32 intervals{ (f32)(((u32)1 << bits) - 1) };
 		return (u32)(intervals * f + 0.5f);
@@ -32,7 +38,7 @@ namespace vel::math
 	template<u32 bits>
 	[[nodiscard]] constexpr f32 unpack_to_unit_float(u32 i)
 	{
-		static_assert(bits <= sizeof(u32) * 8);
+		static_assert(bits && bits <= sizeof(u32) * 8);
 		assert(i < ((u32)1 << bits));
 		constexpr f32 intervals{ (f32)((u32)1 << bits) - 1 };
 		return (f32)i / intervals;

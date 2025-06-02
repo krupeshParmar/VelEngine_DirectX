@@ -9,7 +9,7 @@ namespace vel::script
 	};
 
 	component create(init_info info, game_entity::entity ent);
-	void update(float dt);
+	void update(f32 dt);
 	void remove(component c);
 }
 
