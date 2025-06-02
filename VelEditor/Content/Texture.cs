@@ -1,4 +1,5 @@
-﻿using VelEditor.Utilities;
+﻿global using SliceArray3D = System.Collections.Generic.List<System.Collections.Generic.List<System.Collections.Generic.List<VelEditor.Content.Slice>>>;
+using VelEditor.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -191,6 +192,16 @@ namespace VelEditor.Content
         IsSRGB = 0x40,
     }
 
+    class TextureMetadata : AssetMetadata
+    {
+        public int Width { get; init; }
+        public int Height { get; init; }
+        public int DepthOrArraySize { get; init; }
+        public int MipLevels { get; init; }
+        public DXGI_FORMAT Format { get; init; }
+        public TextureDimension Dimension { get; init; }
+    }
+
     class TextureImportSettings : ViewModelBase, IAssetImportSettings
     {
         public ObservableCollection<string> Sources { get; } = new();
@@ -231,7 +242,7 @@ namespace VelEditor.Content
             set
             {
                 value = Math.Clamp(value, 0.0f, 1.0f);
-                if (_alphaThreshold != value)
+                if (!_alphaThreshold.IsTheSameAs(value))
                 {
                     _alphaThreshold = value;
                     OnPropertyChanged(nameof(AlphaThreshold));
@@ -285,6 +296,48 @@ namespace VelEditor.Content
             }
         }
 
+        private int _cubeMapSize;
+        public int CubeMapSize
+        {
+            get => _cubeMapSize;
+            set
+            {
+                if (_cubeMapSize != value)
+                {
+                    _cubeMapSize = value;
+                    OnPropertyChanged(nameof(CubeMapSize));
+                }
+            }
+        }
+
+        private bool _mirrorCubeMap;
+        public bool MirrorCubeMap
+        {
+            get => _mirrorCubeMap;
+            set
+            {
+                if (_mirrorCubeMap != value)
+                {
+                    _mirrorCubeMap = value;
+                    OnPropertyChanged(nameof(MirrorCubeMap));
+                }
+            }
+        }
+
+        private bool _prefilterCubeMap;
+        public bool PrefilterCubeMap
+        {
+            get => _prefilterCubeMap;
+            set
+            {
+                if (_prefilterCubeMap != value)
+                {
+                    _prefilterCubeMap = value;
+                    OnPropertyChanged(nameof(PrefilterCubeMap));
+                }
+            }
+        }
+
         public void ToBinary(BinaryWriter writer)
         {
             writer.Write(string.Join(";", Sources.ToArray()));
@@ -294,18 +347,24 @@ namespace VelEditor.Content
             writer.Write(PreferBC7);
             writer.Write(FormatIndex);
             writer.Write(Compress);
+            writer.Write(CubeMapSize);
+            writer.Write(MirrorCubeMap);
+            writer.Write(PrefilterCubeMap);
         }
 
         public void FromBinary(BinaryReader reader)
         {
             Sources.Clear();
-            reader.ReadString().Split(";").ToList().ForEach(x => Sources.Add(x));
+            reader.ReadString().Split(";").Where(x => !string.IsNullOrEmpty(x)).ToList().ForEach(Sources.Add);
             Dimension = (TextureDimension)reader.ReadInt32();
             MipLevels = reader.ReadInt32();
             AlphaThreshold = reader.ReadSingle();
             PreferBC7 = reader.ReadBoolean();
             FormatIndex = reader.ReadInt32();
             Compress = reader.ReadBoolean();
+            CubeMapSize = reader.ReadInt32();
+            MirrorCubeMap = reader.ReadBoolean();
+            PrefilterCubeMap = reader.ReadBoolean();
         }
 
         public TextureImportSettings()
@@ -315,6 +374,9 @@ namespace VelEditor.Content
             PreferBC7 = true;
             FormatIndex = 0;
             Compress = true;
+            CubeMapSize = 256;
+            MirrorCubeMap = true;
+            PrefilterCubeMap = true;
         }
     }
 
@@ -338,8 +400,8 @@ namespace VelEditor.Content
         // array ( mip ( subresource (slices) ) )
         // see https://learn.microsoft.com/en-us/windows/win32/direct3d12/subresources
         // for the order of slices within the array
-        private List<List<List<Slice>>> _slices;
-        public List<List<List<Slice>>> Slices
+        private SliceArray3D _slices;
+        public SliceArray3D Slices
         {
             get => _slices;
             private set
@@ -697,6 +759,13 @@ namespace VelEditor.Content
         {
             Debug.Assert(importSettings is TextureImportSettings);
             ImportSettings = (TextureImportSettings)importSettings;
+        }
+
+        public Texture(AssetInfo assetInfo) : this()
+        {
+            Debug.Assert(assetInfo != null && assetInfo.GUID != Guid.Empty);
+            Debug.Assert(File.Exists(assetInfo.FullPath) && assetInfo.Type == Type);
+            Load(assetInfo.FullPath);
         }
     }
 }

@@ -356,7 +356,7 @@ namespace VelEditor.Content
                 var lodsList = ReadMeshLods(numMeshes, reader);
 
                 var lodGroup = new LODGroup() { Name = lodGroupName };
-                lodsList.ForEach(l => lodGroup.LODsList.Add(l));
+                lodsList.ForEach(lodGroup.LODsList.Add);
 
                 _lodGroups.Add(lodGroup);
             }

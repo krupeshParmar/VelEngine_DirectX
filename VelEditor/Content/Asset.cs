@@ -52,6 +52,8 @@ namespace VelEditor.Content
         public byte[] Hash { get; set; }
     }
 
+    abstract class AssetMetadata { }
+
     abstract class Asset : ViewModelBase
     {
         public static string AssetFileExtension = ".velasset";

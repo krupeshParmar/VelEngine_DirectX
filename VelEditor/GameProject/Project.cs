@@ -224,7 +224,7 @@ namespace VelEditor.GameProject
             }
         }
 
-        private async Task StopGame() => await Task.Run(() => VisualStudio.Stop());
+        private async Task StopGame() => await Task.Run(VisualStudio.Stop);
 
         private async Task BuildGameCodeDll(bool showVSWindow = true)
         {

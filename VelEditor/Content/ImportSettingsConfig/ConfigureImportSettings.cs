@@ -109,7 +109,7 @@ namespace VelEditor.Content
             proxies.Remove(this);
             if (proxies.Count == 0) return;
 
-            var toIndex = Math.Max(proxies.Select(x => _imageSources.IndexOf(x)).Min() - 1, 1);
+            var toIndex = Math.Max(proxies.Select(_imageSources.IndexOf).Min() - 1, 1);
             foreach (var proxy in proxies)
             {
                 var index = _imageSources.IndexOf(proxy);
@@ -127,7 +127,7 @@ namespace VelEditor.Content
             proxies.Remove(this);
             if (proxies.Count == 0) return;
 
-            var toIndex = Math.Min(proxies.Select(x => _imageSources.IndexOf(x)).Max() + 1, _imageSources.Count - 1);
+            var toIndex = Math.Min(proxies.Select(_imageSources.IndexOf).Max() + 1, _imageSources.Count - 1);
             foreach (var proxy in proxies)
             {
                 var index = _imageSources.IndexOf(proxy);
