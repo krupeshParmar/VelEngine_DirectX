@@ -229,9 +229,9 @@ namespace vel::graphics::d3d12::d3dx {
 			const D3D12_STATIC_SAMPLER_DESC static_point
 		{
 			D3D12_FILTER_MIN_MAG_MIP_POINT,                 // Filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressW
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,				// AddressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,				// AddressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,				// AddressW
 			0.f,                                            // MipLODBias
 			1,                                              // MaxAnisotropy
 			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc
@@ -243,9 +243,9 @@ namespace vel::graphics::d3d12::d3dx {
 		const D3D12_STATIC_SAMPLER_DESC static_linear
 		{
 			D3D12_FILTER_MIN_MAG_MIP_LINEAR,                // Filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressW
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
 			0.f,                                            // MipLODBias
 			1,                                              // MaxAnisotropy
 			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc
@@ -257,9 +257,9 @@ namespace vel::graphics::d3d12::d3dx {
 		const D3D12_STATIC_SAMPLER_DESC static_anisotropic
 		{
 			D3D12_FILTER_ANISOTROPIC,                       // Filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,                // AddressW
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
+			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
 			0.f,                                            // MipLODBias
 			1,                                              // MaxAnisotropy
 			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc

@@ -31,7 +31,37 @@ namespace VelEditor.Content
         private void OnPrimitiveType_ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdatePrimitive();
 
         private void OnSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => UpdatePrimitive();
+        private void OnTextBox_TextChanged(object sender, TextChangedEventArgs e) => UpdatePrimitive();
         private void OnScalarBox_ValueChanged(object sender, RoutedEventArgs e) => UpdatePrimitive();
+
+        private void OnTextureCheckbox_Clicked(object sender, RoutedEventArgs e)
+        {
+            Brush brush = Brushes.White;
+            if ((sender as CheckBox).IsChecked == true)
+            {
+                brush = _texturesList[(int)primitiveTypeComboBox.SelectedItem];
+            }
+
+            var vm = DataContext as GeometryEditor;
+            foreach (var mesh in vm.mMeshRenderer.Meshes)
+            {
+                mesh.Diffuse = brush;
+            }
+        }
+
+        private int Value(Slider slider) => (int)slider.Value;
+
+        private float Value(TextBox textBox, float min)
+        {
+            float.TryParse(textBox.Text, out float result);
+            return Math.Max(result, min);
+        }
+
+        private int Value(TextBox textBox, int min)
+        {
+            int.TryParse(textBox.Text, out int result);
+            return Math.Max(result, min);
+        }
 
         private float Value(ScalarBox scalarBox, float min)
         {
@@ -51,30 +81,31 @@ namespace VelEditor.Content
             {
                 case PrimitiveMeshType.Plane:
                     {
-                        info.SegmentsX = (int)xSliderPlane.Value;
-                        info.SegmentsZ = (int)zSliderPlane.Value;
+                        info.SegmentsX = Value(xSliderPlane);
+                        info.SegmentsZ = Value(zSliderPlane);
                         info.Size.X = Value(widthScalarBoxPlane,0.001f);
                         info.Size.Z = Value(lengthScalarBoxPlane,0.001f);
                     }
                     break;
                 case PrimitiveMeshType.Cube:
                     {
-                        info.SegmentsX = (int)xSegmentSliderCube.Value;
-                        info.SegmentsY = (int)ySegmentSliderCube.Value;
-                        info.SegmentsZ = (int)zSegmentSliderCube.Value;
-                        info.Size.X = Value(xSizeCube, 0.001f);
-                        info.Size.Y = Value(ySizeCube, 0.001f);
-                        info.Size.Z = Value(zSizeCube, 0.001f);
+                        info.SegmentsX = Value(xSliderCube);
+                        info.SegmentsY = Value(ySliderCube);
+                        info.SegmentsZ = Value(zSliderCube);
+                        info.Size.X = Value(xTextBoxCube, 0.001f);
+                        info.Size.Y = Value(yTextBoxCube, 0.001f);
+                        info.Size.Z = Value(zTextBoxCube, 0.001f);
+                        info.LOD = Value(lodTextBoxCube, 0);
                     }
                     break;
                 case PrimitiveMeshType.UVSphere:
                     {
-                        info.SegmentsX = (int)xSliderUVSphere.Value;
-                        info.SegmentsY = (int)ySliderUVSphere.Value;
+                        info.SegmentsX = Value(xSliderUVSphere);
+                        info.SegmentsY = Value(ySliderUVSphere);
                         info.Size.X = Value(xScalarBoxUVSphere, 0.001f);
                         info.Size.Y = Value(yScalarBoxUVSphere, 0.001f);
                         info.Size.Z = Value(zScalarBoxUVSphere, 0.001f);
-                        smoothingAngle = (int)angleSliderUVSphere.Value;
+                        smoothingAngle = Value(angleSliderUVSphere);
                     }
                     break;
                 /*case PrimitiveMeshType.ICOSphere:
@@ -98,7 +129,7 @@ namespace VelEditor.Content
             var uris = new List<Uri>
             {
                 new Uri("pack://application:,,,/Resources/PrimitiveMeshView/plane_deformation.png"),
-                new Uri("pack://application:,,,/Resources/PrimitiveMeshView/plane_deformation.png"),
+                new Uri("pack://application:,,,/Resources/PrimitiveMeshView/CubeCheckermap.png"),
                 new Uri("pack://application:,,,/Resources/PrimitiveMeshView/plane_deformation.png"),
             };
 
@@ -119,32 +150,6 @@ namespace VelEditor.Content
             }
         }
 
-        static PrimitiveMeshDialog()
-        {
-            LoadTextures();
-        }
-
-        public PrimitiveMeshDialog()
-        {
-            InitializeComponent();
-            Loaded += (s, e) => UpdatePrimitive();
-        }
-
-        private void OnTextureCheckbox_Clicked(object sender, RoutedEventArgs e)
-        {
-            Brush brush = Brushes.White;
-            if((sender as CheckBox).IsChecked == true)
-            {
-                brush = _texturesList[(int)primitiveTypeComboBox.SelectedIndex];
-            }
-
-            var vm = DataContext as GeometryEditor;
-            foreach (var mesh in vm.mMeshRenderer.Meshes)
-            {
-                mesh.Diffuse = brush;
-            }
-        }
-
         private void OnSave_Button_Clicked(object sender, RoutedEventArgs e)
         {
             var dlg = new SaveDialog();
@@ -156,6 +161,17 @@ namespace VelEditor.Content
                 asset.FullPath = dlg.SaveFilePath;
                 asset.SaveAsset();
             }
+        }
+
+        static PrimitiveMeshDialog()
+        {
+            LoadTextures();
+        }
+
+        public PrimitiveMeshDialog()
+        {
+            InitializeComponent();
+            Loaded += (s, e) => UpdatePrimitive();
         }
     }
 }

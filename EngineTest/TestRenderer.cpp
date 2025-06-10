@@ -250,9 +250,9 @@ bool test_initialize()
 
 	init_test_workers(buffer_test_worker);
 
-	create_render_items();
-
 	generate_lights();
+
+	create_render_items();
 
 	render_item_id_cache.resize(3 + 12); 
 	geometry::get_render_item_ids(render_item_id_cache.data(), (u32)render_item_id_cache.size());
@@ -294,8 +294,8 @@ bool test_initialize()
 void test_shutdown()
 {
 	input::unbind(std::hash<std::string>()("move"));
-	remove_lights();
 	destroy_render_items();
+	remove_lights();
 
 	joint_test_workers();
 
@@ -328,8 +328,8 @@ void engine_test::run()
 			f32 thresholds[3 + 12]{};
 
 			graphics::frame_info info{};
-			info.render_item_ids = render_item_id_cache.data();
-			info.render_item_count = 3 + 12;
+			info.render_item_ids = render_item_id_cache.data() + 1;
+			info.render_item_count = 3 + 12 - 1;
 			info.thresholds = &thresholds[0];
 			info.light_set_key = light_set_key;
 			info.average_frame_time = dt;

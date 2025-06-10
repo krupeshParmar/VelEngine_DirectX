@@ -4,7 +4,6 @@
 namespace vel::tools
 {
 	namespace {
-		using namespace math;
 		using namespace DirectX;
 		using primitive_mesh_creator = void(*)(scene&, const primitive_init_info& info);
 
@@ -39,31 +38,31 @@ namespace vel::tools
 
 		mesh create_plane(const primitive_init_info& info,
 			u32 horizontal_index = axis::x, u32 vertical_index = axis::z, bool flip_winding = false,
-			v3 offset = { -0.5f, 0.f, -0.5f }, v2 u_range = { 0.f, 1.f }, v2 v_range = { 0.f, 1.f })
+			math::v3 offset = { -0.5f, 0.f, -0.5f }, math::v2 u_range = { 0.f, 1.f }, math::v2 v_range = { 0.f, 1.f })
 		{
 			assert(horizontal_index < 3 && vertical_index < 3);
 			assert(horizontal_index != vertical_index);
 
-			const u32 horizontal_count{ clamp(info.segments[horizontal_index], 1u, 10u) };
-			const u32 vertical_count{ clamp(info.segments[vertical_index], 1u, 10u) };
+			const u32 horizontal_count{ math::clamp(info.segments[horizontal_index], 1u, 10u) };
+			const u32 vertical_count{ math::clamp(info.segments[vertical_index], 1u, 10u) };
 			const f32 horizontal_step{ 1.f / horizontal_count };
 			const f32 vertical_step{ 1.f / vertical_count };
 			const f32 u_step{ (u_range.y - u_range.x) / horizontal_count };
 			const f32 v_step{ (v_range.y - v_range.x) / vertical_count };
 
 			mesh m{};
-			utl::vector<v2> uvs;
+			utl::vector<math::v2> uvs;
 
 			for (u32 j{ 0 }; j <= vertical_count; ++j)
 				for (u32 i{ 0 }; i <= horizontal_count; ++i)
 				{
-					v3 position{ offset };
+					math::v3 position{ offset };
 					f32* const as_array{ &position.x };
 					as_array[horizontal_index] += i * horizontal_step;
 					as_array[vertical_index] += j * vertical_step;
 					m.positions.emplace_back(position.x * info.size.x, position.y * info.size.y, position.z * info.size.z);
 
-					v2 uv{ u_range.x, 1.f - v_range.x };
+					math::v2 uv{ u_range.x, 1.f - v_range.x };
 					uv.x += i * u_step;
 					uv.y -= j * v_step;
 					uvs.emplace_back(uv);
@@ -197,10 +196,10 @@ namespace vel::tools
 
 		mesh create_uv_sphere(const primitive_init_info& info)
 		{
-			const u32 phi_count{ clamp(info.segments[axis::x], 3u, 64u) };
-			const u32 theta_count{ clamp(info.segments[axis::y], 2u, 64u) };
-			const f32 theta_step{ pi / theta_count };
-			const f32 phi_step{ two_pi / phi_count };
+			const u32 phi_count{ math::clamp(info.segments[axis::x], 3u, 64u) };
+			const u32 theta_count{ math::clamp(info.segments[axis::y], 2u, 64u) };
+			const f32 theta_step{ math::pi / theta_count };
+			const f32 phi_step{ math::two_pi / phi_count };
 			const u32 num_indices{ 2 * 3 * phi_count + 3 * 2 * phi_count * (theta_count - 2) };
 			const u32 num_vertices{ 2 + phi_count * (theta_count - 1) };
 
@@ -239,7 +238,7 @@ namespace vel::tools
 
 			c = 0;
 			m.raw_indices.resize(num_indices);
-			utl::vector<v2> uvs(num_indices);
+			utl::vector<math::v2> uvs(num_indices);
 			const f32 inv_theta_count{ 1.f / theta_count };
 			const f32 inv_phi_count{ 1.f / phi_count };
 
@@ -346,6 +345,10 @@ namespace vel::tools
 		}
 		void create_cube(scene& scene, const primitive_init_info& info)
 		{
+			mesh cube{};
+			cube.name = "cube";
+			cube.uv_sets.resize(1);
+
 			lod_group lod{};
 			lod.name = "cube";
 			lod.meshes_list.emplace_back(create_cube(info));

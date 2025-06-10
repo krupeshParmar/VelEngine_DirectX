@@ -13,6 +13,7 @@ namespace vel::graphics {
             directional,
             point,
             spot,
+            ambient,
 
             count
         };

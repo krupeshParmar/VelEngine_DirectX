@@ -20,14 +20,14 @@
         <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
                 <x:Type TypeName="local:PrimitiveMeshType"/>
-            </ObjectDataProvider.MethodParameters>            
+            </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
         <Style TargetType="{x:Type Label}">
             <Setter Property="Margin" Value="5,5,0,0"/>
             <Setter Property="FontSize" Value="9"/>
         </Style>
     </Window.Resources>
-    
+
     <DockPanel Background="{StaticResource Editor.Window.GrayBrush2}">
         <Border Background="{StaticResource Editor.Window.GrayBrush3}" Height="32"
                 DockPanel.Dock="Top" VerticalAlignment="Top" Margin="0,0,0,1">
@@ -43,11 +43,12 @@
         </Border>
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MinWidth="100" MaxWidth="200"/>
-                <ColumnDefinition/>
+                <ColumnDefinition MinWidth="100" MaxWidth="200" Width="69*"/>
+                <ColumnDefinition Width="31*"/>
+                <ColumnDefinition Width="300*"/>
             </Grid.ColumnDefinitions>
             <!-- Plane Settings -->
-            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}">
+            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}" Grid.ColumnSpan="2">
                 <StackPanel.Style>
                     <Style TargetType="{x:Type StackPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -75,7 +76,7 @@
                                 <Slider Minimum="1" Maximum="10" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight" x:Name="zSliderPlane" ValueChanged="OnSlider_ValueChanged"/>
                             </DockPanel>
-                        </StackPanel>                        
+                        </StackPanel>
                     </Border>
                     <Label Content="Segments" VerticalAlignment="Top"
                            HorizontalAlignment="Left" Padding="5,0" 
@@ -93,7 +94,7 @@
                                 <TextBlock Text="Length" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
                                 <ctl:ScalarBox x:Name="lengthScalarBoxPlane" Value="1" ValueChanged="OnScalarBox_ValueChanged"/>
                             </DockPanel>
-                        </StackPanel>                        
+                        </StackPanel>
                     </Border>
                     <Label Content="Size" VerticalAlignment="Top"
                            HorizontalAlignment="Left" Padding="5,0" 
@@ -102,72 +103,74 @@
                 <Button Content="Save Asset" Width="96" Margin="5,0" Click="OnSave_Button_Clicked"/>
             </StackPanel>
             <!-- Cube Settings -->
-            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}">
+            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}" Grid.ColumnSpan="2">
                 <StackPanel.Style>
                     <Style TargetType="{x:Type StackPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding SelectedItem, ElementName=primitiveTypeComboBox}"
-                             Value="{x:Static local:PrimitiveMeshType.Cube}">
+                            <DataTrigger Binding="{Binding SelectedItem, ElementName=primitiveTypeComboBox}" Value="{x:Static local:PrimitiveMeshType.Cube}">
                                 <Setter Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
                 <Grid Margin="0,5">
-                    <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}" Margin="5"
-                Background="{StaticResource Editor.Window.GrayBrush4}">
+                    <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}"
+                            Margin="5">
                         <StackPanel Margin="5,15,5,5">
                             <DockPanel Margin="5">
-                                <TextBlock Text="X" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <TextBox Text="{Binding Path=Value, ElementName=xSegmentSliderCube}" Width="30" DockPanel.Dock="Right"/>
+                                <TextBlock Text="X" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                                 <Slider Minimum="1" Maximum="10" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
-                            TickPlacement="BottomRight" x:Name="xSegmentSliderCube" ValueChanged="OnSlider_ValueChanged"/>
+                                        TickPlacement="BottomRight" x:Name="xSliderCube" ValueChanged="OnSlider_ValueChanged"/>
                             </DockPanel>
                             <DockPanel Margin="5">
-                                <TextBlock Text="Y" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <TextBox Text="{Binding Path=Value, ElementName=ySegmentSliderCube}" Width="30" DockPanel.Dock="Right"/>
+                                <TextBlock Text="Y" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                                 <Slider Minimum="1" Maximum="10" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
-                            TickPlacement="BottomRight" x:Name="ySegmentSliderCube" ValueChanged="OnSlider_ValueChanged"/>
+                                        TickPlacement="BottomRight" x:Name="ySliderCube" ValueChanged="OnSlider_ValueChanged"/>
                             </DockPanel>
                             <DockPanel Margin="5">
-                                <TextBlock Text="Z" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <TextBox Text="{Binding Path=Value, ElementName=zSegmentSliderCube}" Width="30" DockPanel.Dock="Right"/>
+                                <TextBlock Text="Z" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                                 <Slider Minimum="1" Maximum="10" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
-                            TickPlacement="BottomRight" x:Name="zSegmentSliderCube" ValueChanged="OnSlider_ValueChanged"/>
+                                        TickPlacement="BottomRight" x:Name="zSliderCube" ValueChanged="OnSlider_ValueChanged"/>
                             </DockPanel>
                         </StackPanel>
                     </Border>
-                    <Label Content="Segments" VerticalAlignment="Top"
-               HorizontalAlignment="Left" Padding="5,0" 
-               Foreground="{StaticResource Editor.FontBrush}"/>
+                    <Label Content="Segments" Background="{StaticResource Editor.Window.GrayBrush3}" VerticalAlignment="Top"
+                           HorizontalAlignment="Left"  Margin="20,-3,0,0" Padding="5,0" Foreground="{StaticResource Editor.FontBrush}"/>
                 </Grid>
                 <Grid Margin="0,5">
-                    <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}" 
-                Margin="5" Background="{StaticResource Editor.Window.GrayBrush4}">
+                    <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}"
+                            Margin="5">
                         <StackPanel Margin="5,15,5,5">
-                            <DockPanel Margin="5,5,5,0">
-                                <TextBlock Text="X" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <ctl:ScalarBox x:Name="xSizeCube" Value="1" ValueChanged="OnScalarBox_ValueChanged"/>
+                            <DockPanel Margin="5">
+                                <TextBlock Text="X" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <TextBox Text="1" x:Name="xTextBoxCube" TextChanged="OnTextBox_TextChanged"/>
                             </DockPanel>
-                            <DockPanel Margin="5,5,5,0">
-                                <TextBlock Text="Y" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <ctl:ScalarBox x:Name="ySizeCube" Value="1" ValueChanged="OnScalarBox_ValueChanged"/>
+                            <DockPanel Margin="5,0">
+                                <TextBlock Text="Y" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <TextBox Text="1" x:Name="yTextBoxCube" TextChanged="OnTextBox_TextChanged"/>
                             </DockPanel>
-                            <DockPanel Margin="5,5,5,0">
-                                <TextBlock Text="Z" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
-                                <ctl:ScalarBox x:Name="zSizeCube" Value="1" ValueChanged="OnScalarBox_ValueChanged"/>
+                            <DockPanel Margin="5">
+                                <TextBlock Text="Z" Width="20" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                                <TextBox Text="1" x:Name="zTextBoxCube" TextChanged="OnTextBox_TextChanged"/>
                             </DockPanel>
                         </StackPanel>
                     </Border>
-                    <Label Content="Size" VerticalAlignment="Top"
-               HorizontalAlignment="Left" Padding="5,0" 
-               Foreground="{StaticResource Editor.FontBrush}"/>
+                    <Label Content="Size" Background="{StaticResource Editor.Window.GrayBrush3}" VerticalAlignment="Top"
+                           HorizontalAlignment="Left"  Margin="20,-3,0,0" Padding="5,0" Foreground="{StaticResource Editor.FontBrush}"/>
                 </Grid>
-                <Button Content="Save Asset" Width="96" Margin="5,0" Click="OnSave_Button_Clicked"/>
+                <Grid Margin="0,5">
+                    <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}"
+                            Margin="5">
+                        <TextBox Text="1" Margin="30,20,10,10" x:Name="lodTextBoxCube" TextChanged="OnTextBox_TextChanged"/>
+                    </Border>
+                    <Label Content="LOD" Background="{StaticResource Editor.Window.GrayBrush3}" VerticalAlignment="Top"
+                           HorizontalAlignment="Left"  Margin="20,-3,0,0" Padding="5,0" Foreground="{StaticResource Editor.FontBrush}"/>
+                </Grid>
+                <Button Content="Save" Click="OnSave_Button_Clicked" Width="80" Margin="5,0" VerticalAlignment="Bottom"/>
             </StackPanel>
             <!-- UVSphere Settings -->
-            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}">
+            <StackPanel Background="{StaticResource Editor.Window.GrayBrush3}" Grid.ColumnSpan="2">
                 <StackPanel.Style>
                     <Style TargetType="{x:Type StackPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -181,7 +184,7 @@
                 </StackPanel.Style>
                 <Grid Margin="0,5">
                     <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}" Margin="5"
-                Background="{StaticResource Editor.Window.GrayBrush4}"> 
+                Background="{StaticResource Editor.Window.GrayBrush4}">
                         <StackPanel Margin="5,15,5,5">
                             <DockPanel Margin="5">
                                 <TextBlock Text="Lon." Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
@@ -227,11 +230,11 @@
                     <Border CornerRadius="3" BorderThickness="1" BorderBrush="{StaticResource Editor.Window.GrayBrush6}" Margin="5"
                         Background="{StaticResource Editor.Window.GrayBrush4}">
                         <DockPanel Margin="5">
-                                <TextBlock Text="Angle" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
+                            <TextBlock Text="Angle" Width="40" DockPanel.Dock="Left" VerticalAlignment="Center" />
                             <TextBox Text="{Binding Path=Value, ElementName=angleSliderUVSphere}" Width="30" DockPanel.Dock="Right"/>
-                                <Slider Minimum="0" Maximum="180" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
+                            <Slider Minimum="0" Maximum="180" HorizontalAlignment="Stretch" TickFrequency="1" IsSnapToTickEnabled="True"
                                     x:Name="angleSliderUVSphere" ValueChanged="OnSlider_ValueChanged"/>
-                            </DockPanel>
+                        </DockPanel>
                     </Border>
                     <Label Content="Smoothing" VerticalAlignment="Top"
                         HorizontalAlignment="Left" Padding="5,0" 
@@ -242,8 +245,8 @@
             <!-- ICOSphere Settings -->
             <!-- Cylinder Settings -->
             <!-- Capsule Settings -->
-            <edt:GeometryView DataContext="{Binding mMeshRenderer}" Grid.Column="1"/>
-            <StackPanel Grid.Column="1"  Margin="5" Orientation="Vertical" VerticalAlignment="Top"
+            <edt:GeometryView DataContext="{Binding mMeshRenderer}" Grid.Column="2"/>
+            <StackPanel Grid.Column="2"  Margin="5,5,0,0" Orientation="Vertical" VerticalAlignment="Top"
                             HorizontalAlignment="Left" IsHitTestVisible="False">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding mMeshRenderer.CameraPosition.X, StringFormat=G5}" Foreground="{StaticResource Editor.RedBrush}"/>

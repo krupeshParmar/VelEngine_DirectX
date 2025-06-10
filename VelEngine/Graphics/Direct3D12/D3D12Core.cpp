@@ -287,7 +287,7 @@ namespace vel::graphics::d3d12::core
 			data.ViewHeight = surface.viewport().Height;
 			data.NumDirectionalLights = light::non_cullable_light_count(info.light_set_key);
 			data.DeltaTime = delta_time;
-
+			data.AmbientLight = light::ambient_light(info.light_set_key);
 			// NOTE: be careful not to read from this buffer. Reads are really really slow.
 			hlsl::GlobalShaderData *const shader_data{ cbuffer.allocate<hlsl::GlobalShaderData>() };
 			// TODO: handle the case when cbuffer is full.

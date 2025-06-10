@@ -291,8 +291,6 @@ namespace vel::content {
         {
             graphics::remove_texture(id);
         }
-
-
     } // anonymous namespace
 
     id::id_type create_resource(const void *const data, asset_type::type type)

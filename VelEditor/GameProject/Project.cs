@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -167,7 +165,7 @@ namespace VelEditor.GameProject
         public void Unload()
         {
             UnloadGameCodeDll_Internal();
-            VisualStudio.CloseVisualStudio();
+            Task.Run(VisualStudio.CloseVisualStudio);
             UndoRedoManager.Reset();
             Logger.Clear();
             DeleteTempFolder();
@@ -283,7 +281,7 @@ namespace VelEditor.GameProject
             ActiveScene.GameEntityList.Where(x => x.GetComponent<Script>() != null).ToList().ForEach(x => x.IsActive = false);
             if(VelAPI.UnloadGameCodeDll() != 0)
             {
-                Logger.Log(MessageType.Info, "Game code DLL unloaded");
+                Logger.Log(MessageType.Info, "Game code DLL unloaded.");
                 AvailableScripts = null;
             }
         }

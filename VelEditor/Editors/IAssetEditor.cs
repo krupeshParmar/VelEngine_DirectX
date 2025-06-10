@@ -1,5 +1,6 @@
 ﻿using VelEditor.Content;
 using System;
+using System.Threading.Tasks;
 namespace VelEditor.Editors
 {
     enum AssetEditorState
@@ -14,9 +15,8 @@ namespace VelEditor.Editors
     interface IAssetEditor
     {
         AssetEditorState State { get; }
-        Guid AssetGuid { get; }
         Asset Asset { get; }
-
-        void SetAsset(AssetInfo info);
+        bool CheckAssetGuid(Guid guid);
+        Task SetAsset(AssetInfo info);
     }
 }

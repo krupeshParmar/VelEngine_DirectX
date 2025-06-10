@@ -12,13 +12,22 @@ using namespace Microsoft::WRL;
 namespace vel::tools {
 
 	bool is_normal_map(const Image *const image);
-
+	HRESULT brdf_integration_lut(ID3D11Device* device, u32 sample_count, ScratchImage& brdf_lut);
+	HRESULT prefilter_specular(ID3D11Device* device, const ScratchImage& cubemaps, u32 sample_count, ScratchImage& prefiltered_specular);
+	HRESULT prefilter_diffuse(ID3D11Device* device, const ScratchImage& cubemaps, u32 sample_count, ScratchImage& prefiltered_diffuse);
 	HRESULT equirectangular_to_cubemap(ID3D11Device* device, const Image* env_maps, u32 env_map_count, u32 cubemap_size,
 		bool use_prefilter_size, bool mirror_cubemap, ScratchImage& cubemaps);
 	HRESULT equirectangular_to_cubemap(const Image* env_maps, u32 env_map_count, u32 cubemap_size,
 		bool use_prefilter_size, bool mirror_cubemap, ScratchImage& cubemaps);
 
 	namespace {
+		struct ibl_filter {
+			enum type : u32 {
+				diffuse = 0,
+				specular,
+			};
+		};
+
 		struct import_error {
 			enum error_code : u32 {
 				succeeded = 0,
@@ -201,13 +210,14 @@ namespace vel::tools {
 			}
 
 			bool wait{ true };
+			bool result{ false };
 			while (wait)
 			{
 				for (u32 i{ 0 }; i < d3d11_devices.size(); ++i)
 				{
 					if (d3d11_devices[i].hw_compression_mutex.try_lock())
 					{
-						func(d3d11_devices[i].device.Get());
+						result = func(d3d11_devices[i].device.Get());
 						d3d11_devices[i].hw_compression_mutex.unlock();
 						wait = false;
 						break;
@@ -216,7 +226,7 @@ namespace vel::tools {
 				if (wait) std::this_thread::sleep_for(std::chrono::milliseconds(200));
 			}
 
-			return true;
+			return result;
 		}
 
 		constexpr void set_or_clear_flag(u32& flags, u32 flag, bool set)
@@ -508,6 +518,7 @@ namespace vel::tools {
 							{
 								hr = equirectangular_to_cubemap(device, images.data(), array_size, settings.cubemap_size,
 									settings.prefilter_cubemap, settings.mirror_cubemap, working_scratch);
+								return SUCCEEDED(hr);
 							}))
 						{
 							hr = equirectangular_to_cubemap(images.data(), array_size, settings.cubemap_size,
@@ -540,9 +551,12 @@ namespace vel::tools {
 				scratch = std::move(working_scratch);
 			}
 
-			if (settings.mip_levels != 1 || settings.prefilter_cubemap)
+			const bool generate_full_mipchain{ settings.prefilter_cubemap && settings.dimension == texture_dimension::texture_cube };
+
+			if (settings.mip_levels != 1 || generate_full_mipchain)
 			{
-				scratch = generate_mipmaps(scratch, data->info, settings.prefilter_cubemap ? 0 : settings.mip_levels,
+				scratch = generate_mipmaps(scratch, data->info,
+					generate_full_mipchain ? 0 : settings.mip_levels,
 					settings.dimension == texture_dimension::texture_3d);
 			}
 
@@ -636,6 +650,7 @@ namespace vel::tools {
 					{
 						hr = Compress(device, scratch.GetImages(), scratch.GetImageCount(),
 							scratch.GetMetadata(), output_format, TEX_COMPRESS_DEFAULT, 1.f, bc_scratch);
+						return SUCCEEDED(hr);
 					})))
 			{
 				hr = Compress(scratch.GetImages(), scratch.GetImageCount(), scratch.GetMetadata(),
@@ -683,6 +698,64 @@ namespace vel::tools {
 			}
 			return scratch;
 		}
+		void prefilter_ibl(texture_data *const data, ibl_filter::type filter_type)
+		{
+			assert(data->import_settings.prefilter_cubemap);
+			texture_info& info{ data->info };
+			const DXGI_FORMAT format{ (DXGI_FORMAT)info.format };
+			assert(!IsCompressed(format));
+			utl::vector<Image> images = subresource_data_to_images(data);
+			assert(!images.empty() && !IsCompressed(images[0].format));
+			assert(info.flags & content::texture_flags::is_cube_map);
+			assert(info.width == info.height);
+			const u32 cubemap_count{ info.array_size / 6 };
+			assert(info.mip_levels == (u8)(math::log2(info.width) + 1));
+			HRESULT hr{ S_OK };
+
+			ScratchImage cubemaps{};
+			hr = cubemaps.InitializeCube(format, info.width, info.height, cubemap_count, info.mip_levels);
+			if (FAILED(hr))
+			{
+				info.import_error = import_error::unknown;
+				return;
+			}
+
+			for (u32 img_idx{ 0 }; img_idx < cubemaps.GetImageCount(); ++img_idx)
+			{
+				const Image& image{ cubemaps.GetImages()[img_idx] };
+				assert(image.slicePitch == images[img_idx].slicePitch);
+				memcpy(image.pixels, images[img_idx].pixels, image.slicePitch);
+			}
+
+			constexpr u32 sample_count{ 1024 };
+
+			if (!run_on_gpu([&](ID3D11Device* device)
+				{
+					hr = filter_type == ibl_filter::diffuse ?
+						prefilter_diffuse(device, cubemaps, sample_count, cubemaps) :
+						prefilter_specular(device, cubemaps, sample_count, cubemaps);
+					return SUCCEEDED(hr);
+				}))
+			{
+				info.import_error = import_error::unknown;
+				return;
+			}
+
+			if (data->import_settings.compress)
+			{
+				ScratchImage bc_scratch{ compress_image(data, cubemaps) };
+				if (data->info.import_error) return;
+
+				// Decompress the first image to be used for the icon.
+				assert(bc_scratch.GetImages());
+				copy_icon(bc_scratch.GetImages()[0], data);
+
+				cubemaps = std::move(bc_scratch);
+			}
+
+			copy_subresources(cubemaps, data);
+			texture_info_from_metadata(cubemaps.GetMetadata(), data->info);
+		}
 	}	// annonymous namespace
 
 	void ShutDownTextureTools()
@@ -701,6 +774,38 @@ namespace vel::tools {
 			d3d11_module = nullptr;
 		}
 	}
+
+	VEL_EDITOR_API void PrefilterDiffuseIBL(texture_data *const data)
+	{
+		prefilter_ibl(data, ibl_filter::diffuse);
+	}
+
+	VEL_EDITOR_API void PrefilterSpecularIBL(texture_data *const data)
+	{
+		prefilter_ibl(data, ibl_filter::specular);
+	}
+
+	VEL_EDITOR_API void ComputeBrdfIntegrationLut(texture_data *const data)
+	{
+		assert(data);
+		constexpr u32 sample_count{ 1024 };
+		HRESULT hr{ S_OK };
+		ScratchImage brdf_lut{};
+
+		if (!run_on_gpu([&](ID3D11Device* device)
+			{
+				hr = brdf_integration_lut(device, sample_count, brdf_lut);
+				return SUCCEEDED(hr);
+			}))
+		{
+			data->info.import_error = import_error::unknown;
+			return;
+		}
+
+		copy_subresources(brdf_lut, data);
+		texture_info_from_metadata(brdf_lut.GetMetadata(), data->info);
+	}
+
 
 	VEL_EDITOR_API void Decompress(texture_data *const data)
 	{
@@ -783,7 +888,9 @@ namespace vel::tools {
 		ScratchImage scratch{ initialize_from_images(data, images) };
 		if (data->info.import_error) return;
 
-		if (settings.compress)
+		// NOTE: don't compress if it's a cubemap that's going to be prefiltered. Compression is
+		//       postponed till after prefiltering is done.
+		if (settings.compress && !(scratch.GetMetadata().IsCubemap() && settings.prefilter_cubemap))
 		{
 			ScratchImage bc_scratch{ compress_image(data, scratch) };
 

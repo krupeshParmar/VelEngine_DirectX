@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 using VelEditor.Utilities;
 using System.Text.RegularExpressions;
@@ -35,7 +34,6 @@ namespace VelEditor.GameProject
     class CreateNewProject : ViewModelBase
     {
         // TODO: get the path from the installation
-        private readonly string _templatePath = @"..\..\VelEditor\ProjectTemplates";
         private string _projectname = "NewProject";
         public string ProjectName {
             get => _projectname; 
@@ -66,12 +64,12 @@ namespace VelEditor.GameProject
         private readonly ObservableCollection<ProjectTemplate> _projectTemplates = new();
         public ReadOnlyObservableCollection<ProjectTemplate> ProjectTemplates { get; }
 
-        private bool _isValid;
+        private bool _isValid = true;
 
         public bool IsValid        
         {
             get => _isValid;
-            set
+            private set
             {
                 if (_isValid != value) 
                 {
@@ -86,7 +84,7 @@ namespace VelEditor.GameProject
         public string ErrorMessage
         {
             get => _errorMessage;
-            set
+            private set
             {
                 if (_errorMessage != value)
                 {
@@ -104,7 +102,7 @@ namespace VelEditor.GameProject
             var nameRegex = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*$");
             IsValid = false;
 
-            if(string.IsNullOrWhiteSpace(ProjectName.Trim()))
+            if(string.IsNullOrEmpty(ProjectName.Trim()))
             {
                 ErrorMessage = "Type in a project name.";
             }
@@ -112,7 +110,7 @@ namespace VelEditor.GameProject
             {
                 ErrorMessage = "Invalid character(s) used in project name.";
             }
-            else if(string.IsNullOrWhiteSpace(ProjectPath.Trim()))
+            else if(string.IsNullOrEmpty(ProjectPath.Trim()))
             {
                 ErrorMessage = "Select a valid project folder.";
             }
@@ -139,6 +137,8 @@ namespace VelEditor.GameProject
             {
                 return string.Empty;
             }
+            ProjectName = ProjectName.Trim();
+            ProjectPath = ProjectPath.Trim();
 
             if (!Path.EndsInDirectorySeparator(ProjectPath)) ProjectPath += @"\";
             var path = $@"{ProjectPath}{ProjectName}\";
@@ -197,9 +197,10 @@ namespace VelEditor.GameProject
             ProjectTemplates = new ReadOnlyObservableCollection<ProjectTemplate>(_projectTemplates);
             try
             {
-                var templateList = Directory.GetFiles(_templatePath, "template.xml", SearchOption.AllDirectories);
-                Debug.Assert(templateList.Any());
-                foreach (var file in templateList)
+                var templatesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @".\Resources\ProjectTemplates\");
+                var templatesFiles = Directory.GetFiles(templatesPath, "template.xml", SearchOption.AllDirectories);
+                Debug.Assert(templatesFiles.Any());
+                foreach (var file in templatesFiles)
                 {
                     var template = Serializer.FromFile<ProjectTemplate>(file);
                     template.IconFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file), "Icon.png"));

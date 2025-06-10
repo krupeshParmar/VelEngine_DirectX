@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace VelEditor.Editors
@@ -26,6 +27,12 @@ namespace VelEditor.Editors
         private void OnZoomFitTexture(object sender, ExecutedRoutedEventArgs e) => textureView.ZoomFit();
 
         private void OnActualSizeTexture(object sender, ExecutedRoutedEventArgs e) => textureView.ActualSize();
+
+        private async void OnIBLPair_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as TextureEditor;
+            await vm.SetAsset(vm.Texture.IBLPair);
+        }
 
         public TextureEditorView()
         {

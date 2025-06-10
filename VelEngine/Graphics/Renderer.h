@@ -71,6 +71,13 @@ namespace vel::graphics
         f32         penumbra;
     };
 
+    struct ambient_params
+    {
+        id::id_type diffuse_texture_id;
+        id::id_type specular_texture_id;
+        id::id_type brdf_lut_texture_id;
+    };
+
     struct light_init_info
     {
         u64                             light_set_key{ 0 };
@@ -83,6 +90,7 @@ namespace vel::graphics
             directional_light_params    directional_params;
             point_light_params          point_params;
             spot_light_params           spot_params;
+            ambient_params              ambient_params;
         };
         bool                            is_enabled{ true };
     };
@@ -151,8 +159,8 @@ namespace vel::graphics
             up = { 0.f, 1.f, 0.f };
             field_of_view = 0.25f;
             aspect_ratio = 16.f / 10.f;
-            near_z = 0.01f;
-            far_z = 1000.f;
+            near_z = 0.1f;
+            far_z = 100.f;
         }
     };
 

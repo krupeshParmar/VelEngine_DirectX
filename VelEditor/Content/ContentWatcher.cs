@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using VelEditor.Utilities;
@@ -64,10 +62,7 @@ namespace VelEditor.Content
             }
         }
 
-        private static async void OnContentModified(object sender, FileSystemEventArgs e)
-        {
-            await Application.Current.Dispatcher.BeginInvoke(new Action(() => _refreshTimer.Trigger(e)));
-        }
+        private static async void OnContentModified(object sender, FileSystemEventArgs e) => await Application.Current.Dispatcher.BeginInvoke(() => _refreshTimer.Trigger(e));
 
         private static void Refresh(object sender, DelayEventTimerArgs e)
         {

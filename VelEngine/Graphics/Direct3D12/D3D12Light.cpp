@@ -3,6 +3,7 @@
 #include "Shaders/SharedTypes.h"
 #include "VelAPI/GameEntity.h"
 #include "Components/TransformComponent.h"
+#include "D3D12Content.h"
 
 namespace vel::graphics::d3d12::light {
     namespace {
@@ -72,6 +73,22 @@ namespace vel::graphics::d3d12::light {
 
                     return graphics::light{ id, info.light_set_key };
                 }
+                else if (info.type == graphics::light::ambient)
+                {
+                    static_assert(sizeof(graphics::ambient_params) / sizeof(id::id_type) == 3);
+                    u32 indices[3]{};
+                    content::texture::get_descriptor_indices(&info.ambient_params.diffuse_texture_id, 3, &indices[0]);
+                    assert(!id::is_valid(_ambient_light_id) && _ambient_light.DiffuseSrvIndex == u32_invalid_id);
+
+                    _ambient_light.Intensity = info.intensity;
+                    _ambient_light.DiffuseSrvIndex = indices[0];
+                    _ambient_light.SpecularSrvIndex = indices[1];
+                    _ambient_light.BrdfLutSrvIndex = indices[2];
+
+                    light_owner owner{ game_entity::entity_id{ info.entity_id }, u32_invalid_id, info.type, info.is_enabled };
+                    _ambient_light_id = light_id{ _owners.add(owner) };
+                    return graphics::light{ _ambient_light_id, info.light_set_key };
+                }
                 else
                 {
                     u32 index{ u32_invalid_id };
@@ -126,6 +143,12 @@ namespace vel::graphics::d3d12::light {
                 {
                     _non_cullable_owners[owner.data_index] = light_id{ id::invalid_id };
                 }
+                else if (owner.type == graphics::light::ambient)
+                {
+                    assert(id == _ambient_light_id);
+                    _ambient_light = { -1, u32_invalid_id, u32_invalid_id, u32_invalid_id };
+                    _ambient_light_id = light_id{ id::invalid_id };
+                }
                 else
                 {
                     assert(_owners[_cullable_owners[owner.data_index]].data_index == owner.data_index);
@@ -173,7 +196,8 @@ namespace vel::graphics::d3d12::light {
             {
                 _owners[id].is_enabled = is_enabled;
 
-                if (_owners[id].type == graphics::light::directional)
+                if (_owners[id].type == graphics::light::directional ||
+                    _owners[id].type == graphics::light::ambient)
                 {
                     return;
                 }
@@ -224,6 +248,10 @@ namespace vel::graphics::d3d12::light {
                 {
                     assert(index < _non_cullable_lights.size());
                     _non_cullable_lights[index].Intensity = intensity;
+                }
+                else if (owner.type == graphics::light::ambient)
+                {
+                    _ambient_light.Intensity = intensity;
                 }
                 else
                 {
@@ -278,21 +306,14 @@ namespace vel::graphics::d3d12::light {
                 assert(index < _cullable_lights.size());
                 _cullable_lights[index].Range = range;
                 _culling_info[index].Range = range;
-#if USE_BOUNDING_SPHERES
                 _culling_info[index].CosPenumbra = -1.f;
-#endif
-
                 _bounding_spheres[index].Radius = range;
                 make_dirty(index);
 
                 if (owner.type == graphics::light::spot)
                 {
                     calculate_cone_bounding_sphere(_cullable_lights[index], _bounding_spheres[index]);
-#if USE_BOUNDING_SPHERES
                     _culling_info[index].CosPenumbra = _cullable_lights[index].CosPenumbra;
-#else
-                    _culling_info[index].ConeRadius = calculate_cone_radius(range, _cullable_lights[index].CosPenumbra);
-#endif
                 }
             }
 
@@ -326,11 +347,8 @@ namespace vel::graphics::d3d12::light {
                 _cullable_lights[index].CosPenumbra = DirectX::XMScalarCos(penumbra * 0.5f);
                 calculate_cone_bounding_sphere(_cullable_lights[index], _bounding_spheres[index]);
 
-#if USE_BOUNDING_SPHERES
                 _culling_info[index].CosPenumbra = _cullable_lights[index].CosPenumbra;
-#else
-                _culling_info[index].ConeRadius = calculate_cone_radius(range(id), _cullable_lights[index].CosPenumbra);
-#endif
+
                 make_dirty(index);
             }
 
@@ -431,6 +449,17 @@ namespace vel::graphics::d3d12::light {
                 return count;
             }
 
+            CONSTEXPR hlsl::AmbientLightParameters ambient_light()
+            {
+                if (id::is_valid(_ambient_light_id) && _owners[_ambient_light_id].is_enabled)
+                {
+                    assert(_owners[_ambient_light_id].type == graphics::light::ambient);
+                    return _ambient_light;
+                }
+
+                return { -1.f, u32_invalid_id, u32_invalid_id, u32_invalid_id };
+            }
+
             CONSTEXPR void non_cullable_lights(hlsl::DirectionalLightParameters *const lights, [[maybe_unused]] u32 buffer_size) const
             {
                 assert(buffer_size >= math::align_size_up<D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT>(non_cullable_light_count() * sizeof(hlsl::DirectionalLightParameters)));
@@ -461,13 +490,6 @@ namespace vel::graphics::d3d12::light {
             }
 
         private:
-            f32 calculate_cone_radius(f32 range, f32 cos_penumbra)
-            {
-                const f32 sin_penumbra{ sqrt(1.f - cos_penumbra * cos_penumbra) };
-
-                return sin_penumbra * range;
-            }
-
             void calculate_cone_bounding_sphere(const hlsl::LightParameters& params, hlsl::Sphere& sphere)
             {
                 using namespace DirectX;
@@ -514,10 +536,7 @@ namespace vel::graphics::d3d12::light {
                 assert(info.type != light::directional && index < _cullable_lights.size());
 
                 hlsl::LightParameters& params{ _cullable_lights[index] };
-#if !USE_BOUNDING_SPHERES
-                params.Type = info.type;
-                assert(params.Type < light::count);
-#endif
+
                 params.Color = info.color;
                 params.Intensity = info.intensity;
 
@@ -547,20 +566,11 @@ namespace vel::graphics::d3d12::light {
                 hlsl::LightCullingLightInfo& culling_info{ _culling_info[index] };
 
                 culling_info.Range = _bounding_spheres[index].Radius = params.Range;
-#if USE_BOUNDING_SPHERES
                 culling_info.CosPenumbra = -1.f;
-#else
-
-                culling_info.Type = params.Type;
-#endif
 
                 if (info.type == light::spot)
                 {
-#if USE_BOUNDING_SPHERES
                     culling_info.CosPenumbra = params.CosPenumbra;
-#else
-                    culling_info.ConeRadius = calculate_cone_radius(params.Range, params.CosPenumbra);
-#endif
                 }
             }
 
@@ -650,6 +660,8 @@ namespace vel::graphics::d3d12::light {
             utl::vector<u8>                                 _transform_flags_cache;
             u32                                             _enabled_light_count{ 0 }; // number of cullable lights
             u8                                              _something_is_dirty{ 0 };  // flag is set if any of cullable lights where changed.
+            hlsl::AmbientLightParameters                    _ambient_light{ -1.f, u32_invalid_id, u32_invalid_id, u32_invalid_id };
+            light_id                                        _ambient_light_id{ id::invalid_id };
 
             friend class d3d12_light_buffer;
         };
@@ -1037,6 +1049,12 @@ namespace vel::graphics::d3d12::light {
     {
         const d3d12_light_buffer& light_buffer{ light_buffers[frame_index] };
         return light_buffer.bounding_spheres();
+    }
+
+    hlsl::AmbientLightParameters ambient_light(u64 light_set_key)
+    {
+        assert(light_sets.count(light_set_key));
+        return light_sets[light_set_key].ambient_light();
     }
 
     u32 non_cullable_light_count(u64 light_set_key)

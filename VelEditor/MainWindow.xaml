@@ -7,7 +7,8 @@
         xmlns:editors="clr-namespace:VelEditor.Editors"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="VelEditor" Height="1080" Width="1920"
+        Height="1080" Width="1920"
+        Title="{Binding Name, StringFormat='Vel Editor [{0}]'}"
         Style="{StaticResource VelWindowStyle}">
     <Grid>
         <editors:WorldEditorView/>

@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using VelEditor.Content;
+using VelEditor.Utilities;
 
 namespace VelEditor.Editors
 {
@@ -320,7 +321,7 @@ namespace VelEditor.Editors
             }
         }
 
-        public Guid AssetGuid { get; private set; }
+        private Guid _assetGuid;
         Asset IAssetEditor.Asset => Geometry;
 
         private Content.Geometry _geometry;
@@ -341,7 +342,7 @@ namespace VelEditor.Editors
         public MeshRenderer mMeshRenderer
         {
             get => _meshRenderer;
-            set
+            private set
             {
                 if (_meshRenderer != value)
                 {
@@ -411,13 +412,13 @@ namespace VelEditor.Editors
                 }
             }
         }
-
+        public bool CheckAssetGuid(Guid guid) => _assetGuid == guid;
         public void SetAsset(Content.Asset asset)
         {
             Debug.Assert(asset is Content.Geometry);
             if(asset  is Content.Geometry geometry)
             {
-                AssetGuid = asset.GUID;
+                _assetGuid = asset.GUID;
                 Geometry = geometry;
                 var numLods = geometry.GetLODGroup().LODsList.Count;
                 if (LODIndex >= numLods)
@@ -426,16 +427,16 @@ namespace VelEditor.Editors
                 }
                 else
                 {
-                    mMeshRenderer = new MeshRenderer(Geometry.GetLODGroup().LODsList[0], mMeshRenderer);
+                    mMeshRenderer = new MeshRenderer(Geometry.GetLODGroup().LODsList[LODIndex], mMeshRenderer);
                 }
             }
         }
 
-        public async void SetAsset(AssetInfo info)
+        public async Task SetAsset(AssetInfo info)
         {
             try
             {
-                AssetGuid = info.GUID;
+                _assetGuid = info.GUID;
                 Debug.Assert(info != null && File.Exists(info.FullPath));
                 var geometry = new Content.Geometry();
                 await Task.Run(() =>
@@ -447,7 +448,7 @@ namespace VelEditor.Editors
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log(MessageType.Error, $"Failed to set geometry for use in geometry editor. File: {info.FullPath}, {ex.Message}");
             }
         }
     }

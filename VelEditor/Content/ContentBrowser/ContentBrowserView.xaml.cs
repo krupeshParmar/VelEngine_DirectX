@@ -1,22 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
-using System.Windows.Navigation;
 using VelEditor.Editors;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
@@ -301,7 +296,7 @@ namespace VelEditor.Content
             }
             else if (FileAccess.HasFlag(FileAccess.Read))
             {
-                var assetInfo = Asset.GetAssetInfo(info.FullPath);
+                var assetInfo = Asset.TryGetAssetInfo(info.FullPath);
                 if (assetInfo != null)
                 {
                     OpenAssetEditor(assetInfo);
@@ -320,11 +315,11 @@ namespace VelEditor.Content
                     case AssetType.Audio: break;
                     case AssetType.Material: break;
                     case AssetType.Mesh:
-                        editor = OpenEditorPanel<GeometryEditorView>(info, info.GUID, "Geometry Editor");
+                        editor = OpenEditorPanel<GeometryEditorView>(info, "Geometry Editor");
                         break;
                     case AssetType.Skeleton: break;
                     case AssetType.Texture:
-                        editor = OpenEditorPanel<TextureEditorView>(info, info.GUID, "Texture Editor");
+                        editor = OpenEditorPanel<TextureEditorView>(info, "Texture Editor");
                         break;
                 }
             }
@@ -336,7 +331,7 @@ namespace VelEditor.Content
             return editor;
         }
 
-        private static IAssetEditor OpenEditorPanel<T>(AssetInfo info, Guid guid, string title)
+        private static IAssetEditor OpenEditorPanel<T>(AssetInfo info, string title)
             where T : FrameworkElement, new()
         {
             // First look for a window that's already open and is displaying the same asset.
@@ -344,7 +339,7 @@ namespace VelEditor.Content
             {
                 if (window.Content is FrameworkElement content &&
                     content.DataContext is IAssetEditor editor &&
-                    editor.AssetGuid == info.GUID)
+                    editor.CheckAssetGuid(info.GUID))
                 {
                     window.Activate();
                     return editor;

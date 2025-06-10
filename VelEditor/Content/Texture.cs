@@ -1,5 +1,6 @@
 ﻿global using SliceArray3D = System.Collections.Generic.List<System.Collections.Generic.List<System.Collections.Generic.List<VelEditor.Content.Slice>>>;
 using VelEditor.Utilities;
+using VelEditor.ContentToolsAPIStruct;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -394,7 +395,7 @@ namespace VelEditor.Content
         public static int MaxMipLevels => 14;
         public static int MaxArraySize => 2048;
         public static int Max3DSize => 2048;
-
+        private bool _isSaving;
         public TextureImportSettings ImportSettings { get; } = new();
 
         // array ( mip ( subresource (slices) ) )
@@ -518,6 +519,34 @@ namespace VelEditor.Content
 
         public string FormatName => ImportSettings.Compress && !IsSRGB ? ((BC_FORMAT)Format).GetDescription() : Format.GetDescription();
 
+        private Texture _iblPair;
+        public Texture IBLPair
+        {
+            get => _iblPair;
+            private set
+            {
+                if (_iblPair != value)
+                {
+                    _iblPair = value;
+                    OnPropertyChanged(nameof(IBLPair));
+                }
+            }
+        }
+
+        private bool _isPrefilteredIBL;
+        public bool IsPrefilteredIBL
+        {
+            get => _isPrefilteredIBL;
+            private set
+            {
+                if (_isPrefilteredIBL != value)
+                {
+                    _isPrefilteredIBL = value;
+                    OnPropertyChanged(nameof(IsPrefilteredIBL));
+                }
+            }
+        }
+
         private static bool HasValidDimensions(int width, int height, int arrayOrDepth, bool is3D, string file)
         {
             bool result = true;
@@ -558,6 +587,44 @@ namespace VelEditor.Content
             return result;
         }
 
+        public bool SetData(SliceArray3D slices, Slice icon, Texture iblPair)
+        {
+            Debug.Assert(slices.Any() && slices.First().Any() && slices.First().First().Any());
+
+            if (slices.Any() && slices.First().Any() && slices.First().First().Any())
+            {
+                Slices = slices;
+            }
+            else
+            {
+                return false;
+            }
+
+            var firstMip = Slices[0][0][0];
+
+            if (!HasValidDimensions(firstMip.Width, firstMip.Height, ArraySize, IsVolumeMap, FullPath))
+            {
+                return false;
+            }
+
+            if (icon == null)
+            {
+                Debug.Assert(!ImportSettings.Compress);
+                icon = firstMip;
+            }
+
+            Icon = BitmapHelper.CreateThumbnail(BitmapHelper.ImageFromSlice(icon, Format, IsNormalMap), ContentInfo.IconWidth, ContentInfo.IconWidth);
+
+            IsPrefilteredIBL = iblPair != null;
+
+            if (IsPrefilteredIBL)
+            {
+                IBLPair = iblPair;
+            }
+
+            return true;
+        }
+
         public override bool Import(string file)
         {
             Debug.Assert(File.Exists(file));
@@ -565,32 +632,7 @@ namespace VelEditor.Content
             try
             {
                 Logger.Log(MessageType.Info, $"Importing image file {file}");
-                (var slices, var icon) = ContentToolsAPI.Import(this);
-                Debug.Assert(slices.Any() && slices.First().Any() && slices.First().First().Any());
-
-                if (slices.Any() && slices.First().Any() && slices.First().First().Any())
-                {
-                    Slices = slices;
-                }
-                else
-                {
-                    return false;
-                }
-
-                var firstMip = Slices[0][0][0];
-                if (!HasValidDimensions(firstMip.Width, firstMip.Height, ArraySize, IsVolumeMap, file))
-                {
-                    return false;
-                }
-
-                if (icon == null)
-                {
-                    Debug.Assert(!ImportSettings.Compress);
-                    icon = firstMip;
-                }
-
-                Icon = BitmapHelper.CreateThumbnail(BitmapHelper.ImageFromSlice(icon, IsNormalMap), ContentInfo.IconWidth, ContentInfo.IconWidth);
-
+                ContentToolsAPI.Import(this);
                 return true;
             }
             catch (Exception ex)
@@ -621,6 +663,25 @@ namespace VelEditor.Content
                 Flags = (TextureFlags)reader.ReadInt32();
                 MipLevels = reader.ReadInt32();
                 Format = (DXGI_FORMAT)reader.ReadInt32();
+                var iblPairGuid = new Guid(reader.ReadString());
+                if (iblPairGuid != Guid.Empty)
+                {
+                    IsPrefilteredIBL = true;
+                    var iblFile = AssetRegistry.GetAssetInfo(iblPairGuid)?.FullPath;
+                    if (string.IsNullOrEmpty(iblFile))
+                    {
+                        Logger.Log(MessageType.Error, $"Unable to open IBL pair asset for {file}");
+                        return false;
+                    }
+                    if(IBLPair == null)
+                    {
+                        IBLPair = new Texture() { IBLPair = this };
+                        if (!IBLPair.Load(iblFile))
+                        {
+                            return false;
+                        }
+                    }
+                }
                 var compressedLength = reader.ReadInt32();
                 Debug.Assert(compressedLength > 0);
                 var compressed = reader.ReadBytes(compressedLength);
@@ -698,13 +759,38 @@ namespace VelEditor.Content
 
         public override IEnumerable<string> Save(string file)
         {
+            _isSaving = true;
             try
             {
                 if (TryGetAssetInfo(file) is AssetInfo info && info.Type == Type)
                 {
                     GUID = info.GUID;
                 }
+                else
+                {
+                    file = AssetRegistry.GetAssetInfo(GUID)?.FullPath ?? file;
+                }
 
+                if (IBLPair?.IBLPair?.GUID == GUID && !IBLPair._isSaving)
+                {
+                    var pairFile = string.IsNullOrEmpty(IBLPair.FullPath) ?
+                        file.Replace(AssetFileExtension, $"_diffuse_ibl{AssetFileExtension}") : IBLPair.FullPath;
+
+                    if (IsCubeMap && ImportSettings.PrefilterCubeMap)
+                    {
+                        IBLPair.Save(pairFile);
+                        Debug.Assert(IBLPair != null && IBLPair.IBLPair?.GUID == GUID && IBLPair.IsCubeMap && IsCubeMap);
+                    }
+                    else
+                    {
+                        var fileName = AssetRegistry.GetAssetInfo(IBLPair.GUID)?.FullPath;
+                        if (!string.IsNullOrEmpty(fileName) && File.Exists(fileName))
+                        {
+                            IBLPair = null;
+                            File.Delete(pairFile);
+                        }
+                    }
+                }
                 var compressed = CompressContent();
                 Debug.Assert(compressed?.Length > 0);
                 Hash = ContentHelper.ComputeHash(compressed);
@@ -720,6 +806,7 @@ namespace VelEditor.Content
                 writer.Write((int)Flags);
                 writer.Write(MipLevels);
                 writer.Write((int)Format);
+                writer.Write(IBLPair != null ? IBLPair.GUID.ToString() : Guid.Empty.ToString());
                 writer.Write(compressed.Length);
                 writer.Write(compressed);
 
@@ -734,15 +821,18 @@ namespace VelEditor.Content
             {
                 Debug.WriteLine(ex.Message);
                 Logger.Log(MessageType.Error, $"Failed to save texture to {file}");
+                return new List<string>();
             }
-
-            return new List<string>();
+            finally
+            {
+                _isSaving = false;
+            }
         }
 
         private byte[] CompressContent()
         {
             Debug.Assert(Slices.First().Any() && Slices.First().Count == MipLevels);
-            var data = ContentToolsAPI.SlicesToBinary(Slices);
+            var data = TextureData.SlicesToBinary(Slices);
             Debug.Assert(data?.Length > 0);
             return CompressionHelper.Compress(data);
         }
@@ -750,7 +840,7 @@ namespace VelEditor.Content
         private void DecompressContent(byte[] compressed)
         {
             var decompressed = CompressionHelper.Decompress(compressed);
-            Slices = ContentToolsAPI.SlicesFromBinary(decompressed, ArraySize, MipLevels, IsVolumeMap);
+            Slices = TextureData.SlicesFromBinary(decompressed, ArraySize, MipLevels, IsVolumeMap);
         }
 
         public Texture() : base(AssetType.Texture) { }
