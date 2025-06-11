@@ -1,4 +1,5 @@
-﻿using System;
+﻿global using IdType = System.Int32;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,8 +11,8 @@ namespace VelEditor.Utilities
 
     public static class ID
     {
-        public static int INVALID_ID => -1;
-        public static bool IsValid(int id) => id != INVALID_ID;
+        public static IdType INVALID_ID => -1;
+        public static bool IsValid(IdType id) => id != INVALID_ID;
     }
 
     public static class MathUtil

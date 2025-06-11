@@ -234,38 +234,38 @@ namespace vel::graphics::d3d12::d3dx {
 			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,				// AddressW
 			0.f,                                            // MipLODBias
 			1,                                              // MaxAnisotropy
-			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc
+			D3D12_COMPARISON_FUNC_NONE,						// ComparisonFunc
 			D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK,         // BorderColor
 			0.f, D3D12_FLOAT32_MAX,                         // MinLOD, MaxLOD
 			0, 0, D3D12_SHADER_VISIBILITY_PIXEL             // ShaderRegister, RegisterSpace, ShaderVisibility
-		};
+			};
 
-		const D3D12_STATIC_SAMPLER_DESC static_linear
-		{
-			D3D12_FILTER_MIN_MAG_MIP_LINEAR,                // Filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
-			0.f,                                            // MipLODBias
-			1,                                              // MaxAnisotropy
-			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc
-			D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK,         // BorderColor
-			0.f, D3D12_FLOAT32_MAX,                         // MinLOD, MaxLOD
-			0, 0, D3D12_SHADER_VISIBILITY_PIXEL             // ShaderRegister, RegisterSpace, ShaderVisibility
-		};
+			const D3D12_STATIC_SAMPLER_DESC static_linear
+			{
+				D3D12_FILTER_MIN_MAG_MIP_LINEAR,                // Filter
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
+				0.f,                                            // MipLODBias
+				1,                                              // MaxAnisotropy
+				D3D12_COMPARISON_FUNC_NONE,						// ComparisonFunc
+				D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK,         // BorderColor
+				0.f, D3D12_FLOAT32_MAX,                         // MinLOD, MaxLOD
+				0, 0, D3D12_SHADER_VISIBILITY_PIXEL             // ShaderRegister, RegisterSpace, ShaderVisibility
+			};
 
-		const D3D12_STATIC_SAMPLER_DESC static_anisotropic
-		{
-			D3D12_FILTER_ANISOTROPIC,                       // Filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
-			0.f,                                            // MipLODBias
-			1,                                              // MaxAnisotropy
-			D3D12_COMPARISON_FUNC_ALWAYS,                   // ComparisonFunc
-			D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK,         // BorderColor
-			0.f, D3D12_FLOAT32_MAX,                         // MinLOD, MaxLOD
-			0, 0, D3D12_SHADER_VISIBILITY_PIXEL             // ShaderRegister, RegisterSpace, ShaderVisibility
+			const D3D12_STATIC_SAMPLER_DESC static_anisotropic
+			{
+				D3D12_FILTER_ANISOTROPIC,                       // Filter
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressU
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressV
+				D3D12_TEXTURE_ADDRESS_MODE_CLAMP,               // AddressW
+				0.f,                                            // MipLODBias
+				16,                                             // MaxAnisotropy
+				D3D12_COMPARISON_FUNC_NONE,						// ComparisonFunc
+				D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK,         // BorderColor
+				0.f, D3D12_FLOAT32_MAX,                         // MinLOD, MaxLOD
+				0, 0, D3D12_SHADER_VISIBILITY_PIXEL             // ShaderRegister, RegisterSpace, ShaderVisibility
 		};
 
 	} sampler_state;

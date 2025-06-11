@@ -48,6 +48,7 @@
     <Resource Include="Resources\ContentBrowser\FolderLarge.png" />
     <Resource Include="Resources\ContentBrowser\FolderSmall.png" />
     <Resource Include="Resources\ContentBrowser\ListView.png" />
+    <Resource Include="Resources\MaterialEditor\DefaultMaterialShaders.hlsl" />
     <Resource Include="Resources\PrimitiveMeshView\CubeCheckermap.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane.png" />
     <Resource Include="Resources\PrimitiveMeshView\plane_deformation.png" />
@@ -60,6 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\MaterialEditor\DefaultMaterialShaders.hlsl" />
     <None Remove="Resources\PrimitiveMeshView\CubeCheckermap.png" />
   </ItemGroup>
 

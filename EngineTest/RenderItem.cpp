@@ -1,7 +1,7 @@
 #include <filesystem>
 #include "CommonHeaders.h"
 #include "Content/ContentToEngine.h"
-#include "ShaderCompilation.h"
+#include "../EngineDLL/ShaderCompilation.h"
 #include "Components/Entity.h"
 #include "Components/GeometryComponent.h"
 #include "Graphics/Renderer.h"
@@ -85,7 +85,7 @@ namespace {
 		shader_file_info info{};
 		info.file_name = "TestShader.hlsl";
 		info.function = "TestShaderVS";
-		info.type = shader_type::vertex;
+		info.type = graphics::shader_type::vertex;
 
 		const char* shader_path{ "..\\..\\enginetest\\" };
 
@@ -110,7 +110,7 @@ namespace {
 		extra_args.clear();
 
 		info.function = "TestShaderPS";
-		info.type = shader_type::pixel;
+		info.type = graphics::shader_type::pixel;
 		utl::vector<Scope<u8[]>> pixel_shaders;
 
 		pixel_shaders.emplace_back(compile_shader(info, shader_path, extra_args));
@@ -135,8 +135,8 @@ namespace {
 	{
 		assert(id::is_valid(vs_id) && id::is_valid(ps_id) && id::is_valid(textured_ps_id));
 		graphics::material_init_info info{};
-		info.shader_ids[shader_type::vertex] = vs_id;
-		info.shader_ids[shader_type::pixel] = ps_id;
+		info.shader_ids[graphics::shader_type::vertex] = vs_id;
+		info.shader_ids[graphics::shader_type::pixel] = ps_id;
 		info.type = graphics::material_type::opaque;
 		default_mtl_id = content::create_resource(&info, content::asset_type::material);
 
@@ -155,7 +155,7 @@ namespace {
 			pbr_mtl_ids[i] = content::create_resource(&info, content::asset_type::material);
 		}
 
-		info.shader_ids[shader_type::pixel] = textured_ps_id;
+		info.shader_ids[graphics::shader_type::pixel] = textured_ps_id;
 		info.texture_count = texture_usage::count;
 		info.texture_ids = &texture_ids[0];
 		maria_mtl_id = content::create_resource(&info, content::asset_type::material);

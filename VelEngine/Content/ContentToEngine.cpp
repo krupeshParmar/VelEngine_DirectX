@@ -254,12 +254,12 @@ namespace vel::content {
 
         // NOTE: expects data to contain
         // struct {
+        // id::id_type*         texture_ids;
+        //  material_surface    surface;
         //  material_type::type type,
         //  u32                 texture_count,
         //  id::id_type         shader_ids[shader_type::count],
-        //  id::id_type*        texture_ids;
         // } material_init_info
-
         [[nodiscard]] id::id_type create_material_resource(const void *const data)
         {
             assert(data);

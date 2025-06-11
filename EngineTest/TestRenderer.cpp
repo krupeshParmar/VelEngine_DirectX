@@ -1,16 +1,15 @@
 #include "Platform/platformtypes.h"
 #include "Platform/Platform.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Direct3D12/D3D12Core.h"
 #include "Content/ContentToEngine.h"
 #include "Components/Entity.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
 #include "Components/GeometryComponent.h"
 #include "Input/Input.h"
-#include "ShaderCompilation.h"
 #include "TestRenderer.h"
-#include "Utilities/KeyCodes.h"
+#include "../EngineDLL/ShaderCompilation.h"
+#include "../EngineDLL/ShaderCompilation.cpp"
 #include <filesystem>
 #include <fstream>
 #if TEST_RENDERER
@@ -29,10 +28,10 @@ void buffer_test_worker()
 {
 	while (!_shutdown)
 	{
-		auto* resource = graphics::d3d12::d3dx::create_buffer(buffer.data(), (u32)buffer.size());
+		//auto* resource = graphics::d3d12::d3dx::create_buffer(buffer.data(), (u32)buffer.size());
 		// NOTE: We can also use core::release(resource) since we're not using the buffer for rendering.
 		//       However, this is a nice test for deferred_release functionality.
-		graphics::d3d12::core::deferred_release(resource);
+		//graphics::d3d12::core::deferred_release(resource);
 	}
 }
 

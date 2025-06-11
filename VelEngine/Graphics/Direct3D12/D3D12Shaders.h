@@ -6,10 +6,10 @@ namespace vel::graphics::d3d12::shaders
     struct engine_shader {
         enum id : u32 {
             fullscreen_triangle_vs = 0,
-            fill_color_ps = 1, 
-            post_process_ps = 2,
-            grid_frustums_cs = 3,
-            light_culling_cs = 4,
+            fill_color_ps, 
+            post_process_ps,
+            grid_frustums_cs,
+            light_culling_cs,
 
             count
         };

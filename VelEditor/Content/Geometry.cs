@@ -22,13 +22,19 @@ namespace VelEditor.Content
         Capsule
     }
 
-    enum ElementsType
+    // NOTE: copy of element_type enum in ContentTools Geometry.h
+    enum ElementsType : UInt32
     {
-        Position = 0x00,
-        Normals = 0x01,
-        TSpace = 0x03,
-        Joints = 0x04,
-        Colors = 0x08
+        PositionOnly = 0x00,
+        StaticNormal = 0x01,
+        StaticNormalTexture = 0x03,
+        StaticColor = 0x04,
+        Skeletal = 0x08,
+        SkeletalColor = Skeletal | StaticColor,
+        SkeletalNormal = Skeletal | StaticNormal,
+        SkeletalNormalColor = SkeletalNormal | StaticColor,
+        SkeletalNormalTexture = Skeletal | StaticNormalTexture,
+        SkeletalNormalTextureColor = SkeletalNormalTexture | StaticColor,
     }
 
     enum PrimitiveTopology
@@ -38,6 +44,26 @@ namespace VelEditor.Content
         LineStrip,
         TriangleList,
         TriangleStrip,
+    }
+
+    class MeshInfo
+    {
+        public string Name { get; init; }
+        public byte[] Icon { get; init; }
+        public int IndexCount { get; init; }
+        public int VertexCount { get; init; }
+        public int TriangleCount { get; init; }
+    }
+    class LodInfo
+    {
+        public string Name { get; init; }
+        public float Threshold { get; init; }
+        public List<MeshInfo> Meshes { get; init; }
+    }
+
+    class GeometryMetadata : AssetMetadata
+    {
+        public List<LodInfo> LODsList { get; init; }
     }
 
     class Mesh : ViewModelBase
@@ -150,7 +176,7 @@ namespace VelEditor.Content
         }
 
 
-        public ObservableCollection<Mesh> MeshesList { get; } = new ObservableCollection<Mesh>();
+        public ObservableCollection<Mesh> MeshesList { get; } = [];
     }
 
     class LODGroup : ViewModelBase
@@ -168,7 +194,7 @@ namespace VelEditor.Content
                 }
             }
         }
-        public ObservableCollection<MeshLOD> LODsList { get; } = new ObservableCollection<MeshLOD>();
+        public ObservableCollection<MeshLOD> LODsList { get; } = [];
     }
 
     class GeometryImportSettings : ViewModelBase, IAssetImportSettings
@@ -313,8 +339,9 @@ namespace VelEditor.Content
     {
         public GeometryImportSettings ImportSettings { get; } = new();
 
-        private readonly List<LODGroup> _lodGroups = new();
+        private readonly List<LODGroup> _lodGroups = [];
         private readonly object _lock = new();
+        public static AssetInfo Default => DefaultAssets.DefaultGeometry;
 
         public LODGroup? GetLODGroup(int lodGroup = 0)
         {
@@ -707,7 +734,7 @@ namespace VelEditor.Content
             return lod;
         }
 
-        private static byte[] GenerateIcon(MeshLOD lod)
+        private static byte[] GenerateIcon(MeshLOD lod, int index = -1)
         {
             var width = ContentInfo.IconWidth * 4;
 
@@ -719,11 +746,40 @@ namespace VelEditor.Content
             Application.Current.Dispatcher.Invoke(() =>
             {
                 // Create an image that's 4x larger, so it's softened when it's scaled down.
-                var bmp = Editors.GeometryView.RenderToBitmap(new Editors.MeshRenderer(lod, null), width, width);
+                var bmp = Editors.GeometryView.RenderToBitmap(new Editors.MeshRenderer(lod, null), width, width, index);
                 icon = BitmapHelper.CreateThumbnail(bmp, ContentInfo.IconWidth, ContentInfo.IconWidth);
             });
 
             return icon;
+        }
+
+        public override GeometryMetadata GetMetadata()
+        {
+            var lodGroup = GetLODGroup();
+
+            GeometryMetadata metadata = new() { LODsList = [] };
+
+            foreach (var lod in lodGroup.LODsList)
+            {
+                LodInfo lodInfo = new() { Name = lod.Name, Threshold = lod.LodThreshold, Meshes = [] };
+                metadata.LODsList.Add(lodInfo);
+
+                foreach (var mesh in lod.MeshesList)
+                {
+                    MeshInfo meshInfo = new()
+                    {
+                        Name = mesh.Name,
+                        Icon = GenerateIcon(lod, lod.MeshesList.IndexOf(mesh)),
+                        IndexCount = mesh.IndexCount,
+                        TriangleCount = mesh.IndexCount / 3,
+                        VertexCount = mesh.VertexCount
+                    };
+
+                    lodInfo.Meshes.Add(meshInfo);
+                }
+            }
+
+            return metadata;
         }
 
         public Geometry() : base(AssetType.Mesh) { }
@@ -732,6 +788,12 @@ namespace VelEditor.Content
         {
             Debug.Assert(importSettings is GeometryImportSettings);
             ImportSettings = (GeometryImportSettings)importSettings;
+        }
+        public Geometry(AssetInfo assetInfo) : this()
+        {
+            Debug.Assert(assetInfo != null && assetInfo.GUID != Guid.Empty);
+            Debug.Assert(File.Exists(assetInfo.FullPath) && assetInfo.Type == Type);
+            Load(assetInfo.FullPath);
         }
     }
 }

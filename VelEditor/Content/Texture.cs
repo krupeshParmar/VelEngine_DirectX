@@ -843,6 +843,19 @@ namespace VelEditor.Content
             Slices = TextureData.SlicesFromBinary(decompressed, ArraySize, MipLevels, IsVolumeMap);
         }
 
+        public override TextureMetadata GetMetadata()
+        {
+            return new()
+            {
+                Width = Width,
+                Height = Height,
+                DepthOrArraySize = ArraySize,
+                Format = Format,
+                MipLevels = MipLevels,
+                Dimension = ImportSettings.Dimension,
+            };
+        }
+
         public Texture() : base(AssetType.Texture) { }
 
         public Texture(IAssetImportSettings importSettings) : this()
