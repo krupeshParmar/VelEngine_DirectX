@@ -133,7 +133,7 @@ struct PerObjectData
     float EmissiveIntensity;
     float Metallic;
     float Roughness;
-    uint _pad;
+    uint2 _pad;
 };
 
 

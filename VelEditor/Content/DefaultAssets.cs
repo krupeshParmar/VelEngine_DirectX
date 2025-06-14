@@ -40,7 +40,7 @@ namespace VelEditor.Content
                 CreateDefaultCube(cubeFileName);
             }
 
-            var mtlFileName = $@"{defaultAssetsPath}DefaultMaterial.asset";
+            var mtlFileName = $@"{defaultAssetsPath}DefaultMaterial.velasset";
 
             if (!File.Exists(mtlFileName))
             {

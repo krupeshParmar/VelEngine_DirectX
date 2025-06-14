@@ -340,7 +340,7 @@ namespace vel::content {
             assert(shaders[i]);
             const compiled_shader_ptr shader_ptr{ (const compiled_shader_ptr)shaders[i] };
             const u64 size{ shader_ptr->buffer_size() };
-            std::unique_ptr<u8[]> shader{ std::make_unique<u8[]>(size) };
+            Scope<u8[]> shader{ CreateScope<u8[]>(size) };
             memcpy(shader.get(), shaders[i], size);
             group.map[keys[i]] = std::move(shader);
         }

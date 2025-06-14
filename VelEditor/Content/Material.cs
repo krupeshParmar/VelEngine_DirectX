@@ -172,26 +172,26 @@ namespace VelEditor.Content
 
     class DefaultMaterialInputs : ViewModelBase
     {
-        private readonly List<MaterialInput> _inputs;
+        private readonly List<MaterialInput> _inputsList;
 
-        public List<MaterialInput> GetInputs() => _inputs;
+        public List<MaterialInput> GetInputs() => _inputsList;
 
         public void AddInput(MaterialInput input)
         {
-            if (!_inputs.Any(x => x.Name == input.Name))
+            if (!_inputsList.Any(x => x.Name == input.Name))
             {
-                _inputs.Add(input);
+                _inputsList.Add(input);
             }
         }
 
         public void RemoveInput(string name)
         {
-            _inputs.Remove(_inputs.Find(x => x.Name == name));
+            _inputsList.Remove(_inputsList.Find(x => x.Name == name));
         }
 
         public void FromBinary(BinaryReader reader)
         {
-            foreach (var input in _inputs)
+            foreach (var input in _inputsList)
             {
                 input.Name = reader.ReadString();
             }
@@ -199,7 +199,7 @@ namespace VelEditor.Content
 
         public void ToBinary(BinaryWriter writer)
         {
-            foreach (var input in _inputs)
+            foreach (var input in _inputsList)
             {
                 writer.Write(input.Name);
             }
@@ -207,7 +207,7 @@ namespace VelEditor.Content
 
         public DefaultMaterialInputs()
         {
-            _inputs = [new("Base Color"), new("Emissive Color"), new("Normal Map"), new("Metallic and Roughness"), new("Ambient Occlusion"),];
+            _inputsList = [new("Base Color"), new("Emissive Color"), new("Normal Map"), new("Metallic and Roughness"), new("Ambient Occlusion"),];
         }
     }
 

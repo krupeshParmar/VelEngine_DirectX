@@ -176,7 +176,7 @@ namespace VelEditor.GameProject
             Debug.Assert(File.Exists(Path.Combine(template.TemplatePath, "MSVCProject")));
 
             var engineAPIPath = @"$(VEL_ENGINE)VelEngine\VelAPI\";
-            Debug.Assert(Directory.Exists(engineAPIPath));
+            //TODO: check if velEngineAPIPath exists.
 
             var _0 = ProjectName;
             var _1 = "{" + Guid.NewGuid().ToString().ToUpper() + "}";

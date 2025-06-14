@@ -5,6 +5,7 @@ using System.Windows;
 using VelEditor.Content;
 using VelEditor.GameProject;
 using VelEditor.DLLWrapper;
+using System.Runtime.InteropServices;
 
 namespace VelEditor
 {
@@ -20,7 +21,16 @@ namespace VelEditor
             Loaded -= OnMainWindowLoaded;
             DefaultAssets.GenerateDefaultAssets();
             GetEnginePath();
-            OpenProjectBrowserDialog();
+            var initResult = VelAPI.InitializeEngine();
+            if (initResult == EngineAPIStructs.EngineInitError.Succeeded)
+            {
+                OpenProjectBrowserDialog();
+            }
+            else
+            {
+                MessageBox.Show($"{initResult.GetDescription()}", "Engine initialization failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Shutdown();
+            }
         }
 
         private void GetEnginePath()
@@ -45,6 +55,15 @@ namespace VelEditor
             }
         }
 
+        private void Shutdown()
+        {
+            Closing -= OnMainWindowClosing;
+            Project.Current?.Unload();
+            DataContext = null;
+            ContentToolsAPI.ShutDownContentTools();
+            VelAPI.ShutdownEngine();
+        }
+
         private void OnMainWindowClosing(object? sender, CancelEventArgs e)
         {
             if (DataContext == null)
@@ -59,10 +78,7 @@ namespace VelEditor
             }
             else
             {
-                Closing -= OnMainWindowClosing;
-                Project.Current?.Unload();
-                DataContext = null;
-                ContentToolsAPI.ShutDownContentTools();
+                Shutdown();
             }
         }
 

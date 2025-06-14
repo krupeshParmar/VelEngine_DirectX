@@ -35,6 +35,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, PSTR, int)
 {
 #if _DEBUG
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    // When a leak is detected, call _CrtSetBreakAlloc(N) with leak number N to
+    // break at leak site.
 #endif  // _DEBUG
     set_current_directory_to_executable_path();
     engine_test test{};

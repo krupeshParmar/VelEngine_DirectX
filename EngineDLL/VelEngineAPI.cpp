@@ -27,6 +27,15 @@ namespace
 
 	utl::vector<graphics::render_surface> surfaces_list;
 
+	struct engine_init_error {
+		enum error_code :u32 {
+			succeeded = 0,
+			unknown,
+			shader_compilation,
+			graphics,
+		};
+	};
+
 	struct shader_data
 	{
 		u32 type;
@@ -63,6 +72,26 @@ namespace
 		return (u8*)blob.position();
 	}
 } // annonymous namespace
+
+VEL_EDITOR_API engine_init_error::error_code
+InitializeEngine()
+{
+	while (!compile_shaders())
+	{
+		// Pop up a message box allowing the user to retry compilation.
+		if (MessageBox(nullptr, L"Failed to compile engine shaders.", L"Shader Compilation Error", MB_RETRYCANCEL) != IDRETRY)
+			return engine_init_error::shader_compilation;
+	}
+
+	return graphics::initialize(graphics::graphics_platform::direct3d12) ? engine_init_error::succeeded : engine_init_error::graphics;
+}
+
+VEL_EDITOR_API void
+ShutdownEngine()
+{
+	graphics::shutdown();
+}
+
 
 VEL_EDITOR_API u32
 LoadGameCodeDll(const char* dll_path)
@@ -137,12 +166,15 @@ CreateResource(u8* data, content::asset_type::type type)
 		data = patch_material_data(data);
 	}
 
-	return id::invalid_id;
+	assert(data && type < content::asset_type::count);
+	return content::create_resource(data, type);
 }
 
 VEL_EDITOR_API void
 DestroyResource(id::id_type id, content::asset_type::type type)
 {
+	assert(id::is_valid(id) && type < content::asset_type::count);
+	content::destroy_resource(id, type);
 }
 
 VEL_EDITOR_API id::id_type
