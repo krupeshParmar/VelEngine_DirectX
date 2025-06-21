@@ -4,7 +4,7 @@
     <ClInclude Include="Common\CommonHeaders.h" />
     <ClInclude Include="Common\PrimitiveTypes.h" />
     <ClInclude Include="Common\id.h" />
-    <ClInclude Include="Components\Entity.h" />
+    <ClInclude Include="Components\EntityManager.h" />
     <ClInclude Include="Components\ComponentsCommon.h" />
     <ClInclude Include="Components\TransformComponent.h" />
     <ClInclude Include="Utilities\Utilities.h" />
@@ -47,9 +47,10 @@
     <ClInclude Include="Graphics\Direct3D12\D3D12LightCulling.h" />
     <ClInclude Include="Components\GeometryComponent.h" />
     <ClInclude Include="VelAPI\GeometryComponentAPI.h" />
+    <ClInclude Include="Scene\Scene.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Components\Entity.cpp" />
+    <ClCompile Include="Components\EntityManager.cpp" />
     <ClCompile Include="Components\TransformComponent.cpp" />
     <ClCompile Include="Components\ScriptComponent.cpp" />
     <ClCompile Include="Core\EntryPointWin32.cpp" />

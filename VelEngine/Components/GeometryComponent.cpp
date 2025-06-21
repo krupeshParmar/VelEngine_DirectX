@@ -1,5 +1,5 @@
 #include "GeometryComponent.h"
-#include "Entity.h"
+#include "EntityManager.h"
 #include "Graphics/Renderer.h"
 
 namespace vel::geometry {

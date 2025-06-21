@@ -1,4 +1,4 @@
-#include "Components/Entity.h"
+#include "Components/EntityManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
 #include "VelAPI/Input.h"

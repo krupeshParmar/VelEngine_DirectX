@@ -1,6 +1,6 @@
 
 #include "Common.h"
-#include "Components/Entity.h"
+#include "Components/EntityManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
 

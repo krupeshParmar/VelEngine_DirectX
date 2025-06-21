@@ -1,5 +1,5 @@
 #include "ScriptComponent.h"
-#include "Entity.h"
+#include "EntityManager.h"
 #include "TransformComponent.h"
 
 #define USE_TRANSFORM_CACHE_MAP 0

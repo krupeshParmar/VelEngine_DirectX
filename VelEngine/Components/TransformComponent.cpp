@@ -1,5 +1,5 @@
 #include "TransformComponent.h"
-#include "Entity.h"
+#include "EntityManager.h"
 
 namespace vel::transform
 {

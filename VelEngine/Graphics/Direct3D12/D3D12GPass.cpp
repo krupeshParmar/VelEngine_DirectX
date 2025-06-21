@@ -6,7 +6,7 @@
 #include "D3D12Light.h"
 #include "D3D12LightCulling.h"
 #include "Shaders/SharedTypes.h"
-#include "Components/Entity.h"
+#include "Components/EntityManager.h"
 #include "Components/TransformComponent.h"
 
 namespace vel::graphics::d3d12::gpass {

@@ -1,4 +1,4 @@
-#include "Entity.h"
+#include "EntityManager.h"
 #include "TransformComponent.h"
 #include "ScriptComponent.h"
 #include "GeometryComponent.h"

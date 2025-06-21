@@ -2,7 +2,7 @@
 #include "CommonHeaders.h"
 #include "Content/ContentToEngine.h"
 #include "../EngineDLL/ShaderCompilation.h"
-#include "Components/Entity.h"
+#include "Components/EntityManager.h"
 #include "Components/GeometryComponent.h"
 #include "Graphics/Renderer.h"
 #include "../ContentTools/Geometry.h"
@@ -200,12 +200,12 @@ create_render_items()
 		std::thread{ [] { texture_ids[texture_usage::normal] = load_texture("..\\..\\x64\\normal.texture"); }},
 		
 		std::thread{ [] { ibl_brdf_lut_id = load_texture("..\\..\\x64\\ibl\\brdf_lut.texture"); } },
-		std::thread{ [] { ibl_diffuse_id = load_texture("..\\..\\x64\\ibl\\set2\\diffuse.texture"); } },
-		std::thread{ [] { ibl_specular_id = load_texture("..\\..\\x64\\ibl\\set2\\specular.texture"); } },
+		std::thread{ [] { ibl_diffuse_id = load_texture("..\\..\\x64\\ibl\\set3\\diffuse.texture"); } },
+		std::thread{ [] { ibl_specular_id = load_texture("..\\..\\x64\\ibl\\set3\\specular.texture"); } },
 
 		std::thread{ [] { strip_club_model_id = load_model("..\\..\\x64\\stripclub_interior2.model"); } },
 		std::thread{ [] { sword_model_id = load_model("..\\..\\x64\\sword.model"); } },
-		std::thread{ [] { maria_model_id = load_model("..\\..\\x64\\maria.model"); } },
+		std::thread{ [] { maria_model_id = load_model("..\\..\\x64\\fembot.model"); } },
 		std::thread{ [] { sphere_model_id = load_model("..\\..\\x64\\sphere_model.model"); } },
 		std::thread{ [] { load_shaders(); } },
 	};

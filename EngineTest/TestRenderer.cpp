@@ -2,7 +2,7 @@
 #include "Platform/Platform.h"
 #include "Graphics/Renderer.h"
 #include "Content/ContentToEngine.h"
-#include "Components/Entity.h"
+#include "Components/EntityManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
 #include "Components/GeometryComponent.h"
