@@ -8,7 +8,6 @@ A modern 3D game engine written in C++ and DirectX, built with an ECS architectu
 - ✅ Scene serialization (XML-based)
 - ✅ Physically Based Rendering (PBR)
 - ✅ Image-Based Lighting (IBL)
-- ✅ Basic post-processing (bloom, tone mapping)
 - ✅ Custom UI framework
 - ✅ C++ scripting system for gameplay logic
 - ✅ Editor tools with hierarchy, inspector, and transform gizmos (WIP)
