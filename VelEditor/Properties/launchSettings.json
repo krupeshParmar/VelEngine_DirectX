@@ -1,8 +1,7 @@
 {
   "profiles": {
-    "Profile 1": {
-      "commandName": "Executable",
-      "executablePath": ".\\VelEditor.exe",
+    "VelEdtior": {
+      "commandName": "Project",
       "nativeDebugging": true
     }
   }

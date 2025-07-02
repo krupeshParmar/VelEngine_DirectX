@@ -2,251 +2,255 @@
 using System.IO;
 using VelEditor.DLLWrapper;
 using VelEditor.Utilities;
+using System.Runtime.Serialization;
+using System.Threading;
 
-namespace VelEditor.Content
+namespace VelEditor.Content;
+
+enum AssetType
 {
-    enum AssetType
-    {
-        Unkonwn,
-        Animation,
-        Audio,
-        Material,
-        Mesh,
-        Skeleton,
-        Texture,
-    }
+    Unknown,
+    Animation,
+    Audio,
+    Material,
+    Mesh,
+    Skeleton,
+    Texture,
+}
 
-    interface IAssetImportSettings
-    {
-        void ToBinary(BinaryWriter writer);
-        void FromBinary(BinaryReader reader);
+interface IAssetImportSettings
+{
+    void ToBinary(BinaryWriter writer);
+    void FromBinary(BinaryReader reader);
 
-        static void CopyImportSettings(IAssetImportSettings fromSettings, IAssetImportSettings toSettings)
+    static void CopyImportSettings(IAssetImportSettings fromSettings, IAssetImportSettings toSettings)
+    {
+        if (fromSettings == null || toSettings == null)
         {
-            if (fromSettings == null || toSettings == null)
-            {
-                throw new ArgumentNullException("Arguments should not be null.");
-            }
-            else if (fromSettings.GetType() != toSettings.GetType())
-            {
-                throw new ArgumentException("Arguments should be of the same type.");
-            }
+            throw new ArgumentNullException("Arguments should not be null.");
+        }
+        else if (fromSettings.GetType() != toSettings.GetType())
+        {
+            throw new ArgumentException("Arguments should be of the same type.");
+        }
 
-            using BinaryWriter writer = new(new MemoryStream());
-            fromSettings.ToBinary(writer);
-            writer.Flush();
-            var bytes = (writer.BaseStream as MemoryStream).ToArray();
+        using BinaryWriter writer = new(new MemoryStream());
+        fromSettings.ToBinary(writer);
+        writer.Flush();
+        var bytes = (writer.BaseStream as MemoryStream).ToArray();
 
-            using BinaryReader reader = new(new MemoryStream(bytes));
-            toSettings.FromBinary(reader);
+        using BinaryReader reader = new(new MemoryStream(bytes));
+        toSettings.FromBinary(reader);
+    }
+}
+
+sealed class AssetInfo
+{
+    public AssetType Type { get; set; }
+    public byte[] Icon { get; set; }
+    public string FullPath { get; set; }
+    public string FileName => Path.GetFileNameWithoutExtension(FullPath);
+    public DateTime RegisterTime { get; set; }
+    public DateTime ImportDate { get; set; }
+    public Guid GUID { get; set; }
+    public byte[] Hash { get; set; }
+}
+
+abstract class AssetMetadata { }
+
+[DataContract]
+abstract class Asset : ViewModelBase
+{
+    public static string AssetFileExtension => ".velasset";
+    [DataMember]
+    public AssetType Type { get; private set; }
+    public byte[] Icon { get; protected set; }
+
+    private string _fullPath;
+    public string FullPath
+    {
+        get => _fullPath;
+        set
+        {
+            if (_fullPath != value)
+            {
+                _fullPath = value;
+                OnPropertyChanged(nameof(FullPath));
+                OnPropertyChanged(nameof(FileName));
+            }
         }
     }
 
-    sealed class AssetInfo
+    public string FileName => Path.GetFileNameWithoutExtension(FullPath);
+    public Guid GUID { get; protected set; } = Guid.NewGuid();
+    public DateTime ImportDate { get; protected set; }
+    public byte[] Hash { get; protected set; }
+
+    public abstract AssetMetadata GetMetadata();
+    public abstract bool Import(string file);
+    public abstract bool Load(string file);
+    public abstract IEnumerable<string> Save(string file);
+    public abstract byte[] PackForEngine();
+    public virtual List<AssetInfo> GetReferencedAssets() => [];
+
+    public AssetInfo GetAssetInfo()
+        => new()
+        {
+            Type = Type,
+            Icon = Icon,
+            FullPath = FullPath,
+            RegisterTime = AssetRegistry.GetAssetInfo(GUID)?.RegisterTime ?? default,
+            ImportDate = ImportDate,
+            GUID = GUID,
+            Hash = Hash,
+        };
+
+    private static AssetInfo GetAssetInfo(BinaryReader reader)
     {
-        public AssetType Type { get; set; }
-        public byte[] Icon { get; set; }
-        public string FullPath { get; set; }
-        public string FileName => Path.GetFileNameWithoutExtension(FullPath);
-        public DateTime RegisterTime { get; set; }
-        public DateTime ImportDate { get; set; }
-        public Guid GUID { get; set; }
-        public byte[] Hash { get; set; }
+        reader.BaseStream.Position = 0;
+        var info = new AssetInfo();
+
+        info.Type = (AssetType)reader.ReadInt32();
+        var idSize = reader.ReadInt32();
+        info.GUID = new Guid(reader.ReadBytes(idSize));
+        info.ImportDate = DateTime.FromBinary(reader.ReadInt64());
+        var hashSize = reader.ReadInt32();
+        if (hashSize > 0)
+        {
+            info.Hash = reader.ReadBytes(hashSize);
+        }
+        var iconSize = reader.ReadInt32();
+        info.Icon = reader.ReadBytes(iconSize);
+
+        return info;
     }
 
-    abstract class AssetMetadata { }
+    public static AssetInfo TryGetAssetInfo(string file) => AssetRegistry.GetAssetInfo(file) ?? GetAssetInfo(file);
 
-    abstract class Asset : ViewModelBase
+    public static AssetInfo GetAssetInfo(string file)
     {
-        public static string AssetFileExtension = ".velasset";
-        public AssetType Type { get; }
-
-        public byte[] Icon { get; protected set; }
-        public string SourcePath { get; protected set; }
-
-        private string _fullPath;
-        public string FullPath
+        if (!File.Exists(file) || Path.GetExtension(file) != AssetFileExtension) return null;
+        try
         {
-            get => _fullPath;
-            set
-            {
-                if (_fullPath != value)
-                {
-                    _fullPath = value;
-                    OnPropertyChanged(nameof(FullPath));
-                    OnPropertyChanged(nameof(FileName));
-                }
-            }
-        }
-        public string FileName => Path.GetFileNameWithoutExtension(FullPath);
-        public Guid GUID { get; protected set; } = Guid.NewGuid();
-        public DateTime ImportDate { get; protected set; }
-        public byte[] Hash { get; protected set; }
-        public abstract AssetMetadata GetMetadata();
-        public abstract bool Import(string file);
-        public abstract bool Load(string file);
-
-        public abstract IEnumerable<string> Save(string file);
-        public abstract byte[] PackForEngine();
-
-        public virtual List<AssetInfo> GetReferencedAssets() => [];
-
-        public AssetInfo GetAssetInfo()
-            => new()
-            {
-                Type = Type,
-                Icon = Icon,
-                FullPath = FullPath,
-                RegisterTime = AssetRegistry.GetAssetInfo(GUID)?.RegisterTime ?? default,
-                ImportDate = ImportDate,
-                GUID = GUID,
-                Hash = Hash,
-            };
-
-        private static AssetInfo GetAssetInfo(BinaryReader reader)
-        {
-            reader.BaseStream.Position = 0;
-            var info = new AssetInfo();
-
-            info.Type = (AssetType)reader.ReadInt32();
-            var idSize = reader.ReadInt32();
-            info.GUID = new Guid(reader.ReadBytes(idSize));
-            info.ImportDate = DateTime.FromBinary(reader.ReadInt64());
-            var hashSize = reader.ReadInt32();
-            if (hashSize > 0)
-            {
-                info.Hash = reader.ReadBytes(hashSize);
-            }
-
-            var iconSize = reader.ReadInt32();
-            info.Icon = reader.ReadBytes(iconSize);
-
+            using var reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read));
+            var info = GetAssetInfo(reader);
+            info.FullPath = file;
             return info;
         }
+        catch (Exception ex) { Debug.WriteLine(ex.Message); }
 
-        public static AssetInfo TryGetAssetInfo(string file) =>
-            File.Exists(file) && Path.GetExtension(file) == AssetFileExtension ? AssetRegistry.GetAssetInfo(file) ?? GetAssetInfo(file) : null;
-
-        public static AssetInfo GetAssetInfo(string file)
-        {
-            Debug.Assert(File.Exists(file) && Path.GetExtension(file) == AssetFileExtension);
-            try
-            {
-                using var reader = new BinaryReader(File.Open(file, FileMode.Open, FileAccess.Read));
-                var info = GetAssetInfo(reader);
-                info.FullPath = file;
-                return info;
-            }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
-
-            return null;
-        }
-
-        protected void WriteAssetFileHeader(BinaryWriter writer)
-        {
-            var id = GUID.ToByteArray();
-            var importDate = DateTime.Now.ToBinary();
-            writer.BaseStream.Position = 0;
-
-            writer.Write((int)Type);
-            writer.Write(id.Length);
-            writer.Write(id);
-            writer.Write(importDate);
-
-            // asset hash is optional
-            if(Hash?.Length > 0)
-            {
-                writer.Write(Hash.Length);
-                writer.Write(Hash);
-            }
-            else
-            {
-                writer.Write(0);
-            }
-
-            writer.Write(Icon.Length);
-            writer.Write(Icon);
-        }
-
-        protected void ReadAssetFileHeader(BinaryReader reader)
-        {
-            var info = GetAssetInfo(reader);
-
-            Debug.Assert(Type == info.Type);
-            GUID = info.GUID;
-            ImportDate = info.ImportDate;
-            Hash = info.Hash;
-            Icon = info.Icon;
-        }
-
-
-        public Asset(AssetType type)
-        {
-            Debug.Assert(type != AssetType.Unkonwn);
-            Type = type;
-        }
+        return null;
     }
-    class UploadedAsset
+
+    protected void WriteAssetFileHeader(BinaryWriter writer)
     {
-        public IdType ContentId { get; private set; } = ID.INVALID_ID;
-        public int ReferenceCount { get; private set; }
-        public AssetInfo AssetInfo { get; private set; }
-        public AssetMetadata Metadata { get; private set; }
-        private List<UploadedAsset> _referencedAssets = [];
+        var id = GUID.ToByteArray();
+        var importDate = DateTime.Now.ToBinary();
 
-        private static readonly Dictionary<Guid, UploadedAsset> _uploadedAssets = [];
+        writer.BaseStream.Position = 0;
 
-        private static UploadedAsset UploadAssetToEngine(AssetInfo assetInfo, Asset asset = null)
+        writer.Write((int)Type);
+        writer.Write(id.Length);
+        writer.Write(id);
+        writer.Write(importDate);
+        // asset hash is optional
+        if (Hash?.Length > 0)
         {
-            Debug.Assert(assetInfo != null);
+            writer.Write(Hash.Length);
+            writer.Write(Hash);
+        }
+        else
+        {
+            writer.Write(0);
+        }
 
-            asset ??= assetInfo.Type switch
+        writer.Write(Icon.Length);
+        writer.Write(Icon);
+    }
+
+    protected void ReadAssetFileHeader(BinaryReader reader)
+    {
+        var info = GetAssetInfo(reader);
+
+        Debug.Assert(Type == info.Type);
+        GUID = info.GUID;
+        ImportDate = info.ImportDate;
+        Hash = info.Hash;
+        Icon = info.Icon;
+    }
+
+    protected Asset(AssetType type)
+    {
+        Debug.Assert(type != AssetType.Unknown);
+        Type = type;
+    }
+}
+
+class UploadedAsset
+{
+    public IdType ContentId { get; private set; } = ID.INVALID_ID;
+    public int ReferenceCount { get; private set; }
+    public AssetInfo AssetInfo { get; private set; }
+    public AssetMetadata Metadata { get; private set; }
+    private List<UploadedAsset> _referencedAssets = [];
+
+    private static readonly Lock _lock = new();
+    // NOTE: use a lock to synchronize access to _uploadedAssets across multiple threads.
+    private static readonly Dictionary<Guid, UploadedAsset> _uploadedAssets = [];
+
+    private static UploadedAsset UploadAssetToEngine(AssetInfo assetInfo, Asset asset = null)
+    {
+        Debug.Assert(assetInfo != null);
+
+        asset ??= assetInfo.Type switch
+        {
+            AssetType.Animation => null,
+            AssetType.Audio => null,
+            AssetType.Material => null,
+            AssetType.Mesh => new Geometry(assetInfo),
+            AssetType.Skeleton => null,
+            AssetType.Texture => new Texture(assetInfo),
+            _ => null
+        };
+
+        Debug.Assert(asset != null);
+
+        if (asset != null)
+        {
+            Debug.Assert(asset.GUID == assetInfo.GUID);
+            var referencedAssets = new List<UploadedAsset>();
+            asset.GetReferencedAssets().ForEach(x => referencedAssets.Add(AddToScene(x)));
+            var data = asset.PackForEngine();
+
+            if (data?.Length > 0)
             {
-                AssetType.Animation => null,    
-                AssetType.Audio => null,
-                AssetType.Material => null,
-                AssetType.Mesh => new Geometry(assetInfo),
-                AssetType.Skeleton => null,
-                AssetType.Texture => new Texture(assetInfo),
-                _ => null
-            };
-
-            Debug.Assert(asset != null);
-
-            if (asset != null)
-            {
-                Debug.Assert(asset.GUID == assetInfo.GUID);
-                var referencedAssets = new List<UploadedAsset>();
-                asset.GetReferencedAssets().ForEach(x => referencedAssets.Add(AddToScene(x)));
-                var data = asset.PackForEngine();
-
-                if (data?.Length > 0)
+                return new()
                 {
-                    return new()
-                    {
-                        AssetInfo = assetInfo,
-                        Metadata = asset.GetMetadata(),
-                        ContentId = VelAPI.CreateResource(data, assetInfo.Type),
-                        ReferenceCount = 1,
-                        _referencedAssets = referencedAssets
-                    };
-                }
+                    AssetInfo = assetInfo,
+                    Metadata = asset.GetMetadata(),
+                    ContentId = VelAPI.CreateResource(data, assetInfo.Type),
+                    ReferenceCount = 1,
+                    _referencedAssets = referencedAssets
+                };
             }
-
-            return null;
         }
 
-        private static void UnloadAssetFromEngine(UploadedAsset uploadedAsset)
-        {
-            Debug.Assert(uploadedAsset?.AssetInfo != null && ID.IsValid(uploadedAsset.ContentId));
-            VelAPI.DestroyResource(uploadedAsset.ContentId, (int)uploadedAsset.AssetInfo.Type);
-        }
+        return null;
+    }
 
-        public static UploadedAsset AddToScene(AssetInfo assetInfo, Asset asset = null)
-        {
-            Debug.Assert(assetInfo != null && assetInfo.GUID != Guid.Empty);
-            var key = assetInfo.GUID;
+    private static void UnloadAssetFromEngine(UploadedAsset uploadedAsset)
+    {
+        Debug.Assert(uploadedAsset?.AssetInfo != null && ID.IsValid(uploadedAsset.ContentId));
+        VelAPI.DestroyResource(uploadedAsset.ContentId, (int)uploadedAsset.AssetInfo.Type);
+    }
 
+    public static UploadedAsset AddToScene(AssetInfo assetInfo, Asset asset = null)
+    {
+        Debug.Assert(assetInfo != null && assetInfo.GUID != Guid.Empty);
+        var key = assetInfo.GUID;
+
+        lock (_lock)
+        {
             if (_uploadedAssets.TryGetValue(key, out var value))
             {
                 ++value.ReferenceCount;
@@ -271,8 +275,11 @@ namespace VelEditor.Content
             Debug.Assert(_uploadedAssets.ContainsKey(key));
             return _uploadedAssets[key];
         }
+    }
 
-        public static void RemoveFromScene(UploadedAsset uploadedAsset)
+    public static void RemoveFromScene(UploadedAsset uploadedAsset)
+    {
+        lock (_lock)
         {
             Debug.Assert(uploadedAsset != null && _uploadedAssets.ContainsKey(uploadedAsset.AssetInfo.GUID));
 
@@ -285,14 +292,14 @@ namespace VelEditor.Content
                 uploadedAsset.ContentId = ID.INVALID_ID;
             }
         }
-
-        public static IdType GetContentId(Guid id)
-        {
-            Debug.Assert(id != Guid.Empty);
-            return _uploadedAssets.TryGetValue(id, out var uploadedAsset) ? uploadedAsset.ContentId : ID.INVALID_ID;
-        }
-
-        // Note: can only be created by UploadedAsset.AddToScene()
-        private UploadedAsset() { }
     }
+
+    public static IdType GetContentId(Guid id)
+    {
+        Debug.Assert(id != Guid.Empty);
+        lock (_lock) { return _uploadedAssets.TryGetValue(id, out var uploadedAsset) ? uploadedAsset.ContentId : ID.INVALID_ID; }
+    }
+
+    // Note: can only be created by UploadedAsset.AddToScene()
+    private UploadedAsset() { }
 }

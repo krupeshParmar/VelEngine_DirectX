@@ -1,15 +1,14 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using VelEditor.Components;
 using VelEditor.Content;
 using VelEditor.EngineAPIStructs;
-using VelEditor.GameDev;
 using VelEditor.GameProject;
 using VelEditor.Utilities;
 
@@ -40,12 +39,53 @@ namespace VelEditor.EngineAPIStructs
         public IntPtr ScriptCreator;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    class GeometryComponent : IDisposable
+    {
+        public IdType GeometryContentId = ID.INVALID_ID;
+        public int MaterialCount;
+        public IntPtr MaterialIds;
+
+        public GeometryComponent() { }
+
+        public GeometryComponent(Components.Geometry geometry)
+        {
+            GeometryContentId = geometry.ContentId;
+            MaterialCount = geometry.GeometryWithMaterials.LODs.Sum(x => x.Meshes.Count);
+            Debug.Assert(MaterialCount == geometry.MaterialsList.Count);
+
+            byte[] data = null;
+            using (var writer = new BinaryWriter(new MemoryStream()))
+            {
+                geometry.MaterialsList.ForEach(mtl => writer.Write(mtl.UploadedAsset.ContentId));
+                writer.Flush();
+                data = (writer.BaseStream as MemoryStream).ToArray();
+            }
+
+            Debug.Assert(data?.Length == geometry.MaterialsList.Count * sizeof(IdType));
+            MaterialIds = Marshal.AllocCoTaskMem(data.Length);
+            Marshal.Copy(data, 0, MaterialIds, data.Length);
+        }
+
+        public void Dispose()
+        {
+            Marshal.FreeCoTaskMem(MaterialIds);
+            MaterialIds = IntPtr.Zero;
+            GC.SuppressFinalize(this);
+        }
+
+        ~GeometryComponent()
+        {
+            Dispose();
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     class GameEntityDescriptor
     {
         public TransformComponent Transform = new();
         public ScriptComponent Script = new();
+        public GeometryComponent Geometry = new();
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -269,6 +309,7 @@ namespace VelEditor.DLLWrapper
 
         internal static class EntityAPI
         {
+            private static readonly Lock _lock = new();
             [DllImport(_engineDll)]
             private static extern IdType CreateGameEntity(GameEntityDescriptor desc);
             public static IdType CreateGameEntity(GameEntity entity)
@@ -302,14 +343,30 @@ namespace VelEditor.DLLWrapper
                     }
                 }
 
-                return CreateGameEntity(gameEntityDescriptor);
+                // geometry component
+                {
+                    var c = entity.GetComponent<Components.Geometry>();
+                    if (c != null)
+                    {
+                        Debug.Assert(c.MaterialsList.Count > 0);
+                        gameEntityDescriptor.Geometry = new(c);
+                    }
+                }
+
+                lock (_lock)
+                {
+                    return CreateGameEntity(gameEntityDescriptor);
+                }
             }
 
             [DllImport(_engineDll)]
             private static extern void RemoveGameEntity(IdType id);
             public static void RemoveGameEntity(GameEntity entity)
             {
-                RemoveGameEntity(entity.EntityId);
+                lock (_lock)
+                {
+                    RemoveGameEntity(entity.EntityId);
+                }
             }
         }
     }

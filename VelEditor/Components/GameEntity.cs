@@ -16,9 +16,9 @@ namespace VelEditor.Components
     [KnownType(typeof(Script))]
     class GameEntity : ViewModelBase
     {
-        private int _entityId = ID.INVALID_ID;
+        private IdType _entityId = ID.INVALID_ID;
 
-        public int EntityId
+        public IdType EntityId
         {
             get => _entityId;
             set
@@ -43,11 +43,13 @@ namespace VelEditor.Components
                     _isActive = value;
                     if(_isActive)
                     {
+                        _componentsList.ToList().ForEach(x => x.Load());
                         EntityId = VelAPI.EntityAPI.CreateGameEntity(this);
                         Debug.Assert(ID.IsValid(_entityId));
                     }
                     else if(ID.IsValid(EntityId))
                     {
+                        _componentsList.ToList().ForEach(x => x.Load());
                         VelAPI.EntityAPI.RemoveGameEntity(this);
                         EntityId = ID.INVALID_ID;
                     }
@@ -90,7 +92,7 @@ namespace VelEditor.Components
         public double positionX;
 
         [DataMember(Name = nameof(ComponentsList))]
-        private readonly ObservableCollection<Component> _componentsList = new();
+        private readonly ObservableCollection<Component> _componentsList = [];
         public ReadOnlyObservableCollection<Component> ComponentsList { get; private set; }
 
         public Component GetComponent(Type type) => ComponentsList.FirstOrDefault(c => c.GetType() == type);
@@ -100,13 +102,14 @@ namespace VelEditor.Components
         {
             Debug.Assert(component != null);
             if(!ComponentsList.Any(x=>x.GetType() == component.GetType()))
-            {
+            {// Adding a component to an inactive entity should not activate it.
+                var wasActive = IsActive;
                 IsActive = false;
                 _componentsList.Add(component);
-                IsActive = true;
+                IsActive = wasActive;
                 return true;
             }
-            Logger.Log(MessageType.Warning, $"Entity {Name} already as {component.GetType().Name} component");
+            Logger.Log(MessageType.Warning, $"Entity {Name} already as {component.GetType().Name} component.");
             return false;
         }
 
@@ -175,7 +178,7 @@ namespace VelEditor.Components
             }
         }
 
-        private readonly ObservableCollection<IMSComponent> _components = new();
+        private readonly ObservableCollection<IMSComponent> _components = [];
         public ReadOnlyObservableCollection<IMSComponent> ComponentsList { get; }
 
         public T GetMSComponent<T>() where T : IMSComponent
@@ -202,16 +205,22 @@ namespace VelEditor.Components
             }
         }
 
+        public static int? GetMixedValue<T>(List<T> objects, Func<T, int> getProperty)
+        {
+            var value = getProperty(objects.First());
+            return objects.Skip(1).Any(x => value != getProperty(x)) ? null : value;
+        }
+
         public static float? GetMixedValue<T>(List<T> objects, Func<T, float> getProperty)
         {
             var value = getProperty(objects.First());
-            return objects.Skip(1).Any(x => !getProperty(x).IsTheSameAs(value)) ? (float?)null : value; 
+            return objects.Skip(1).Any(x => !getProperty(x).IsTheSameAs(value)) ? null : value; 
         }
 
         public static bool? GetMixedValue<T>(List<T> objects, Func<T, bool> getProperty)
         {
             var value = getProperty(objects.First());
-            return objects.Skip(1).Any(x => getProperty(x) != value) ? (bool?)null :  value;
+            return objects.Skip(1).Any(x => getProperty(x) != value) ? null :  value;
         }
 
         public static string GetMixedValue<T>(List<T> objects, Func<T, string> getProperty)

@@ -1,3 +1,4 @@
+#define INITGUID
 #include "D3D12Core.h"
 #include "D3D12Surface.h"
 #include "D3D12Shaders.h"
@@ -9,9 +10,6 @@
 #include "D3D12LightCulling.h"
 #include "D3D12Camera.h"
 #include "Shaders/SharedTypes.h"
-
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 615; }
-extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = u8".\\D3D12\\"; }
 
 using namespace Microsoft::WRL;
 namespace vel::graphics::d3d12::core
@@ -174,8 +172,12 @@ namespace vel::graphics::d3d12::core
 			command_frame					_cmd_frames_list[frame_buffer_count]{};
 			u32								_frame_index{ 0 };
 		};
-
+		constexpr UINT                  d3d12_sdk_version = 615;
+		constexpr const char*           d3d12_sdk_path = ".\\D3D12\\";
+		constexpr D3D_FEATURE_LEVEL     minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
 		using surface_collection = utl::free_list<d3d12_surface>;
+		ID3D12SDKConfiguration1*        d3d12_sdk_config{ nullptr };
+		ID3D12DeviceFactory*            d3d12_device_factory{ nullptr };
 
 		id3d12_device*					main_device{ nullptr };
 		IDXGIFactory7*					dxgi_factory{ nullptr };
@@ -192,8 +194,6 @@ namespace vel::graphics::d3d12::core
 		utl::vector<IUnknown*>			deferred_releases_list[frame_buffer_count];
 		u32								deferred_releases_flag[frame_buffer_count]{};
 		std::mutex						deferred_releases_mutx{};
-
-		constexpr D3D_FEATURE_LEVEL		minimum_feature_level{ D3D_FEATURE_LEVEL_11_0 };
 
 		bool failed_init()
 		{
@@ -215,7 +215,7 @@ namespace vel::graphics::d3d12::core
 				++i)
 			{
 				// pick the first adapter that supports the minimum feature level
-				if (SUCCEEDED(D3D12CreateDevice(adapter, minimum_feature_level, __uuidof(ID3D12Device), nullptr)))
+				if (SUCCEEDED(d3d12_device_factory->CreateDevice(adapter, minimum_feature_level, __uuidof(ID3D12Device), nullptr)))
 				{
 					return adapter;
 				}
@@ -240,7 +240,7 @@ namespace vel::graphics::d3d12::core
 			feature_level_info.pFeatureLevelsRequested = feature_levels;
 
 			ComPtr<ID3D12Device> device;
-			DXCall(D3D12CreateDevice(adapter, minimum_feature_level, IID_PPV_ARGS(&device)));
+			DXCall(d3d12_device_factory->CreateDevice(adapter, minimum_feature_level, IID_PPV_ARGS(&device)));
 			DXCall(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &feature_level_info, sizeof(feature_level_info)));
 			return feature_level_info.MaxSupportedFeatureLevel;
 		}
@@ -324,13 +324,20 @@ namespace vel::graphics::d3d12::core
 	bool initialize()
 	{
 		if (main_device) shutdown();
+		HRESULT hr{ S_OK };
+
+		DXCall(hr = D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&d3d12_sdk_config)));
+		if (FAILED(hr)) return failed_init();
+
+		DXCall(hr = d3d12_sdk_config->CreateDeviceFactory(d3d12_sdk_version, d3d12_sdk_path, IID_PPV_ARGS(&d3d12_device_factory)));
+		if (FAILED(hr)) return failed_init();
 
 		u32 dxgi_factory_flags{ 0 };
 #ifdef _DEBUG
 		// Enable debugging layer. Requires the Graphics Tools "optional feature" to be installed.
 		{
-			ComPtr<ID3D12Debug3> debug_interface;
-			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_interface))))
+			ComPtr<ID3D12Debug6> debug_interface;
+			if (SUCCEEDED(d3d12_device_factory->GetConfigurationInterface(CLSID_D3D12Debug, IID_PPV_ARGS(&debug_interface))))
 			{
 				debug_interface->EnableDebugLayer();
 #if 0
@@ -345,8 +352,6 @@ namespace vel::graphics::d3d12::core
 			dxgi_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
 		}
 #endif // _DEBUG
-
-		HRESULT hr{ S_OK };
 
 		DXCall(hr = CreateDXGIFactory2(dxgi_factory_flags, IID_PPV_ARGS(&dxgi_factory)));
 
@@ -364,7 +369,7 @@ namespace vel::graphics::d3d12::core
 
 		// create a ID3D12Device (this is a virtual adapter).
 
-		DXCall(hr = D3D12CreateDevice(
+		DXCall(hr = d3d12_device_factory->CreateDevice(
 			main_adapter.Get(),
 			max_feature_level,
 			IID_PPV_ARGS(&main_device))
@@ -481,7 +486,9 @@ namespace vel::graphics::d3d12::core
 		}
 #endif // _DEBUG
 
-		release(main_device);
+		release(main_device); 
+		release(d3d12_device_factory);
+		release(d3d12_sdk_config);
 	}
 
 	id3d12_device* const device()

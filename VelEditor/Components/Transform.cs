@@ -57,7 +57,7 @@ namespace VelEditor.Components
         }
         public override IMSComponent GetMultiSelectionComponent(MSEntity msEntity) => new MSTransform(msEntity);
 
-        public override void WriteToBinaray(BinaryWriter bw)
+        public override void WriteToBinary(BinaryWriter bw)
         {
             bw.Write(_position.X); bw.Write(_position.Y); bw.Write(_position.Z);
             bw.Write(_rotation.X); bw.Write(_rotation.Y); bw.Write(_rotation.Z);

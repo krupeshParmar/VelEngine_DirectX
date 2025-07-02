@@ -143,7 +143,7 @@ namespace VelEditor.Content
 
         public static CollectionViewSource FilteredItems { get; private set; }
 
-        private static readonly object _lockObject = new();
+        private static readonly Lock _lockObject = new();
         private static AssetType _itemFilter = AssetType.Mesh;
 
         public static void SetItemFilter(AssetType assetType)

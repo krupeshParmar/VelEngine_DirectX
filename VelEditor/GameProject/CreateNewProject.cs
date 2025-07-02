@@ -61,7 +61,7 @@ namespace VelEditor.GameProject
             } 
         }
 
-        private readonly ObservableCollection<ProjectTemplate> _projectTemplates = new();
+        private readonly ObservableCollection<ProjectTemplate> _projectTemplates = [];
         public ReadOnlyObservableCollection<ProjectTemplate> ProjectTemplates { get; }
 
         private bool _isValid = true;
@@ -197,7 +197,7 @@ namespace VelEditor.GameProject
             ProjectTemplates = new ReadOnlyObservableCollection<ProjectTemplate>(_projectTemplates);
             try
             {
-                var templatesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @".\Resources\ProjectTemplates\");
+                var templatesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Resources\ProjectTemplates\");
                 var templatesFiles = Directory.GetFiles(templatesPath, "template.xml", SearchOption.AllDirectories);
                 Debug.Assert(templatesFiles.Any());
                 foreach (var file in templatesFiles)

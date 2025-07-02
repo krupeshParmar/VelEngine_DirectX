@@ -3,6 +3,7 @@
 #include "Components/EntityManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/ScriptComponent.h"
+#include "Components/GeometryComponent.h"
 
 using namespace vel;
 
@@ -42,10 +43,28 @@ namespace
 		}
 	};
 
+	struct geometry_component
+	{
+		id::id_type     geometry_content_id;
+		u32             material_count;
+		id::id_type*    material_ids;
+
+		geometry::init_info to_init_info()
+		{
+			geometry::init_info info{};
+			info.geometry_content_id = geometry_content_id;
+			info.material_count = material_count;
+			info.material_ids = material_ids;
+			return info;
+		}
+	};
+
+
 	struct game_entity_descriptor
 	{
 		transform_component transform;
 		script_component script;
+		geometry_component  geometry;
 	};
 
 	game_entity::entity entity_from_id(id::id_type id)
@@ -60,10 +79,12 @@ VEL_EDITOR_API id::id_type CreateGameEntity(game_entity_descriptor* e)
 	game_entity_descriptor& desc{ *e };
 	transform::init_info transform_info{ desc.transform.to_init_info() };
 	script::init_info script_info{ desc.script.to_init_info() };
+	geometry::init_info geometry_info{ desc.geometry.to_init_info() };
 	game_entity::entity_info entity_info
 	{
 		&transform_info,
 		&script_info,
+		id::is_valid(desc.geometry.geometry_content_id) ? &geometry_info : nullptr,
 	};
 	return game_entity::create(entity_info).get_id();
 }

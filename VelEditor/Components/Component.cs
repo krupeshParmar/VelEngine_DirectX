@@ -14,7 +14,10 @@ namespace VelEditor.Components
         [DataMember]
         public GameEntity Owner { get; private set; }
         public abstract IMSComponent GetMultiSelectionComponent(MSEntity msEntity);
-        public abstract void WriteToBinaray(BinaryWriter bw);
+        public abstract void WriteToBinary(BinaryWriter bw);
+
+        public virtual void Load() { }
+        public virtual void Unload() { }
 
         public Component(GameEntity entity)
         {
@@ -41,7 +44,7 @@ namespace VelEditor.Components
         public MSComponent(MSEntity msEntity)
         {
             Debug.Assert(msEntity?.SelectedEntities?.Any() == true);
-            SelectedComponents = msEntity.SelectedEntities.Select(entity => entity.GetComponent<T>()).ToList();
+            SelectedComponents = [.. msEntity.SelectedEntities.Select(entity => entity.GetComponent<T>())];
             PropertyChanged += (s, e) => { if (_enableUpdates) UpdateComponents(e.PropertyName); };
         }
     }

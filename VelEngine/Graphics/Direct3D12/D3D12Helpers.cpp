@@ -35,7 +35,12 @@ namespace vel::graphics::d3d12::d3dx {
         ComPtr<ID3DBlob> signature_blob{ nullptr };
         ComPtr<ID3DBlob> error_blob{ nullptr };
         HRESULT hr{ S_OK };
-        if (FAILED(hr = D3D12SerializeVersionedRootSignature(&versioned_desc, &signature_blob, &error_blob)))
+        id3d12_device* device{ core::device() };
+        ComPtr<ID3D12DeviceConfiguration1> device_config;
+        DXCall(hr = device->QueryInterface(IID_PPV_ARGS(&device_config)));
+        if (FAILED(hr)) return nullptr;
+
+        if (FAILED(hr = device_config->SerializeVersionedRootSignature(&versioned_desc, &signature_blob, &error_blob)))
         {
             DEBUG_OP(const char* error_msg{ error_blob ? (const char*)error_blob->GetBufferPointer() : "" });
             DEBUG_OP(OutputDebugStringA(error_msg));
@@ -43,7 +48,7 @@ namespace vel::graphics::d3d12::d3dx {
         }
 
         ID3D12RootSignature* signature{ nullptr };
-        DXCall(hr = core::device()->CreateRootSignature(0, signature_blob->GetBufferPointer(),
+        DXCall(hr = device->CreateRootSignature(0, signature_blob->GetBufferPointer(),
             signature_blob->GetBufferSize(), IID_PPV_ARGS(&signature)));
 
         if (FAILED(hr))

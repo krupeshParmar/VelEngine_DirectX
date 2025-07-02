@@ -63,6 +63,7 @@ namespace VelEditor.Content
 
     class GeometryMetadata : AssetMetadata
     {
+        public string Name { get; init; }
         public List<LodInfo> LODsList { get; init; }
     }
 
@@ -340,7 +341,7 @@ namespace VelEditor.Content
         public GeometryImportSettings ImportSettings { get; } = new();
 
         private readonly List<LODGroup> _lodGroups = [];
-        private readonly object _lock = new();
+        private static readonly Lock _lock = new();
         public static AssetInfo Default => DefaultAssets.DefaultGeometry;
 
         public LODGroup? GetLODGroup(int lodGroup = 0)

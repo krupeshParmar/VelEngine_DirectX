@@ -31,7 +31,7 @@ namespace VelEditor.Components
 
         public override IMSComponent GetMultiSelectionComponent(MSEntity msEntity) => new MSScript(msEntity);
 
-        public override void WriteToBinaray(BinaryWriter bw)
+        public override void WriteToBinary(BinaryWriter bw)
         {
             var nameBytes = Encoding.UTF8.GetBytes(Name);
             bw.Write(nameBytes.Length);

@@ -175,6 +175,8 @@ namespace VelEditor.GameProject
         {
             if (Directory.Exists(TempFolder))
             {
+                // Set attributes to normal to delete read-only files.
+                _ = new DirectoryInfo(TempFolder) { Attributes = FileAttributes.Normal };
                 Directory.Delete(TempFolder, true);
             }
         }
@@ -200,7 +202,7 @@ namespace VelEditor.GameProject
                     foreach(var component in entity.ComponentsList)
                     {
                         bw.Write((int)component.ToEnumType());
-                        component.WriteToBinaray(bw);
+                        component.WriteToBinary(bw);
                     }
                 }
             }
