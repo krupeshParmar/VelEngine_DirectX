@@ -360,7 +360,7 @@ namespace vel::tools {
         {
             FbxLayerElementArrayTemplate<FbxVector4>* tangents{ nullptr };
             // Calculate tangents using FBX's built-in method, but only if no tangent data is already there.
-             // NOTE: the documentation states that the function returns true if tangent data is already thereAdd commentMore actions
+             // NOTE: the documentation states that the function returns true if tangent data is already there
             //       and pOverwrite == false. This seeps to be wrong (i.e. it return false in that case)!
             fbx_mesh->GenerateTangentsData();
 
@@ -402,7 +402,7 @@ namespace vel::tools {
                 const s32 num_uvs{ uvs.Size() };
                 for (s32 j{ 0 }; j < num_uvs; ++j)
                 {
-                    // Assuming FBX UVs always have their origin at the bottom-left, the V-axis Add commentMore actions
+                    // Assuming FBX UVs always have their origin at the bottom-left, the V-axis
                     // should be flipped, since DirectX uses the upper-left corner as the origin.
                     m.uv_sets[i].emplace_back((f32)uvs[j][0], 1.f - (f32)uvs[j][1]);
                 }

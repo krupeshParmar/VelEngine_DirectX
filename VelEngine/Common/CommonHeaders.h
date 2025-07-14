@@ -45,12 +45,18 @@
 #include "../Utilities/Utilities.h"
 #include "../Utilities/MathTypes.h"
 #include "../Utilities/Math.h"
+#include "../Utilities/Hashing.h"
 #include "../Common/id.h"
 
 
 namespace vel
 {
-	using string_hash = std::hash<std::string>;
+	//using string_hash = std::hash<std::string>;
+	struct string_hash {
+		size_t operator()(const std::string& str) const noexcept {
+			return utl::fnv1a_hash(str);
+		}
+	};
 
 	template<typename T>
 	using Scope = std::unique_ptr<T>;

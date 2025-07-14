@@ -16,7 +16,7 @@ namespace vel::game_entity
 		[[nodiscard]] constexpr bool is_valid() const { return id::is_valid(_id); }
 
 		[[nodiscard]] transform::component transform() const;
-		[[nodiscard]] script::component script() const;
+		[[nodiscard]] utl::vector<script::component> script() const { return {};};
 		[[nodiscard]] geometry::component geometry() const;
 
 		[[nodiscard]] math::v4 rotation() const { return transform().rotation(); }
@@ -38,16 +38,35 @@ namespace vel::script
 		virtual void update(f32) {};
 	public:
 		constexpr explicit entity_script(game_entity::entity entity)
-			: game_entity::entity{ entity.get_id() }{};
+			: game_entity::entity{ entity.get_id() }, _script_id(id::invalid_id) {};
+
+		void set_script_id(script_id id) { _script_id = id; }
+		script_id get_script_id() const { return _script_id; }
 		void set_rotation(math::v4 rotation_quaternion) const { set_rotation(this, rotation_quaternion); }
 		void set_orientation(math::v3 orientation_vector) const { set_orientation(this, orientation_vector); }
 		void set_position(math::v3 position) const { set_position(this, position); }
 		void set_scale(math::v3 scale) const { set_scale(this, scale); }
+		utl::vector<entity_script*> get_scripts(game_entity::entity ent);
 
 		static void set_rotation(const game_entity::entity *const entity, math::v4 rotation_quaternion);
 		static void set_orientation(const game_entity::entity *const entity, math::v3 orientation_vector);
 		static void set_position(const game_entity::entity *const entity, math::v3 position);
 		static void set_scale(const game_entity::entity *const entity, math::v3 scale);
+
+		template<typename T>
+		static bool has_script(game_entity::entity ent)
+		{
+			auto scripts = get_scripts(ent);
+			for (auto* script : scripts)
+			{
+				if (dynamic_cast<T*>(script))
+					return true;
+			}
+			return false;
+		}
+
+	private:
+		script_id _script_id;
 	};
 
 	namespace detail

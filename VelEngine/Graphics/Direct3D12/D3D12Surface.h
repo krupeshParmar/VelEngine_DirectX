@@ -5,7 +5,7 @@ namespace vel::graphics::d3d12
 	class d3d12_surface
 	{
 	public:
-		// NOTE: https://learn.microsoft.com/en-us/windows/win32/direct3darticles/high-dynamic-range#option-1-use-fp16-pixel-format-and-scrgb-color-spaceAdd commentMore actions
+		// NOTE: https://learn.microsoft.com/en-us/windows/win32/direct3darticles/high-dynamic-range#option-1-use-fp16-pixel-format-and-scrgb-color-space
 		constexpr static DXGI_FORMAT   default_back_buffer_format{ DXGI_FORMAT_R16G16B16A16_FLOAT };
 		constexpr static u32 buffer_count{ 3 };
 

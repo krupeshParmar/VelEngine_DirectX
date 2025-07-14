@@ -1,13 +1,26 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using VelEditor.DLLWrapper;
+using VelEditor.EngineAPIStructs;
+using VelEditor.GameProject;
 using VelEditor.Utilities;
 
 namespace VelEditor.Components
 {
+    [StructLayout(LayoutKind.Sequential)]
+    class TransformComponent
+    {
+        public Vector3 Position;
+        public Vector3 Rotation;
+        public Vector3 Scale;
+    }
     [DataContract]
     class Transform : Component
     {
@@ -55,6 +68,7 @@ namespace VelEditor.Components
                 }
             }
         }
+        public override string GetName() => "";
         public override IMSComponent GetMultiSelectionComponent(MSEntity msEntity) => new MSTransform(msEntity);
 
         public override void WriteToBinary(BinaryWriter bw)
@@ -64,9 +78,24 @@ namespace VelEditor.Components
             bw.Write(_scale.X); bw.Write(_scale.Y); bw.Write(_scale.Z);
         }
 
+        public override ComponentDescriptor GetComponentDescriptor()
+        {
+            TransformComponent transform = new TransformComponent();
+            transform.Position = Position;
+            transform.Rotation = Rotation;
+            transform.Scale = Scale;
+
+            IntPtr transformPtr = Marshal.AllocHGlobal(Marshal.SizeOf<TransformComponent>());
+            Marshal.StructureToPtr(transform, transformPtr, false);
+
+            ComponentDescriptor componentDescriptor = new ComponentDescriptor{ TypeId = (int)ComponentType, Data = transformPtr };
+
+            return componentDescriptor;
+        }
+
         public Transform(GameEntity entity) : base(entity)
         {
-
+            ComponentType = ComponentType.Transform;
         }
 
     }
@@ -205,6 +234,9 @@ namespace VelEditor.Components
 
         public MSTransform(MSEntity msEntity) : base(msEntity)
         {
+            Debug.Assert(msEntity?.SelectedEntities?.Any() == true);
+            SelectedComponents = [.. msEntity.SelectedEntities.Select(entity => entity.GetComponent<Transform>())];
+            PropertyChanged += (s, e) => { if (EnableUpdates) UpdateComponents(e.PropertyName); };
             Refresh();
         }
 

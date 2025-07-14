@@ -7,24 +7,19 @@ namespace vel::game_entity
 {
 	namespace
 	{
-		utl::vector<transform::component>	transforms_list;
-		utl::vector<script::component>		scripts_list;
-		utl::vector<geometry::component>    geometries_list;
+		utl::vector<transform::component>									transforms_list;
+		//utl::unordered_map<id::id_type, utl::vector<script::component>>		scripts_list;
+		utl::vector<geometry::component>									geometries_list;
 
 		utl::vector<id::generation_type>	generations;
 		utl::deque<entity_id>				free_ids;
 
 	}	// annonymous namespace
 
-
-	entity 
-	create(entity_info info)
+	entity
+	create()
 	{
-		assert(info.transform);		// ALl entity have transform component
-		if (!info.transform) return {};
-
 		entity_id id{};
-
 		if (free_ids.size() > id::min_deleted_elements)
 		{
 			id = free_ids.front();
@@ -41,11 +36,20 @@ namespace vel::game_entity
 			// Resize Components
 			// Note: we don't call resize(), so the number of memory allocations stays low
 			transforms_list.emplace_back();
-			scripts_list.emplace_back();
+			//scripts_list[id::index(id)].emplace_back();
 			geometries_list.emplace_back();
 		}
 
-		const entity new_entity{ id };
+		return entity{ id };
+	}
+
+	entity 
+	create(entity_info info)
+	{
+		assert(info.transform);		// ALl entity have transform component
+		if (!info.transform) return {};
+		const entity new_entity =  create();
+		entity_id id = new_entity.get_id();
 		const id::id_type index{ id::index(id) };
 
 		// create transform component
@@ -58,12 +62,11 @@ namespace vel::game_entity
 		// create script component
 		if (info.script && info.script->script_creator)
 		{
-			assert(!scripts_list[index].is_valid());
-			scripts_list[index] = script::create(*info.script, new_entity);;
-			assert(scripts_list[index].is_valid());
+			script::create(*info.script, new_entity);
+			//scripts_list[index].push_back(script::create(*info.script, new_entity));
 		}
 
-		// Create geometry componentAdd commentMore actions
+		// Create geometry component
 		if (info.geometry)
 		{
 			assert(!geometries_list[index].is_valid());
@@ -77,6 +80,7 @@ namespace vel::game_entity
 	void 
 	remove(entity_id id)
 	{
+		game_entity::entity entity{ id };
 		const id::id_type index{ id::index(id) };
 		assert(is_alive(id));
 		if (geometries_list[index].is_valid())
@@ -85,11 +89,14 @@ namespace vel::game_entity
 			geometries_list[index] = {};
 		}
 
-		if (scripts_list[index].is_valid())
+		script::remove_all_scripts_for_entity(entity);
+		/*for (int i = 0; i < scripts_list[index].size(); ++i)
 		{
-			script::remove(scripts_list[index]);
+			if (!scripts_list[index][i].is_valid())
+				continue;
+			script::remove(scripts_list[index][i], entity);
 			scripts_list[index] = {};
-		}
+		}*/
 
 		transform::remove(transforms_list[index]);
 		transforms_list[index] = {};
@@ -108,17 +115,54 @@ namespace vel::game_entity
 		return generations[index] == id::generation(id) && transforms_list[index].is_valid();
 	}
 
+	bool add_transform(const entity& new_entity,const transform::init_info& info)
+	{
+		const entity_id id = new_entity.get_id();
+		const id::id_type index{ id::index(id) };
+		// create transform component
+		assert(!transforms_list[index].is_valid());
+		transforms_list[index] = transform::create(info, new_entity);
+		assert(transforms_list[index].get_id() == id);
+
+		if (!transforms_list[index].is_valid()) return false;
+		return true;
+	}
+
+	bool add_script(const entity& new_entity,const script::init_info& info)
+	{
+		const entity_id id = new_entity.get_id();
+		const id::id_type index{ id::index(id) };
+		// create script component
+		if (info.script_creator)
+		{
+			script::create(info, new_entity);
+			//scripts_list[index].push_back(script::create(info, new_entity));
+			return true;
+		}
+		return false;
+	}
+	bool add_geometry(const entity& new_entity,const geometry::init_info& info)
+	{
+		const entity_id id = new_entity.get_id();
+		const id::id_type index{ id::index(id) };
+		// Create geometry component
+		assert(!geometries_list[index].is_valid());
+		geometries_list[index] = geometry::create(info, new_entity);
+		assert(geometries_list[index].is_valid());
+		return true;
+	}
+
 	transform::component entity::transform() const
 	{
 		assert(is_alive(this->get_id()));
 		return transforms_list[id::index(_id)];
 	}
 
-	script::component entity::script() const
+	/*utl::vector<script::component> entity::script() const
 	{
 		assert(is_alive(this->get_id()));
-		return scripts_list[id::index(_id)];
-	}
+		return script::get_all_scripts_for_entity(_id);
+	}*/
 
 	geometry::component entity::geometry() const
 	{

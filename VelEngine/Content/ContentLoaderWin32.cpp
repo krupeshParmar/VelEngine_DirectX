@@ -25,12 +25,10 @@ namespace vel::content
 		transform::init_info transform_info{};
 		script::init_info script_info{};
 
-		bool read_transform(const u8*& data, game_entity::entity_info& info)
+		bool read_transform(const u8*& data, game_entity::entity& entity)
 		{
 			using namespace DirectX;
 			f32 rotation[3];
-
-			assert(!info.transform);
 			memcpy(&transform_info.position[0], data, sizeof(transform_info.position)); data += sizeof(transform_info.position);
 			memcpy(&rotation[0], data, sizeof(rotation)); data += sizeof(rotation);
 			memcpy(&transform_info.scale[0], data, sizeof(transform_info.scale)); data += sizeof(transform_info.scale);
@@ -41,13 +39,12 @@ namespace vel::content
 			XMStoreFloat4A(&rot_quat, quat);
 			memcpy(&transform_info.rotation[0], &rot_quat.x, sizeof(transform_info.rotation));
 
-			info.transform = &transform_info;
+			game_entity::add_transform(entity , transform_info);
 			return true;
 		}
 
-		bool read_script(const u8*& data, game_entity::entity_info& info)
+		bool read_script(const u8*& data, game_entity::entity& entity)
 		{
-			assert(!info.script);
 			const u32 name_length{ *data }; data += sizeof(u32);
 			if (!name_length) return false;
 			// if a script name is longer than 255 characters then something is probably
@@ -57,12 +54,14 @@ namespace vel::content
 			memcpy(&script_name[0], data, name_length); data += name_length;
 			// make the name a zero-terminated c-string
 			script_name[name_length] = 0;
-			script_info.script_creator = script::detail::get_script_creator(string_hash()(script_name));
-			info.script = &script_info;
+			script_info.script_name_hash = string_hash()(script_name);
+			script_info.script_creator = script::detail::get_script_creator(script_info.script_name_hash);
+
+			game_entity::add_script(entity, script_info);
 			return script_info.script_creator != nullptr;
 		}
 
-		using component_reader = bool(*)(const u8*&, game_entity::entity_info&);
+		using component_reader = bool(*)(const u8*&, game_entity::entity&);
 		component_reader component_readers[]
 		{
 			read_transform,
@@ -113,15 +112,15 @@ namespace vel::content
 			const u32 num_components{ *at }; at += su32;
 			if (!num_components) return false;
 
+			game_entity::entity entity{ game_entity::create() };
+
 			for (u32 comonent_index{ 0 }; comonent_index < num_components; ++comonent_index)
 			{
 				const u32 comp_type{ *at }; at += su32;
 				assert(comp_type < component_type::count);
-				if (!component_readers[comp_type](at, info)) return false;
+				if (!component_readers[comp_type](at, entity)) return false;
 			}
 
-			assert(info.transform);
-			game_entity::entity entity{ game_entity::create(info) };
 			if (!entity.is_valid()) return false;
 			entity_list.emplace_back(entity);
 		}

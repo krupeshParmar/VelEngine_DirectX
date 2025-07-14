@@ -25,9 +25,11 @@ namespace VelEditor.EngineAPIStructs
         [Description("Graphics module initialization failed")]
         Graphics,
     }
+/*
     [StructLayout(LayoutKind.Sequential)]
     class TransformComponent
     {
+        public int ComponentType;
         public Vector3 Position;
         public Vector3 Rotation;
         public Vector3 Scale = new(1,1,1);
@@ -36,12 +38,14 @@ namespace VelEditor.EngineAPIStructs
     [StructLayout(LayoutKind.Sequential)]
     class ScriptComponent
     {
+        public int ComponentType;
         public IntPtr ScriptCreator;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     class GeometryComponent : IDisposable
     {
+        public int ComponentType;
         public IdType GeometryContentId = ID.INVALID_ID;
         public int MaterialCount;
         public IntPtr MaterialIds;
@@ -78,14 +82,13 @@ namespace VelEditor.EngineAPIStructs
         {
             Dispose();
         }
-    }
+    }*/
 
     [StructLayout(LayoutKind.Sequential)]
     class GameEntityDescriptor
     {
-        public TransformComponent Transform = new();
-        public ScriptComponent Script = new();
-        public GeometryComponent Geometry = new();
+        public IntPtr ComponentsList;
+        public int ComponentCount;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -314,10 +317,27 @@ namespace VelEditor.DLLWrapper
             private static extern IdType CreateGameEntity(GameEntityDescriptor desc);
             public static IdType CreateGameEntity(GameEntity entity)
             {
-                GameEntityDescriptor gameEntityDescriptor = new();
-                // transform
+                int structSize = Marshal.SizeOf<ComponentDescriptor>();
+                IntPtr componentArray = Marshal.AllocHGlobal(entity.ComponentsList.Count * structSize);
+
+                List<ComponentDescriptor> descriptors = new();
+                for(int i = 0; i < entity.ComponentsList.Count; ++i)
+                {
+                    ComponentDescriptor componentDescriptor = entity.ComponentsList[i].GetComponentDescriptor();
+                    componentDescriptor.TypeId = (int)entity.ComponentsList[i].ToEnumType();
+                    descriptors.Add(componentDescriptor);
+                    Marshal.StructureToPtr(descriptors[i], componentArray + i * structSize, false);
+                }
+
+                GameEntityDescriptor gameEntityDescriptor = new() { 
+                    ComponentCount = descriptors.Count,
+                    ComponentsList = componentArray,
+                };
+
+                /*// transform
                 {
                     var c = entity.GetComponent<Transform>();
+                    gameEntityDescriptor.Transform.ComponentType = (int)c.ComponentType;
                     gameEntityDescriptor.Transform.Position = c.Position;
                     gameEntityDescriptor.Transform.Rotation = c.Rotation;
                     gameEntityDescriptor.Transform.Scale = c.Scale;
@@ -333,6 +353,7 @@ namespace VelEditor.DLLWrapper
                         {
                             if (Project.Current.AvailableScripts.Contains(c.Name))
                             {
+                                gameEntityDescriptor.Script.ComponentType = (int)c.ComponentType;
                                 gameEntityDescriptor.Script.ScriptCreator = GetScriptCreator(c.Name);
                             }
                             else
@@ -350,8 +371,9 @@ namespace VelEditor.DLLWrapper
                     {
                         Debug.Assert(c.MaterialsList.Count > 0);
                         gameEntityDescriptor.Geometry = new(c);
+                        gameEntityDescriptor.Geometry.ComponentType = (int)c.ComponentType;
                     }
-                }
+                }*/
 
                 lock (_lock)
                 {

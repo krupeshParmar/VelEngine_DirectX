@@ -14,6 +14,7 @@ namespace VelEditor.Components
     [DataContract]
     [KnownType(typeof(Transform))]
     [KnownType(typeof(Script))]
+    [KnownType(typeof(Geometry))]
     class GameEntity : ViewModelBase
     {
         private IdType _entityId = ID.INVALID_ID;
@@ -95,21 +96,27 @@ namespace VelEditor.Components
         private readonly ObservableCollection<Component> _componentsList = [];
         public ReadOnlyObservableCollection<Component> ComponentsList { get; private set; }
 
-        public Component GetComponent(Type type) => ComponentsList.FirstOrDefault(c => c.GetType() == type);
+        public Component GetComponent(Type type) => ComponentsList.FirstOrDefault(c => type.IsAssignableFrom(c.GetType()));
         public T GetComponent<T>() where T : Component => GetComponent(typeof(T)) as T;
+
+        public T GetComponentByName<T>(string name) where T : Component => ComponentsList.OfType<T>().FirstOrDefault(c => c.GetName() == name);
+
+        public IEnumerable<Component> GetComponents(Type type) => ComponentsList.Where(c => type.IsAssignableFrom((Type)c.GetType()));
+        public IEnumerable<T> GetComponents<T>() where T : Component => ComponentsList.OfType<T>();
 
         public bool AddComponent(Component component)
         {
             Debug.Assert(component != null);
-            if(!ComponentsList.Any(x=>x.GetType() == component.GetType()))
-            {// Adding a component to an inactive entity should not activate it.
+            if(component.AllowMultiples || !ComponentsList.Any(x=>x.GetType() == component.GetType()))
+            {
+                // Adding a component to an inactive entity should not activate it.
                 var wasActive = IsActive;
                 IsActive = false;
                 _componentsList.Add(component);
                 IsActive = wasActive;
                 return true;
             }
-            Logger.Log(MessageType.Warning, $"Entity {Name} already as {component.GetType().Name} component.");
+            Logger.Log(MessageType.Warning, $"Entity {Name} already has {component.GetType().Name} component.");
             return false;
         }
 
@@ -197,11 +204,18 @@ namespace VelEditor.Components
             foreach(var component in firstEntity.ComponentsList)
             {
                 var type = component.GetType();
+                if (type.Equals(typeof(Script)))
+                    continue;
                 if (!SelectedEntities.Skip(1).Any(entity => entity.GetComponent(type) == null))
                 {
                     Debug.Assert(ComponentsList.FirstOrDefault(x => x.GetType() == type) == null);
                     _components.Add(component.GetMultiSelectionComponent(this));
                 }
+            }
+
+            foreach(var component in firstEntity.GetComponents(typeof(Script)))
+            {
+                _components.Add(component.GetMultiSelectionComponent(this));
             }
         }
 

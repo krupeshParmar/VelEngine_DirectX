@@ -1,14 +1,23 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace VelEditor.Components
 {
-    enum ComponentType
+    enum ComponentType : int
     {
-        Transform,
-        Script,
+        Transform = 0,
+        Script = 1,
+        Geometry = 2,
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    class ComponentDescriptor
+    {
+        public int TypeId = -1;
+        public IntPtr Data;
     }
 
     static class ComponentFactory
@@ -32,6 +41,7 @@ namespace VelEditor.Components
             {
                 Transform => ComponentType.Transform,
                 Script => ComponentType.Script,
+                Geometry => ComponentType.Geometry,
                 _ => throw new ArgumentException("Component type not found"),
             };
         }

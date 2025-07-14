@@ -2,6 +2,7 @@
 
 #define USE_STL_VECTOR 0
 #define USE_STL_DEQUE 1
+#define USE_STL_MAP 0
 
 #if USE_STL_VECTOR 
 #include <vector>
@@ -50,5 +51,15 @@ namespace vel::utl
 {
 	// Implement Vel's own containers
 }
+
+#if USE_STL_MAP
+#else
+#include <unordered_map>
+namespace vel::utl
+{
+	template<typename K, typename V>
+	using unordered_map = std::unordered_map<K, V>;
+}
+#endif
 
 #include "FreeList.h"

@@ -15,6 +15,19 @@ namespace VelEditor.Utilities
         public static bool IsValid(IdType id) => id != INVALID_ID;
     }
 
+    public static class Hashing
+    {
+        public static ulong FNV1A(string text)
+        {
+            const ulong FnvOffset = 14695981039346656037;
+            const ulong FnvPrime = 1099511628211;
+            ulong hash = FnvOffset;
+            foreach (var c in text)
+                hash = (hash ^ (byte)c) * FnvPrime;
+            return hash;
+        }
+    }
+
     public static class MathUtil
     {
         public static float Epsilon => 0.00001f;

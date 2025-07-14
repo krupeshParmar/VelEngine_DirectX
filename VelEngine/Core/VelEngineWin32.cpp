@@ -44,12 +44,12 @@ bool engine_intitalize()
 
 	platform::window_init_info info
 	{
-		&win_proc, nullptr, L"Vel Game"	// TODO: get the name from the loaded game file
+		&win_proc, nullptr, L"Bazinga Game"	// TODO: get the name from the loaded game file
 	};
 
 	game_window.window = platform::create_window(&info);
 	if (!game_window.window.is_valid()) return false;
-
+	vel::script::begin_play();
 	return true;
 }
 void engine_update()

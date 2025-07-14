@@ -1,6 +1,6 @@
 #pragma once
 #include "Test.h"
-#include "../VelEngine/Components/Entity.h"
+#include "../VelEngine/Components/EntityManager.h"
 #include "../VelEngine/Components/TransformComponent.h"
 
 #include <iostream>

@@ -48,6 +48,7 @@
     <ClInclude Include="Components\GeometryComponent.h" />
     <ClInclude Include="VelAPI\GeometryComponentAPI.h" />
     <ClInclude Include="Scene\Scene.h" />
+    <ClInclude Include="Utilities\Hashing.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Components\EntityManager.cpp" />

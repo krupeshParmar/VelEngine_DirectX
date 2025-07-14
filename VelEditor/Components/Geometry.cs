@@ -3,14 +3,58 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 using VelEditor.Content;
 using VelEditor.Utilities;
 
 namespace VelEditor.Components;
 
+
+[StructLayout(LayoutKind.Sequential)]
+class GeometryComponent : IDisposable
+{
+    public int ComponentType;
+    public IdType GeometryContentId = ID.INVALID_ID;
+    public int MaterialCount;
+    public IntPtr MaterialIds;
+
+    public GeometryComponent() { }
+
+    public GeometryComponent(Components.Geometry geometry)
+    {
+        GeometryContentId = geometry.ContentId;
+        MaterialCount = geometry.GeometryWithMaterials.LODs.Sum(x => x.Meshes.Count);
+        Debug.Assert(MaterialCount == geometry.MaterialsList.Count);
+
+        byte[] data = null;
+        using (var writer = new BinaryWriter(new MemoryStream()))
+        {
+            geometry.MaterialsList.ForEach(mtl => writer.Write(mtl.UploadedAsset.ContentId));
+            writer.Flush();
+            data = (writer.BaseStream as MemoryStream).ToArray();
+        }
+
+        Debug.Assert(data?.Length == geometry.MaterialsList.Count * sizeof(IdType));
+        MaterialIds = Marshal.AllocCoTaskMem(data.Length);
+        Marshal.Copy(data, 0, MaterialIds, data.Length);
+    }
+
+    public void Dispose()
+    {
+        Marshal.FreeCoTaskMem(MaterialIds);
+        MaterialIds = IntPtr.Zero;
+        GC.SuppressFinalize(this);
+    }
+
+    ~GeometryComponent()
+    {
+        Dispose();
+    }
+}
 class MeshWithMaterial : ViewModelBase
 {
     public MeshInfo MeshInfo { get; }
@@ -148,10 +192,21 @@ class Geometry : Component
             Owner.IsActive = true;  // Create new game entity with the new geometry.
         }
     }
-
+    public override string GetName() => "";
     public override IMSComponent GetMultiSelectionComponent(MSEntity msEntity) => new MSGeometry(msEntity);
 
     public override void WriteToBinary(BinaryWriter bw) => throw new NotImplementedException();
+
+    public override ComponentDescriptor GetComponentDescriptor()
+    {
+        GeometryComponent geometry = new GeometryComponent();
+        IntPtr geometryPtr = Marshal.AllocHGlobal(Marshal.SizeOf<GeometryComponent>());
+        Marshal.StructureToPtr(geometry, geometryPtr, false);
+
+        ComponentDescriptor componentDescriptor = new ComponentDescriptor { TypeId = (int)ComponentType, Data = geometryPtr };
+
+        return componentDescriptor;
+    }
 
     [OnSerializing]
     private void OnSerializing(StreamingContext context)
@@ -204,6 +259,9 @@ sealed class MSGeometry : MSComponent<Geometry>
 
     public MSGeometry(MSEntity msEntity) : base(msEntity)
     {
+        Debug.Assert(msEntity?.SelectedEntities?.Any() == true);
+        SelectedComponents = [.. msEntity.SelectedEntities.Select(entity => entity.GetComponent<Geometry>())];
+        PropertyChanged += (s, e) => { if (EnableUpdates) UpdateComponents(e.PropertyName); };
         Refresh();
     }
 }
