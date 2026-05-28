@@ -403,7 +403,7 @@ namespace VelEditor.DLLWrapper
             {
                 Logger.Log(MessageType.Error, $"Failed to decompress mipmaps from {texture.FileName}");
                 Debug.WriteLine(ex.Message);
-                return new();
+                return [];
             }
         }
 

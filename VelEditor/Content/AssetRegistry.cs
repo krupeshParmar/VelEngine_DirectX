@@ -3,88 +3,177 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using VelEditor.Utilities;
 
-namespace VelEditor.Content
+namespace VelEditor.Content;
+
+static class AssetRegistry
 {
-    static class AssetRegistry
-    {
-        private static readonly Dictionary<string, AssetInfo> _assetsFileDictionary = new();
-        private static readonly Dictionary<Guid, AssetInfo> _assetsGuidDictionary = new();
-        private static readonly ObservableCollection<AssetInfo> _assets = new ();
-        public static ReadOnlyObservableCollection<AssetInfo> Assets { get; } = new ReadOnlyObservableCollection<AssetInfo>(_assets);
+    private static readonly Lock _lock = new();
+    private static readonly Dictionary<string, AssetInfo> _assetsFileDictionary = [];
+    private static readonly Dictionary<Guid, AssetInfo> _assetsGuidDictionary = [];
+    private static readonly ObservableCollection<AssetInfo> _assets = [];
+    private static string _cachePath = string.Empty;
 
-        private static void RegisterAllAssets(string path)
+    public static ReadOnlyObservableCollection<AssetInfo> Assets { get; } = new ReadOnlyObservableCollection<AssetInfo>(_assets);
+
+    private static void RegisterAllAssets(string path)
+    {
+        Debug.Assert(Directory.Exists(path));
+        foreach (var entry in Directory.GetFileSystemEntries(path))
         {
-            Debug.Assert(Directory.Exists(path));
-            foreach (var entry in Directory.GetFileSystemEntries(path))
+            if (ContentHelper.IsDirectory(entry))
             {
-                if (ContentHelper.IsDirectory(entry))
+                RegisterAllAssets(entry);
+            }
+            else
+            {
+                RegisterAsset(entry);
+            }
+        }
+    }
+
+    private static void RegisterAsset(string file, AssetInfo info = null)
+    {
+        Debug.Assert(File.Exists(file));
+        try
+        {
+            var fileInfo = new FileInfo(file);
+            var isNew = !_assetsFileDictionary.ContainsKey(file);
+
+            if (isNew || _assetsFileDictionary[file].RegisterTime.IsOlder(fileInfo.LastWriteTime))
+            {
+                info ??= Asset.GetAssetInfo(file);
+                Debug.Assert(info != null);
+                info.RegisterTime = DateTime.Now;
+
+                // Handle the case when the same asset file was imported using a different guid.
+                // NOTE: not sure if that is or should be possible.
+                if (!isNew && _assetsFileDictionary[file].GUID != info.GUID)
                 {
-                    RegisterAllAssets(entry);
+                    _assetsGuidDictionary.Remove(_assetsFileDictionary[file].GUID);
+                }
+
+                _assetsFileDictionary[file] = info;
+                _assetsGuidDictionary[info.GUID] = info;
+
+                if (isNew)
+                {
+                    Debug.Assert(!_assets.Contains(info));
+                    _assets.Add(info);
                 }
                 else
                 {
-                    RegisterAsset(entry);
+                    var oldInfo = _assets.FirstOrDefault(x => x.FullPath == info.FullPath);
+                    Debug.Assert(oldInfo != null);
+                    _assets[_assets.IndexOf(oldInfo)] = info;
                 }
             }
         }
+        catch (Exception ex) { Debug.WriteLine(ex.Message); }
+    }
 
-        private static void RegisterAsset(string file)
+    private static void UnregisterAsset(string file)
+    {
+        if (_assetsFileDictionary.TryGetValue(file, out var info))
         {
-            Debug.Assert(File.Exists(file));
-            try
+            _assets.Remove(info);
+            _assetsFileDictionary.Remove(file);
+            // NOTE: when a file's renamed, the same GUID will be registered with the new name.
+            //       We don't want to remove the entry in that case.
+            if (_assetsGuidDictionary.TryGetValue(info.GUID, out var value) && !File.Exists(value.FullPath))
             {
-                var fileInfo = new FileInfo(file);
-                var isNew = !_assetsFileDictionary.ContainsKey(file);
-                if (isNew || _assetsFileDictionary[file].RegisterTime.IsOlder(fileInfo.LastWriteTime))
+                _assetsGuidDictionary.Remove(info.GUID);
+            }
+        }
+    }
+
+    private static void LoadCacheFile()
+    {
+        if (!File.Exists(_cachePath)) return;
+
+        try
+        {
+            lock (_lock)
+            {
+                _assetsFileDictionary.Clear();
+                _assetsGuidDictionary.Clear();
+                _assets.Clear();
+
+                using var reader = new BinaryReader(File.Open(_cachePath, FileMode.Open, FileAccess.Read));
+                var numEntries = reader.ReadInt32();
+                for (int i = 0; i < numEntries; ++i)
                 {
-                    var info = Asset.GetAssetInfo(file);
-                    Debug.Assert(info != null);
-                    info.RegisterTime = DateTime.Now;
-                    // Handle the case when the same asset file was imported using a different guid.
-                    // NOTE: not sure if that is or should be possible.
-                    if (!isNew && _assetsFileDictionary[file].GUID != info.GUID)
-                    {
-                        _assetsGuidDictionary.Remove(_assetsFileDictionary[file].GUID);
-                    }
+                    var info = new AssetInfo();
 
-                    _assetsFileDictionary[file] = info;
-                    _assetsGuidDictionary[info.GUID] = info;
+                    info.Type = (AssetType)reader.ReadInt32();
+                    var iconSize = reader.ReadInt32();
+                    info.Icon = reader.ReadBytes(iconSize);
+                    info.FullPath = reader.ReadString();
+                    info.RegisterTime = DateTime.FromBinary(reader.ReadInt64());
+                    info.ImportDate = DateTime.FromBinary(reader.ReadInt64());
+                    info.GUID = new(reader.ReadString());
+                    var hashSize = reader.ReadInt32();
+                    info.Hash = (hashSize > 0) ? reader.ReadBytes(hashSize) : null;
 
-                    if (isNew)
+                    if (File.Exists(info.FullPath))
                     {
-                        Debug.Assert(!_assets.Contains(info));
+                        _assetsFileDictionary[info.FullPath] = info;
+                        _assetsGuidDictionary[info.GUID] = info;
                         _assets.Add(info);
                     }
-                    else
-                    {
-                        var oldInfo = _assets.FirstOrDefault(x => x.FullPath == info.FullPath);
-                        Debug.Assert(oldInfo != null);
-                        _assets[_assets.IndexOf(oldInfo)] = info;
-                    }
                 }
             }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
         }
-
-        private static void UnregisterAsset(string file)
+        catch (Exception ex)
         {
-            if (_assetsFileDictionary.ContainsKey(file))
+            Debug.WriteLine(ex.Message);
+            Logger.Log(MessageType.Warning, "Failed to read Asset Registry cache file.");
+        }
+    }
+
+    private static void SaveCacheFile()
+    {
+        try
+        {
+            List<AssetInfo> assets = [];
+            lock (_lock)
             {
-                var info = _assetsFileDictionary[file];
-                _assets.Remove(info);
-                _assetsFileDictionary.Remove(file);
-                // NOTE: when a file's renamed, the same GUID will be registered with the new name.
-                //       We don't want to remove the entry in that case.
-                if (_assetsGuidDictionary.ContainsKey(info.GUID) && !File.Exists(_assetsGuidDictionary[info.GUID].FullPath))
+                assets = [.. _assets];
+            }
+
+            using var writer = new BinaryWriter(File.Open(_cachePath, FileMode.Create, FileAccess.Write));
+            writer.Write(assets.Count);
+            foreach (var info in assets)
+            {
+                writer.Write((int)info.Type);
+                writer.Write(info.Icon.Length);
+                writer.Write(info.Icon);
+                writer.Write(info.FullPath);
+                writer.Write(info.RegisterTime.ToBinary());
+                writer.Write(info.ImportDate.ToBinary());
+                writer.Write(info.GUID.ToString());
+                var hashSize = info.Hash?.Length ?? 0;
+                writer.Write(hashSize);
+                if (hashSize > 0)
                 {
-                    _assetsGuidDictionary.Remove(info.GUID);
+                    writer.Write(info.Hash);
                 }
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+            Logger.Log(MessageType.Warning, "Failed to write Asset Registry cache file.");
+            File.Delete(_cachePath); // If saving fails, delete the cache file to avoid using curropted version.
+        }
+    }
 
-
-        private static void OnContentModified(object sender, ContentModifiedEventArgs e)
+    private static void OnContentModified(object sender, ContentModifiedEventArgs e)
+    {
+        lock (_lock)
         {
             if (ContentHelper.IsDirectory(e.FullPath))
             {
@@ -95,25 +184,39 @@ namespace VelEditor.Content
                 RegisterAsset(e.FullPath);
             }
 
-        _assets.Where(x => !File.Exists(x.FullPath)).ToList().ForEach(x => UnregisterAsset(x.FullPath));
-
+            _assets.Where(x => !File.Exists(x.FullPath)).ToList().ForEach(x => UnregisterAsset(x.FullPath));
         }
+    }
 
-        public static void Reset(string contentFolder)
+    public static void Reset(string contentFolder, string projectPath)
+    {
+        ContentWatcher.ContentModified -= OnContentModified;
+
+        Debug.Assert(!string.IsNullOrEmpty(projectPath) && Directory.Exists(projectPath));
+        _cachePath = $@"{projectPath}.Vel\AssetInfoCache.bin";
+        LoadCacheFile();
+
+        Debug.Assert(!string.IsNullOrEmpty(contentFolder) && Directory.Exists(contentFolder));
+
+        lock (_lock)
         {
-            ContentWatcher.ContentModified -= OnContentModified;
-
-            _assetsFileDictionary.Clear();
-            _assetsGuidDictionary.Clear();
-            _assets.Clear();
-            Debug.Assert(Directory.Exists(contentFolder));
             RegisterAllAssets(contentFolder);
-
-            ContentWatcher.ContentModified += OnContentModified;
+            DefaultAssets.DefaultAssetsList.ForEach(x => RegisterAsset(x.FullPath, x));
         }
 
-        public static AssetInfo GetAssetInfo(string file) => _assetsFileDictionary.ContainsKey(file) ? _assetsFileDictionary[file] : null;
 
-        public static AssetInfo GetAssetInfo(Guid guid) => _assetsGuidDictionary.ContainsKey(guid) ? _assetsGuidDictionary[guid] : null;
+        ContentWatcher.ContentModified += OnContentModified;
+    }
+
+    public static void Save() => SaveCacheFile();
+
+    public static AssetInfo GetAssetInfo(string file)
+    {
+        lock (_lock) { return _assetsFileDictionary.TryGetValue(file, out var value) ? value : null; }
+    }
+
+    public static AssetInfo GetAssetInfo(Guid guid)
+    {
+        lock (_lock) { return _assetsGuidDictionary.TryGetValue(guid, out var value) ? value : null; }
     }
 }

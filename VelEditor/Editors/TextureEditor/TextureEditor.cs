@@ -27,7 +27,7 @@ namespace VelEditor.Editors
 
     class TextureEditor : ViewModelBase, IAssetEditor
     {
-        private readonly List<List<List<BitmapSource>>> _sliceBitmaps = new();
+        private readonly List<List<List<BitmapSource>>> _sliceBitmaps = [];
         private SliceArray3D _slicesList;
 
         public ICommand SetAllChannelsCommand { get; init; }
@@ -391,10 +391,10 @@ namespace VelEditor.Editors
             _cubeMap = null;
             foreach (var arraySlice in _slicesList)
             {
-                List<List<BitmapSource>> mipmapsBitmaps = new();
+                List<List<BitmapSource>> mipmapsBitmaps = [];
                 foreach (var mipLevel in arraySlice)
                 {
-                    List<BitmapSource> sliceBitmap = new();
+                    List<BitmapSource> sliceBitmap = [];
                     foreach (var slice in mipLevel)
                     {
                         var image = BitmapHelper.ImageFromSlice(slice,format, isNormalMap);

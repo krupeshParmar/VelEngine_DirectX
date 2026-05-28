@@ -84,6 +84,7 @@ namespace VelEditor
 
         private void OpenProjectBrowserDialog()
         {
+            Project.Current?.Unload();
             var projectBrowser = new ProjectBrowserDialogue();
             if(projectBrowser.ShowDialog() == false || projectBrowser.DataContext == null)
             {
@@ -91,10 +92,8 @@ namespace VelEditor
             }
             else
             {
-                Project.Current?.Unload();
                 var project = projectBrowser.DataContext as Project;
                 Debug.Assert(project != null);
-                ContentWatcher.Reset(project.ContentPath, project.Path);
                 DataContext = project;
             }
         }

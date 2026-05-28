@@ -37,7 +37,7 @@ namespace VelEditor.GameProject
     {
         private static readonly string _applicationLocalDataPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\VelEditor\";
         private static readonly string _projectDataPath;
-        private static readonly ObservableCollection<ProjectData> _projects = new();
+        private static readonly ObservableCollection<ProjectData> _projects = [];
         public static ReadOnlyObservableCollection<ProjectData> Projects { get; }
 
         private static void ReadProjectData()

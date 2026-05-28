@@ -21,7 +21,7 @@ static class DefaultAssets
         BrdfIntegrationLut,
         DefaultGeometry,
         DefaultMaterial,
-        DefaultTexture,
+        //DefaultTexture,
      ];
 
     /// <summary>
@@ -35,34 +35,33 @@ static class DefaultAssets
             Directory.CreateDirectory(defaultAssetsPath);
         }
 
-        var brdfLutFileName = $@"{defaultAssetsPath}BrdfIntegrationLut.asset";
+        var brdfLutFileName = $@"{defaultAssetsPath}BrdfIntegrationLut.velasset";
 
         if (!File.Exists(brdfLutFileName))
         {
             ComputeBrdfIntegrationLut(brdfLutFileName);
         }
 
-        var cubeFileName = $@"{defaultAssetsPath}DefaultCube.asset";
+        var cubeFileName = $@"{defaultAssetsPath}DefaultCube.velasset";
 
         if (!File.Exists(cubeFileName))
         {
             CreateDefaultCube(cubeFileName);
         }
 
-        var mtlFileName = $@"{defaultAssetsPath}DefaultMaterial.asset";
+        var mtlFileName = $@"{defaultAssetsPath}DefaultMaterial.velasset";
 
         if (!File.Exists(mtlFileName))
         {
             CreateDefaultMaterial(mtlFileName);
         }
 
-        var textureFileName = $@"{defaultAssetsPath}DefaultTexture.asset";
+        var textureFileName = $@"{defaultAssetsPath}DefaultTexture.velasset";
 
         BrdfIntegrationLut = Asset.GetAssetInfo(brdfLutFileName);
         DefaultGeometry = Asset.GetAssetInfo(cubeFileName);
         DefaultMaterial = Asset.GetAssetInfo(mtlFileName);
         DefaultTexture = Asset.GetAssetInfo(textureFileName);
-
     }
 
     private static void ComputeBrdfIntegrationLut(string file)

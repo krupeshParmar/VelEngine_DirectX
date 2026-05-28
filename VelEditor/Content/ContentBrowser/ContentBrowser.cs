@@ -119,7 +119,7 @@ namespace VelEditor.Content
 
         public string ContentFolder { get; }
 
-        private readonly ObservableCollection<ContentInfo> _folderContent = new();
+        private readonly ObservableCollection<ContentInfo> _folderContent = [];
         public ReadOnlyObservableCollection<ContentInfo> FolderContent { get; }
 
         private string _selectedFolder;

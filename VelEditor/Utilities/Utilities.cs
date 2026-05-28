@@ -84,7 +84,7 @@ namespace VelEditor.Utilities
     {
         private readonly DispatcherTimer _timer;
         private readonly TimeSpan _delay; 
-        private readonly List<object> _data = new();
+        private readonly List<object> _data = [];
         private DateTime _lastEventTime = DateTime.Now;
 
         public event EventHandler<DelayEventTimerArgs> Triggered;

@@ -82,6 +82,8 @@ abstract class Asset : ViewModelBase
     }
 
     public string FileName => Path.GetFileNameWithoutExtension(FullPath);
+
+    [DataMember]
     public Guid GUID { get; protected set; } = Guid.NewGuid();
     public DateTime ImportDate { get; protected set; }
     public byte[] Hash { get; protected set; }

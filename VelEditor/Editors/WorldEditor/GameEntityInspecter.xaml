@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:VelEditor.Editors"
              xmlns:vm="clr-namespace:VelEditor.Components"
              mc:Ignorable="d" Background="{StaticResource Editor.Window.GrayBrush3}"
-             d:DataContext="{d:DesignInstance Type=vm:MSEntity, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance Type=vm:MSEntity}"
              d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>

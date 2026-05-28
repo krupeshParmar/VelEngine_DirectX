@@ -50,7 +50,7 @@ namespace VelEditor.Content
         public static void Reset(string contentFolder, string projectPath)
         {
             _contentWatcher.EnableRaisingEvents = false;
-
+                
             ContentInfoCache.Reset(projectPath);
 
             if (!string.IsNullOrEmpty(contentFolder))
@@ -58,7 +58,7 @@ namespace VelEditor.Content
                 Debug.Assert(Directory.Exists(contentFolder));
                 _contentWatcher.Path = contentFolder;
                 _contentWatcher.EnableRaisingEvents = true;
-                AssetRegistry.Reset(contentFolder);
+                AssetRegistry.Reset(contentFolder, projectPath);
             }
         }
 

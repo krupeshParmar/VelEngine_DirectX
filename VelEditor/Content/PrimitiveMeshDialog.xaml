@@ -32,7 +32,7 @@
         <Border Background="{StaticResource Editor.Window.GrayBrush3}" Height="32"
                 DockPanel.Dock="Top" VerticalAlignment="Top" Margin="0,0,0,1">
             <StackPanel Orientation="Horizontal">
-                <ComboBox SelectedIndex="1" Width="100" VerticalAlignment="Center"
+                <ComboBox SelectedIndex="0" Width="100" VerticalAlignment="Center"
                           ItemsSource="{Binding Source={StaticResource dataFromEnum}}"
                           x:Name="primitiveTypeComboBox"
                           SelectionChanged="OnPrimitiveType_ComboBox_SelectionChanged"/>

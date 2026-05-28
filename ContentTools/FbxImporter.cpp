@@ -139,6 +139,7 @@ namespace vel::tools {
             if (lod.meshes_list.size())
             {
                 lod.name = lod.meshes_list[0].name;
+#if 0
                 mesh combined_mesh{};
 
                 if (coalesce_meshes(lod, combined_mesh, _progression))
@@ -146,6 +147,7 @@ namespace vel::tools {
                     lod.meshes_list.clear();
                     lod.meshes_list.emplace_back(combined_mesh);
                 }
+#endif
                 _scene->lod_groups.emplace_back(lod);
             }
         }

@@ -155,7 +155,7 @@ namespace {1}
             {
                 sw.WriteLine(string.Format(_cppCode, name, _namespace));
             }
-            string[] files = new string[] { cpp, h };
+            string[] files = [cpp, h];
 
             VisualStudio.AddFilesToSolution(solution, projectName, files);
         }

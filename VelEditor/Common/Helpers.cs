@@ -62,9 +62,9 @@ namespace VelEditor
 
     public static class ContentHelper
     {
-        public static string[] MeshFileExtensions { get; } = { ".fbx" };
-        public static string[] ImageFileExtensions { get; }  = { ".bmp", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".tga", ".dds", ".hdr" };
-        public static string[] AudioFileExtensions { get; }  = { ".ogg", ".wav" };
+        public static string[] MeshFileExtensions { get; } = [ ".fbx" ];
+        public static string[] ImageFileExtensions { get; }  = [ ".bmp", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".tga", ".dds", ".hdr" ];
+        public static string[] AudioFileExtensions { get; }  = [ ".ogg", ".wav" ];
         /// <summary>
         /// Length should be greater than 2
         /// </summary>
@@ -152,7 +152,7 @@ namespace VelEditor
 
         internal static async Task<List<Asset>> ImportFilesAsync(IEnumerable<AssetProxy> proxies)
         {
-            List<Asset> assets = new();
+            List<Asset> assets = [];
             try
             {
                 ImportingItemCollection.Init();
@@ -397,9 +397,7 @@ namespace VelEditor
                 {
                     int offset = 0;
                     Half[] dataFloats =
-                        data.GroupBy(x => offset++ / bytesPerChannel)
-                        .Select(x => BitConverter.ToHalf(x.ToArray(), 0))
-                        .ToArray();
+                        [.. data.GroupBy(x => offset++ / bytesPerChannel).Select(x => BitConverter.ToHalf([.. x], 0))];
                     using var writer = new BinaryWriter(new MemoryStream());
                     for (int i = 0; i < dataFloats.Length; i += bytesPerChannel)
                     {
@@ -417,9 +415,7 @@ namespace VelEditor
                 {
                     int offset = 0;
                     float[] dataFloats =
-                        data.GroupBy(x => offset++ / bytesPerChannel)
-                        .Select(x => BitConverter.ToSingle(x.ToArray().Reverse().ToArray(), 0))
-                        .ToArray();
+                        [.. data.GroupBy(x => offset++ / bytesPerChannel).Select(x => BitConverter.ToSingle([.. x.ToArray().Reverse()], 0))];
                     using var writer = new BinaryWriter(new MemoryStream());
                     foreach (var f in dataFloats)
                     {
@@ -467,9 +463,7 @@ namespace VelEditor
                 {
                     int offset = 0;
                     Half[] dataFloats =
-                        data.GroupBy(x => offset++ / bytesPerChannel)
-                        .Select(x => BitConverter.ToHalf(x.ToArray(), 0))
-                        .ToArray();
+                         [.. data.GroupBy(x => offset++ / bytesPerChannel).Select(x => BitConverter.ToHalf([.. x], 0))];
                     using var writer = new BinaryWriter(new MemoryStream());
                     foreach (var f in dataFloats)
                     {
